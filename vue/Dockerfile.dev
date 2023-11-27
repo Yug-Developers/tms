@@ -1,0 +1,18 @@
+FROM node:18
+   
+WORKDIR /node/tms/vue
+   
+COPY package*.json ./
+RUN ln -fs /usr/share/zoneinfo/Europe/Kiev /etc/localtime   
+RUN npm install --verbose
+RUN npx browserslist@latest --update-db
+RUN npm install @vue/cli -g
+
+RUN umask 002
+   
+COPY . .
+
+EXPOSE 8080
+
+CMD npm run serve
+
