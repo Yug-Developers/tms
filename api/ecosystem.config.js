@@ -7,7 +7,7 @@ module.exports = {
       script : "./server.js",
       instances: 2,
       exec_mode: 'cluster',
-      env: { PORT: 3002 }
+      env: { PORT: 3022 }
     }]
   }
   
