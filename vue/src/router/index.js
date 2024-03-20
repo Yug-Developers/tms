@@ -87,7 +87,7 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-  if (to.name != 'Login' && to.name != '403' && to.name != 'ForgotPassword') {
+  if (navigator.onLine && to.name != 'Login' && to.name != '403' && to.name != 'ForgotPassword') {
     const appStore = useAppStore()
 
     try {
