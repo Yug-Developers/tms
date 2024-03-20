@@ -5,8 +5,8 @@
         </v-toolbar>
         <v-card elevation="0">
             <v-card-text>
-                <div>Вітаємо, <b>{{ appStore.userData.pib }}</b>!</div>
-                <div>тел.: {{ appStore.userData.phone }}</div>
+                <div>Вітаємо, <b>{{ appStore.userData && appStore.userData.pib }}</b>!</div>
+                <div>тел.: {{ appStore.userData && appStore.userData.phone }}</div>
             </v-card-text> 
 
             <v-card-text>

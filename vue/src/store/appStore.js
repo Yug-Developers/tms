@@ -307,7 +307,6 @@ export const useAppStore = defineStore('appStore', () => {
   const getUserSelector = async () => {
     if (userData.value && !userData.value._id && online.value) {
       userData.value = await Pouch.getUserData(user_name.value)
-      console.log('userData--------------', userData.value)
     }
     
     const user_id = userData.value.typhoonId
