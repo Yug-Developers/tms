@@ -2,10 +2,6 @@
 
 git pull
 
-cat VERSION
-perl -pe '/^version=/ and s/(\d+\.\d+\.\d+\.)(\d+)/$1 . ($2+1)/e' -i VERSION
-cat VERSION
-
 cd /var/docker
 
 docker kill tms-vue-prod
