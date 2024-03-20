@@ -339,7 +339,7 @@ export const useAppStore = defineStore('appStore', () => {
           cPoint.id = point.id
           cPoint.status = 200
           cPoint.arrivalTime = new Date().toISOString()
-          if (isSecureConnection) {
+          if (isSecureConnection && online.value) {
             await getLocation()
             cPoint.coordinates = location.value
           } else {
@@ -432,7 +432,7 @@ export const useAppStore = defineStore('appStore', () => {
         if (point.id === pointId) {
           point.status = 200
           point.arrivalTime = new Date().toISOString()
-          if (isSecureConnection) {
+          if (isSecureConnection && online.value) {
             await getLocation()
             point.coordinates = location.value
           } else {
