@@ -130,7 +130,7 @@ export const useAppStore = defineStore('appStore', () => {
       throw error
     }
   }
-  
+
   // --------------------------------- actions --------------------------------
   const createCode = (phone) => {
     const code = parseInt(Math.random() * 10000).toString().padStart(4, '0')
@@ -280,7 +280,7 @@ export const useAppStore = defineStore('appStore', () => {
       throw error
     }
   }
-  
+
   const currentTrips = async (opt = {}) => {
     try {
       const dbName = 'routes'
@@ -305,26 +305,30 @@ export const useAppStore = defineStore('appStore', () => {
   }
 
   const getUserSelector = async () => {
-    const user = await Pouch.getUserData(user_name.value)
-    const user_id = user.typhoonId
+    if (userData.value && !userData.value._id && online.value) {
+      userData.value = await Pouch.getUserData(user_name.value)
+      console.log('userData--------------', userData.value)
+    }
+    
+    const user_id = userData.value.typhoonId
     let selector = {}
-    if (user.role == 'manager') {
-        selector = {
-            carrier: { $in: user.carrierId }
-        }
+    if (userData.value.role == 'manager') {
+      selector = {
+        carrier: { $in: userData.value.carrierId }
+      }
     } else {
-        selector =
-        {
-            $or: [
-                { driverCode: { $eq: user_id } },
-                { addDriverCode: { $eq: user_id } },
-                { driverCode: { $eq: Number(user_id) } },
-                { addDriverCode: { $eq: Number(user_id) } }
-            ]
-        }
+      selector =
+      {
+        $or: [
+          { driverCode: { $eq: user_id } },
+          { addDriverCode: { $eq: user_id } },
+          { driverCode: { $eq: Number(user_id) } },
+          { addDriverCode: { $eq: Number(user_id) } }
+        ]
+      }
     }
     return selector
-}
+  }
 
 
 

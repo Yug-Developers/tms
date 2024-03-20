@@ -44,34 +44,39 @@ const curTrips = ref([])
 
 
 onMounted(async () => {
-    await appStore.pullTripsData()
-    const selector = {... await appStore.getUserSelector()}
-    // Доступні рейси
-    const options = {
-        selector,
-        fields: ['_id']
+    try {
+        await appStore.pullTripsData()
+        const selector = { ... await appStore.getUserSelector() }
+        // Доступні рейси
+        const options = {
+            selector,
+            fields: ['_id']
+        }
+        trips.value = await appStore.availableTrips(options)
+        // Кілометрів усього
+        const optionsF = {
+            selector: {
+                odometerStart: { $exists: true },
+                odometerFinish: { $exists: true },
+                odometerFinish: { $gt: 0 },
+                status: { $eq: 300 }
+            },
+            fields: ['_id', 'odometerStart', 'odometerFinish']
+        }
+        finishedStatuses.value = await appStore.availableStatuses(optionsF)
+        // Поточні рейси
+        curTrips.value = await appStore.currentTrips()
     }
-    trips.value = await appStore.availableTrips(options)
-    // Кілометрів усього
-    const optionsF = {
-        selector: {
-            odometerStart: {$exists: true},
-            odometerFinish: {$exists: true},
-            odometerFinish: { $gt: 0 },
-            status: { $eq: 300 }
-        },
-        fields: ['_id', 'odometerStart', 'odometerFinish']
+    catch (error) {
+        console.error(error)
     }
-    finishedStatuses.value = await appStore.availableStatuses(optionsF)
-    // Поточні рейси
-    curTrips.value = await appStore.currentTrips()
 })
 
 const odometrTotal = computed(() => {
     return finishedStatuses.value.reduce((acc, el) => {
         return acc + (Number(el.odometerFinish) - Number(el.odometerStart))
     }, 0)
-})  
+})
 
 const currentTrips = computed(() => {
     return curTrips.value && curTrips.value.map(el => { return { doc: el, id: el._id, key: el._id } }) || []
