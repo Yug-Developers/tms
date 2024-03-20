@@ -89,7 +89,6 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   if (navigator.onLine && to.name != 'Login' && to.name != '403' && to.name != 'ForgotPassword') {
     const appStore = useAppStore()
-
     try {
       const response = await Pouch.getUserSession()
       appStore.user_name = response.userCtx.name
