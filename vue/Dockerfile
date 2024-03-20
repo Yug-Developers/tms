@@ -16,7 +16,7 @@ ARG DEV_MODE
 ENV NODE_ENV $DEV_MODE
 
 # Build the project
-RUN npm run build -- --mode $NODE_ENV
+RUN npm run build -- --mode $NODE_ENV 
 
 
 # nginx state for serving content
@@ -24,7 +24,7 @@ FROM nginx:stable
 
 RUN ln -fs /usr/share/zoneinfo/Europe/Kiev /etc/localtime
 # Install utilities
-#RUN apt-get update --fix-missing && apt-get -y upgrade && apt-get -y install wget gnupg mc
+RUN apt-get update --fix-missing && apt-get -y upgrade && apt-get -y install wget gnupg mc
 
 # Copy nginx configuration file
 COPY --from=builder /vue/nginx.conf /etc/nginx/nginx.conf

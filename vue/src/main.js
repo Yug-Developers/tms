@@ -9,13 +9,18 @@ import App from './App.vue'
 
 // Composables
 import { createApp } from 'vue'
-import { VueReCaptcha } from 'vue-recaptcha-v3'
+// import { VueReCaptcha } from 'vue-recaptcha-v3'
 
+import { registerSW  } from 'virtual:pwa-register'
+
+const updateSW = registerSW({
+    onNeedRefresh() {},
+})
 
 // Plugins
 import { registerPlugins } from '@/plugins'
 
-const app = createApp(App).use(VueReCaptcha, { siteKey: '6LfBkcgUAAAAAKBXOgiOMftenYqJ45A5bE_JJHJl'})
+const app = createApp(App) //.use(VueReCaptcha, { siteKey: '6LfBkcgUAAAAAKBXOgiOMftenYqJ45A5bE_JJHJl'})
 
 // app.config.errorHandler = function(err, vm, info) {
 //     console.log(`Error: ${err.toString()}\nInfo: ${info}`);

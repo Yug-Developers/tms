@@ -5,7 +5,7 @@ module.exports = {
       apps : [{
       name   : "tms-api",
       script : "./server.js",
-      instances: 2,
+      instances: 1,
       exec_mode: 'cluster',
       env: { PORT: 3022 }
     }]

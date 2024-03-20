@@ -1,20 +1,23 @@
 <template>
-    <div class="pa-10">
-        <h1>Test TMS v{{ version }}</h1>
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <div class="container-fluid">
-                <router-link class="navbar-brand pa-5" to="/">Home</router-link>
-                <router-link class="navbar-brand pa-5" to="/dashboard">Dashboard</router-link>
-                <router-link class="navbar-brand pa-5" to="/login">Login</router-link>
-            </div>
-        </nav>
-        <router-view />
-    </div>
+    <v-app>
+        <v-main>
+            <v-container fluid>
+                <router-view />
+            </v-container>
+        </v-main>
+    </v-app>
+    <SnackBar />
 </template>
 
 <script setup>
-import { ref } from 'vue'
-const version = ref('0.0.0.7')
+import SnackBar from './components/SnackBar.vue'
+import { useAppStore } from './store/appStore';
+const appStore = useAppStore()
+
+// setInterval(() => {
+//     appStore.pullTripsData()
+// }, 60000)
+
 </script>
 
 <style>

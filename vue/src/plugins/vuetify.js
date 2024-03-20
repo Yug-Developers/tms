@@ -10,9 +10,9 @@ import 'vuetify/styles'
 
 // Composables
 import { createVuetify } from 'vuetify'
+// import { VuetifyDateAdapter } from 'vuetify/date/adapters/vuetify'
 
-// import { VDataTableServer } from 'vuetify/labs/VDataTable'
-
+// Locales
 import { uk } from 'vuetify/locale'
 import { md3 } from 'vuetify/blueprints'
 import colors from 'vuetify/lib/util/colors'
@@ -20,8 +20,8 @@ import colors from 'vuetify/lib/util/colors'
 // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 export default createVuetify(
   {
-  // components: {
-  //  VDataTableServer,
+  // date: {
+  //   adapter: VuetifyDateAdapter,
   // },
   
   blueprint: md3,
@@ -32,7 +32,7 @@ export default createVuetify(
   },
   defaults: {
     global: {
-      ripple: false,
+      ripple: true,
       density: 'comfortable',
     },
     VSheet: {
@@ -91,7 +91,8 @@ export default createVuetify(
           "surface-variant": "#424242",
           "primary-darken-1": "#3700B3",
           "secondary-darken-1": "#018786",
-          header: colors.blueGrey.darken3,
+          header: colors.teal.darken4,
+          headerBlk: colors.teal.lighten3,
           "header-btn": "#FFFFFF",
           "dialog-header": colors.blueGrey.base,
           "dialog-header-btn":"#FFFFFF",
