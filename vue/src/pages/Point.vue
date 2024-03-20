@@ -744,7 +744,7 @@ const allPallets = computed(() => {
 })
 
 const checkSmsCode = computed(() => {
-    return md5(smsCode.value) == checkSmsHash.value
+    return navigator.onLine ? md5(smsCode.value) == checkSmsHash.value : true
 })
 
 const isEditor = computed(() => {
