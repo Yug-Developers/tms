@@ -4,13 +4,14 @@ import { onMounted, onBeforeUnmount } from 'vue'
 export function useOnlineStatus() {
     const appStore = useAppStore()
 
-    const updateOnlineStatus =  () => {
+    const updateOnlineStatus =  async () => {
         if (appStore.online !== navigator.onLine) {
             appStore.online = navigator.onLine
             if (appStore.online) {
                 console.log('Currently online')
                 appStore.setSnackbar({ text: "Зв'язок з мережею поновлено", type: 'success' })
-                appStore.pullTripsData()
+                await appStore.pullTripsData()
+                await appStore.pushStatusesData()
             } else {
                 console.log('Currently offline')
                 appStore.setSnackbar({ text: "Втрачено зв'язок з мережею", type: 'warning' })
