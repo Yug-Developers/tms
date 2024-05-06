@@ -131,6 +131,15 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
+  const checkRecaptcha = async (token) => {
+    try {
+      const res = await axios.post(Config.misUrl + '/tms/check-recaptcha', { token })
+      return res.data
+    } catch (error) {
+      throw error
+    }
+  }
+  
   // --------------------------------- actions --------------------------------
   const createCode = (phone) => {
     const code = parseInt(Math.random() * 10000).toString().padStart(4, '0')
@@ -586,7 +595,7 @@ export const useAppStore = defineStore('appStore', () => {
     checkOpenTrip, pullTripsData, initNewTripStatus, cancelPoint, inPlace, checkPointDocs, releaseDoc, rejectDoc, cancelDoc,
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
-    availableStatuses, pushStatusesData
+    availableStatuses, pushStatusesData, checkRecaptcha
   }
 })
 

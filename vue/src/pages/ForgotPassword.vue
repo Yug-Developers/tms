@@ -49,6 +49,7 @@ import { useAppStore } from '@/store/appStore'
 import { ref, } from 'vue'
 import { useRouter } from 'vue-router'
 import { vMaska } from "maska"
+import { useReCaptcha } from 'vue-recaptcha-v3'
 const options = { mask: '+38(###) ### - ####' }
 const router = useRouter()
 const appStore = useAppStore()
@@ -57,6 +58,8 @@ const formValid = ref(false)
 const check = ref(true)
 const code = ref('')
 const hash = ref('')
+const { executeRecaptcha, recaptchaLoaded } = useReCaptcha()
+const reCAPTCHA = ref('')
 const rules = {
     phone: v => v.length === 19 || 'Невірний формат телефону'
 }
@@ -65,6 +68,8 @@ const resetData = () => {
 }
 const checkPhone = async () => {
     try {
+        await recaptcha()
+        await appStore.checkRecaptcha(reCAPTCHA.value)
         const response = await appStore.checkPhone(phone.value)
         if (response.content && response.content.hash) {
             hash.value = response.content.hash
@@ -73,8 +78,6 @@ const checkPhone = async () => {
         } else {
             appStore.setSnackbar({ text: "Невідома помилка", type: 'error' });
         }
-        console.log(response)
-
     } catch (err) {
         const error = err.response && err.response.data && err.response.data.error && err.response.data.error.message ? err.response.data.error.message : err.message
         appStore.setSnackbar({ text: error, type: 'error' });
@@ -83,6 +86,8 @@ const checkPhone = async () => {
 }
 const resetPassword = async () => {
     try {
+        await recaptcha()
+        await appStore.checkRecaptcha(reCAPTCHA.value)
         const response = await appStore.resetPassword({phone: phone.value, code: code.value, hash: hash.value})
         console.log(response)
         if (response) {
@@ -101,4 +106,17 @@ const resetPassword = async () => {
         console.error(err.response.data.error.message);
     }
 }
+const recaptcha = async () => {
+    try {
+        // (optional) Wait until recaptcha has been loaded.
+        await recaptchaLoaded()
+
+        // Execute reCAPTCHA with action "login".
+        reCAPTCHA.value = await executeRecaptcha('forgot')
+        // Do stuff with the received token.
+    } catch (error) {
+        throw error
+    }
+}
+
 </script>

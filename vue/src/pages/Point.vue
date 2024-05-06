@@ -115,7 +115,7 @@
         </v-container>
         <pre>{{ appStore.statuses.filter(el => el._id == tripId) }}</pre>
         <v-bottom-navigation :active="bottomNavigation" v-model="bottomModel">
-            <v-btn color="success" :disabled="releaseBottomBtn" @click="massReleaseDialog = true">
+            <v-btn color="success" :disabled="releaseBottomBtn" @click="openMassReleaseDialog()">
                 <v-icon>mdi-check</v-icon>
                 Видано
             </v-btn>
@@ -192,7 +192,7 @@
                         outlined></v-textarea>
                 </v-card-text>
                 <v-card-actions>
-                    <v-btn @click="cancelDialog = false">Назад</v-btn>
+                    <v-btn color="grey" @click="cancelDialog = false">Відмінити</v-btn>
                     <v-btn @click="cancelDoc()">Підтвердити</v-btn>
                 </v-card-actions>
             </v-card>
@@ -207,7 +207,7 @@
                     <v-textarea v-model="rejectText" label="Причина відмови клієнта" outlined></v-textarea>
                 </v-card-text>
                 <v-card-actions>
-                    <v-btn @click="rejectDialog = false">Назад</v-btn>
+                    <v-btn color="grey" @click="rejectDialog = false">Відмінити</v-btn>
                     <v-btn @click="massReject()">Підтвердити</v-btn>
                 </v-card-actions>
             </v-card>
@@ -223,7 +223,7 @@
                         outlined></v-textarea>
                 </v-card-text>
                 <v-card-actions>
-                    <v-btn @click="cancelDialog = false">Назад</v-btn>
+                    <v-btn color="grey" @click="cancelDialog = false">Відмінити</v-btn>
                     <v-btn @click="massCancel()">Підтвердити</v-btn>
                 </v-card-actions>
             </v-card>
@@ -234,7 +234,7 @@
                 <v-card-title>
                     Підтвердити
                 </v-card-title>
-                <v-card-text>
+                <v-card-text v-if="allBoxes || allPallets">
                     <v-row>
                         <v-col>
                             <v-text-field v-model="allBoxes" readonly label="кількість коробок" outlined></v-text-field>
@@ -244,9 +244,20 @@
                         </v-col>
                     </v-row>
                 </v-card-text>
+                <v-card-text v-if="allSum">
+                        Прийнято COD:
+                        <v-row>
+                            <v-col>
+                                <v-text-field v-model="allSumPack" label="Пакет №" outlined></v-text-field>
+                            </v-col>
+                            <v-col>
+                                <v-text-field v-model="allSumFact" label="Сума" outlined></v-text-field>
+                            </v-col>
+                        </v-row>
+                </v-card-text>
                 <v-card-actions>
-                    <v-btn @click="massReleaseDialog = false">Назад</v-btn>
-                    <v-btn @click="acceptMassRelease()">Підтвердити</v-btn>
+                    <v-btn color="grey" @click="massReleaseDialog = false">Відмінити</v-btn>
+                    <v-btn :disabled="allSum && (!allSumPack || !allSumFact)" @click="acceptMassRelease()">Підтвердити</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -331,6 +342,8 @@ const smsCode = ref('')
 const interval = ref({})
 const timer = ref(100)
 const isFormValid = ref(false)
+const allSumPack = ref('')
+const allSumFact = ref('')
 
 onMounted(async () => {
     try {
@@ -430,7 +443,9 @@ const sendMassSMS = async () => {
     checkSmsHash.value = hash
     const message = `видав ${allBoxes.value} кор / ${allPallets.value} пал`
     const codeText = `Код: ${code}`
-    const translit = cyrillicToTranslit({ preset: "uk" }).transform(`Водій ${message}. ${codeText}`)
+    const messageSum = allSumFact.value ? `прийняв ${allSumFact.value} грн (№ пакету ${allSumPack.value})` : ``
+    const coma = messageSum && message ? `, ` : ``
+    const translit = cyrillicToTranslit({ preset: "uk" }).transform(`Водій ${message}${coma}${messageSum}. ${codeText}`)
     console.log(translit)
     timer.value = 100
     interval.value = setInterval(() => {
@@ -442,6 +457,11 @@ const sendMassSMS = async () => {
     }, 600 * 5)
 
     // await appStore.sendSMScode({ phone: pointData.value.rcptTel, message: translit })
+}
+
+const openMassReleaseDialog = () => {
+    massReleaseDialog.value = true
+    allSumFact.value = allSum.value
 }
 
 const accept = async () => {
@@ -568,6 +588,8 @@ const massRelease = async () => {
                 docId,
                 palletsFact: curDoc.pallets,
                 boxesFact: curDoc.boxes,
+                sumFact: allSumFact.value,
+                sumPack: allSumPack.value,
                 statusConnection: navigator.onLine
             })
         }
@@ -690,7 +712,8 @@ const releaseBottomBtn = computed(() => {
     let result = true
     for (let item of Object.keys(docsSelected.value)) {
         const docData = docs.value.find((doc) => doc.id == item)
-        if (docStatuses.value[item] && docStatuses.value[item].status == 200 && !docData.sum && docData.docType == 'out' && completeAllSelectedTasks.value) {
+        if (docStatuses.value[item] && docStatuses.value[item].status == 200 && (docData.docType == 'out' || docData.docType == 'task')
+            && completeAllSelectedTasks.value) {
             result = false
         } else {
             return true
@@ -739,6 +762,16 @@ const allPallets = computed(() => {
     for (let item of Object.keys(docsSelected.value)) {
         const docData = docs.value.find((doc) => doc.id == item)
         if (docData.pallets) result += docData.pallets
+    }
+    return result
+})
+
+// сума COD у всіх вибраних доументів
+const allSum = computed(() => {
+    let result = 0
+    for (let item of Object.keys(docsSelected.value)) {
+        const docData = docs.value.find((doc) => doc.id == item)
+        if (docData.sum) result += docData.sum
     }
     return result
 })

@@ -43,19 +43,25 @@
 import { useAppStore } from '@/store/appStore'
 import { ref, } from 'vue'
 import { useRouter } from 'vue-router'
+import { useReCaptcha } from 'vue-recaptcha-v3'
+
 const router = useRouter()
 const version = process.env.__VERSION__
 const appStore = useAppStore()
 const USER = ref('')
 const PASS = ref('')
 const showPassword = ref(false)
+const { executeRecaptcha, recaptchaLoaded } = useReCaptcha()
+const reCAPTCHA = ref('')
 const resetData = () => {
     USER.value = ''
     PASS.value = ''
 }
 const Login = async () => {
     try {
-        const response = await appStore.login(USER.value, PASS.value)
+        await recaptcha()
+        await appStore.checkRecaptcha(reCAPTCHA.value)
+        await appStore.login(USER.value, PASS.value)
         appStore.user_name = USER.value
         appStore.setSnackbar({ text: "Вы успешно авторизованы", type: 'success' });
         setTimeout(() => {
@@ -67,4 +73,17 @@ const Login = async () => {
         console.error(err);
     }
 }
+const recaptcha = async () => {
+    try {
+        // (optional) Wait until recaptcha has been loaded.
+        await recaptchaLoaded()
+
+        // Execute reCAPTCHA with action "login".
+        reCAPTCHA.value = await executeRecaptcha('login')
+        // Do stuff with the received token.
+    } catch (error) {
+        throw error
+    }
+}
+
 </script>

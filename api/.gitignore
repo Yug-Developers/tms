@@ -1,6 +1,7 @@
 .DS_Store
 node_modules
 logs
+tms_*
 
 # local env files
 .env.local

@@ -2,7 +2,6 @@
     <v-sheet color="headerBlk" v-if="point.id" elevation="12" max-width="600" rounded="lg" width="100%"
         class="pa-4 text-center mx-auto">
         <v-card flat color="headerBlk">
-
             <v-card-title>
                 Точка {{ point.id }}
             </v-card-title>
@@ -13,7 +12,9 @@
                 <div>Тип: {{ point.pointType }}</div>
                 <div>Адреса: {{ point.name }}</div>
                 <div>Отримувач: {{ point.rcpt }} ({{ point.rcptTel }})</div>
-                <div>Відстань: {{ distance }}</div>
+                <div>Відстань: {{ point.distance }}</div>
+                <div>Кількість кор / пал: {{ allBoxesPallets }}</div>
+                <div>Сума COD: {{ allSum }}</div>
             </v-card-text>
             <v-card-actions v-if="editor">
                 <v-btn v-if="pointStatus == 100" variant="elevated" color="blue" @click="inPlace()">На місці </v-btn>
@@ -94,17 +95,6 @@ const isFormValid = ref(false)
 const rules = {
     number: v => v && !isNaN(v) && !/\s+/.test(v) || 'Тільки цифри'
 }
-
-const distance = computed(() => {
-    let distance = 0
-    if (props.points) {
-        const index = props.points.findIndex((item) => item.id == props.point.id)
-        if (index > 0) {
-            distance = props.points[index - 1].distance
-        }
-    }
-    return distance
-})
 
 const inPlace = async () => {
     const activTrips = await appStore.checkOpenTrip(props.tripId)
@@ -203,4 +193,31 @@ const uncompetedPoints = computed(() => {
     }
 })
 
+const allBoxesPallets = computed(() => {
+    // Кількість кор / пал = Сума по документах з docType = Видача та Завдання (boxes / palletes)
+    let boxes = 0
+    let palletes = 0
+    if (props.point && props.point.docs ) {
+            props.point.docs.forEach((doc) => {
+                if (doc.docType == 'out' || doc.docType == 'task') {
+                    if (doc.boxes) boxes += doc.boxes
+                    if (doc.pallets) palletes += doc.pallets
+                }
+            })
+    }
+    return `${boxes} / ${palletes}`
+})
+
+const allSum = computed(() => {
+    // Сума COD = Сума по документах з docType = Видача та Завдання (sum)
+    let sum = 0
+    if (props.point && props.point.docs ) {
+            props.point.docs.forEach((doc) => {
+                if (doc.docType == 'out' || doc.docType == 'task') {
+                    sum += doc.sum
+                }
+            })
+    }
+    return sum
+})
 </script>

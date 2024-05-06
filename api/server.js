@@ -1,29 +1,23 @@
 const PouchDB = require('pouchdb')
 const Config = require('./Config')
-const dbName = 'tms_routes'
+const dbName = 'tms_statuses'
 const db = new PouchDB(dbName)
-const remoteDB = new PouchDB( Config.remoteCouchDb + dbName, {
+const remoteDB = new PouchDB(Config.remoteCouchDb + dbName, {
   auth: {
-    username: 'tms',
-    password: 'koputraPo5'
+    username: 'admin',
+    password: 'defred098'
   }
 })
 
-const fetchData = async (info) => {
-    const result = await db.allDocs({ include_docs: true })
-    // console.log(result.rows.map(row => row.doc))
-    console.log('CouchDb data fetched')
-  }
-
 const syncData = async () => {
-    console.log('CouchDb sync' )
+  console.log('CouchDb sync')
+  try {
     PouchDB.sync(db, remoteDB, {
       live: true,
       retry: true
-    }).on('paused', function (info) {
+    }).on('paused', function () {
       // replication was paused, usually because of a lost connection
       console.log('CouchDb paused')
-      console.log(info)
     }).on('active', function (info) {
       // replication was resumed
       console.log('CouchDb active')
@@ -31,10 +25,11 @@ const syncData = async () => {
       // totally unhandled error (shouldn't happen)
       console.log('CouchDb error ' + err)
     }).on('change', async (info) => {
-        console.log(info.direction)
-        console.log(info.change)
-            // fetchData()
+      console.log(info.change)
     })
+  } catch (error) {
+    console.log('CouchDb sync error', error)
   }
+}
 
 syncData()
