@@ -1,19 +1,43 @@
 <template>
-    <v-sheet v-if="point.id" style="cursor:pointer" @click="goToPoint(point.id)" elevation="12" max-width="600" rounded="lg" width="100%"
-        class="pa-4 text-center mx-auto">
+    <v-sheet v-if="point.id" style="cursor:pointer" @click="goToPoint(point.id)" elevation="4" max-width="600"
+        rounded="sm" width="100%" class="pa-2 pa-sm-4 mx-auto mb-0">
         <v-card flat>
-            <v-card-title>
-                Точка {{ point.id }} 
+            <v-card-title class="d-flex justify-space-between pa-0 pb-2">
+                <div># {{ point.sortNumber }}</div>
+                <span v-if="point.pointType == 'wh'" class="text-caption font-weight-bold">СКЛАД</span>
+                <StatusChip :tripId="tripId" :pointId="pointId" />
             </v-card-title>
-            <v-card-text class="pa-4 text-left mx-auto">
-                <div>Статус: <StatusChip :tripId="tripId" :pointId="pointId"/></div>
-                <div>Тип: {{ point.pointType }}</div>
-                <div>Адреса: {{ point.name }}</div>
-                <div>Отримувач: {{ point.rcpt }} ({{ point.rcptTel }})</div>
-                <div>Кількість видач: {{ docTypeOutPoint }}</div>
-                <div>Кількість прийому: {{ docTypeInPoint }}</div>
-                <div>Кількість завдань: {{ docTypeTaskPoint }}</div>
-                <div>Відстань: {{ distance }}</div>
+            <v-card-text class="pa-0 text-left mx-auto">
+                <!-- <div>Тип: {{ point.pointType }}</div> -->
+                <div><b>Адреса:</b> {{ point.address }}</div>
+                <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, <span
+                        class="d-flex flex-nowrap"><v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1"
+                            color="green" />
+                        <a :href="'tel:' + point.rcptPhone" @click.stop>{{ point.rcptPhone }}</a></span></div>
+                <v-table v-if="point.pointType != 'wh'" density="compact" class="my-2 text-center">
+                    <thead>
+                        <tr>
+                            <th class="text-center">
+                                Видачі
+                            </th>
+                            <th class="text-center">
+                                Забір
+                            </th>
+                            <th class="text-center">
+                                Завдання
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ docTypeOutPoint }}</td>
+                            <td>{{ docTypeInPoint }}</td>
+                            <td>{{ docTypeTaskPoint }}</td>
+                        </tr>
+                    </tbody>
+                </v-table>
+                <div v-if="point.sortNumber != '1'" class="text-right"><v-icon icon="mdi-map-marker-distance" /> <span
+                        v-if="distance">{{ distance }}</span><span v-else>-</span> км</div>
 
             </v-card-text>
         </v-card>
@@ -40,7 +64,7 @@ const goToPoint = (id) => {
 const docTypeInPoint = computed((id) => {
     return props.point.docs.reduce((acc, item) => {
         if (item.docType == 'in') {
-            return acc+1
+            return acc + 1
         } else {
             return acc
         }
@@ -50,7 +74,7 @@ const docTypeInPoint = computed((id) => {
 const docTypeOutPoint = computed((id) => {
     return props.point.docs.reduce((acc, item) => {
         if (item.docType == 'out') {
-            return acc+1
+            return acc + 1
         } else {
             return acc
         }
@@ -60,7 +84,7 @@ const docTypeOutPoint = computed((id) => {
 const docTypeTaskPoint = computed((id) => {
     return props.point.docs.reduce((acc, item) => {
         if (item.docType == 'task') {
-            return acc+1
+            return acc + 1
         } else {
             return acc
         }
@@ -72,7 +96,7 @@ const distance = computed(() => {
     if (props.points) {
         const index = props.points.findIndex((item) => item.id == props.point.id)
         if (index > 0) {
-            distance = props.points[index-1].distance
+            distance = props.points[index - 1].distance
         }
     }
     return distance

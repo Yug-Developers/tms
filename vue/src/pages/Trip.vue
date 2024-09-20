@@ -1,14 +1,18 @@
 <template>
     <div class="container-fluid">
         <MainNavigation />
-        <v-container>
-            <v-row v-if="tripData.doc">
+        <v-layout full-height class="align-center">
+            <v-container class="align-self-stretch">
+                <!-- <v-sheet elevation="0" max-width="600" class="mx-auto mb-4">
+                    <h2 class="mb-4">Точки рейса</h2>
+                </v-sheet> -->
+            <v-row v-if="tripData.doc" class="mb-4">
                 <v-col>
                     <TripHeader :trip="tripData" />
                 </v-col>
             </v-row>
-            <v-row v-if="tripData.doc && tripData.doc.points" v-for="point in tripData.doc.points">
-                <v-col>
+            <v-row v-if="tripData.doc && tripData.doc.points" v-for="point in tripData.doc.points" class="my-0">
+                <v-col class="pt-0">
                     <PointBlk :point="point" :points="tripData.doc.points" :statuses="statuses" :tripId="tripData && tripData.id" />
                 </v-col>
             </v-row>
@@ -18,6 +22,7 @@
                 </v-col>
             </v-row>
         </v-container>
+        </v-layout>
     </div>
 </template>
 

@@ -1,35 +1,36 @@
 <template>
-    <div class="container-fluid">
-        <MainNavigation />
+    <MainNavigation />
+    <v-layout full-height class="align-center">
         <v-container>
             <v-row>
-                <v-col>
-                    <v-sheet elevation="12" max-width="600" rounded="lg" width="100%" class="pa-4 text-center mx-auto">
+                <v-col cols="12" sm="6"> 
+                    <v-sheet elevation="12" max-width="500" rounded="lg" width="100%" class="pa-4 text-center mx-auto">
                         <v-icon class="mb-5" color="success" icon="mdi-check-circle" size="80"></v-icon>
-                        <h2 class="text-h6 mb-6">Доступні<br>рейси</h2>
+                        <h2 class="text-h6 mb-6">Усього<br>рейсів</h2>
                         <p class="mb-4 text-medium-emphasis text-h4">
                             {{ trips.length }}
                         </p>
                     </v-sheet>
-
                 </v-col>
-                <v-col>
-                    <v-sheet elevation="12" max-width="600" rounded="lg" width="100%" class="pa-4 text-center mx-auto">
+                <v-col cols="12" sm="6">
+                    <v-sheet elevation="12" max-width="500" rounded="lg" width="100%" class="pa-4 text-center mx-auto">
                         <v-icon class="mb-5" color="blue" icon="mdi-counter" size="80"></v-icon>
-                        <h2 class="text-h6 mb-6">Кілометрів<br>усього</h2>
+                        <h2 class="text-h6 mb-6">Усього<br>кілометрів</h2>
                         <p class="mb-4 text-medium-emphasis text-h4">
                             {{ odometrTotal }}
                         </p>
                     </v-sheet>
                 </v-col>
             </v-row>
+            <h2 class="my-10 text-center">Рейси в роботі:</h2>
             <v-row v-for="trip in currentTrips">
                 <v-col>
                     <TripBlk :trip="trip" />
+                    <div v-if="!currentTrips.length" class="text-center text-grey">Рейсів в роботі немає.</div>
                 </v-col>
             </v-row>
         </v-container>
-    </div>
+    </v-layout>
 </template>
 
 <script setup>

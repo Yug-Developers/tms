@@ -92,7 +92,7 @@ export default createVuetify(
           "primary-darken-1": "#3700B3",
           "secondary-darken-1": "#018786",
           header: colors.teal.darken4,
-          headerBlk: colors.teal.lighten3,
+          headerBlk: colors.teal.lighten4,
           "header-btn": "#FFFFFF",
           "dialog-header": colors.blueGrey.base,
           "dialog-header-btn":"#FFFFFF",

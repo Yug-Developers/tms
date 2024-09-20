@@ -42,7 +42,7 @@ export const useAppStore = defineStore('appStore', () => {
   }
 
   const pointStatusObj = {
-    100: 'Новий',
+    100: 'Нова',
     200: 'У работі',
     300: 'Завершено',
   }
@@ -79,6 +79,13 @@ export const useAppStore = defineStore('appStore', () => {
     { title: 'Юг-Контракт Винница', value: '122' },
     { title: 'ЮК наемный транспорт', value: '71' }
   ]
+  // --------------------------------- functions ------------------------------
+
+  const formatDate = (date) => {
+    if (!date) return null
+    const [year, month, day] = date.split('-')
+    return `${day}-${month}-${year}`
+  }
 
   // --------------------------------- getters --------------------------------
   const setSnackbar = (config = {}) => {
@@ -201,7 +208,7 @@ export const useAppStore = defineStore('appStore', () => {
       if (online.value) {
         const options = {
           filter: 'filter/by_status_editor',
-          query_params: { editor: user_id.value }
+          query_params: { editorId: user_id.value }
         }
         const pullRes = await Pouch.pull('routes', options)
         console.log('pullRes', pullRes)
@@ -299,7 +306,7 @@ export const useAppStore = defineStore('appStore', () => {
           ...selector,
           status: 'active'
         }
-        // use_index: ['driverCode', 'addDriverCode'] // Вказуємо використання попередньо створеного індексу
+        // use_index: ['driverId', 'addDriverId'] // Вказуємо використання попередньо створеного індексу
       }
       Object.assign(options, opt)
       console.log('options', options)
@@ -322,16 +329,16 @@ export const useAppStore = defineStore('appStore', () => {
     let selector = {}
     if (userData.value.role == 'manager') {
       selector = {
-        carrier: { $in: userData.value.carrierId }
+        carrierId: { $in: userData.value.carrierId }
       }
     } else {
       selector =
       {
         $or: [
-          { driverCode: { $eq: user_id } },
-          { addDriverCode: { $eq: user_id } },
-          { driverCode: { $eq: Number(user_id) } },
-          { addDriverCode: { $eq: Number(user_id) } }
+          { driverId: { $eq: user_id } },
+          { addDriverId: { $eq: user_id } },
+          { driverId: { $eq: Number(user_id) } },
+          { addDriverId: { $eq: Number(user_id) } }
         ]
       }
     }
@@ -347,7 +354,7 @@ export const useAppStore = defineStore('appStore', () => {
       const points = []
       for (let point of config.points) {
         const cPoint = {}
-        if (point.sort == 1) {
+        if (point.sortNumber == 1) {
           cPoint.id = point.id
           cPoint.status = 200
           cPoint.arrivalTime = new Date().toISOString()
@@ -394,7 +401,7 @@ export const useAppStore = defineStore('appStore', () => {
         if (point.id === pointId) {
           const cpoint = trip.points.find(point => point.id === pointId)
           console.log('cpoint', cpoint)
-          if (cpoint.sort == 1) {
+          if (cpoint.sortNumber == 1) {
             const res = await Pouch.deleteDoc('statuses', tripId)
             // const res = await Pouch.updateDoc('statuses', tripId, {_id: st._id, _rev: st._rev})
             statuses.value = await Pouch.fetchData('statuses')
@@ -595,7 +602,7 @@ export const useAppStore = defineStore('appStore', () => {
     checkOpenTrip, pullTripsData, initNewTripStatus, cancelPoint, inPlace, checkPointDocs, releaseDoc, rejectDoc, cancelDoc,
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
-    availableStatuses, pushStatusesData, checkRecaptcha
+    availableStatuses, pushStatusesData, checkRecaptcha, formatDate
   }
 })
 

@@ -1,5 +1,5 @@
 <template>
-    <v-chip :color="colors[status]" class="mr-5" variant="elevated">
+    <v-chip :color="colors[status]" variant="elevated">
         {{ appStore.tripStatusObj[status] }}
     </v-chip>
 </template>
@@ -15,7 +15,7 @@ const props = defineProps({
 
 const colors = {
     0: 'grey',
-    100: 'blue',
+    100: 'yellow',
     200: 'green',
     300: 'red',
 }

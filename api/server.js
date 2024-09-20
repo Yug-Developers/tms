@@ -8,6 +8,7 @@ const remoteDB = new PouchDB(Config.remoteCouchDb + dbName, {
     password: 'defred098'
   }
 })
+const axios = require('axios')
 
 const syncData = async () => {
   console.log('CouchDb sync')
@@ -25,11 +26,131 @@ const syncData = async () => {
       // totally unhandled error (shouldn't happen)
       console.log('CouchDb error ' + err)
     }).on('change', async (info) => {
-      console.log(info.change)
-    })
+      console.log('Зміни в документі:', info.change);
+      const changedDocs = info.change.docs;
+
+      for (let doc of changedDocs) {
+        try {
+          // Отримати поточну версію документа разом з усіма ревізіями
+          const currentDoc = await db.get(doc._id, { revs: true });
+
+          // Перевірити наявність попередньої ревізії
+          if (currentDoc._revisions && currentDoc._revisions.ids.length > 1) {
+            // Отримати попередню ревізію
+            const previousRev = `${currentDoc._revisions.start - 1}-${currentDoc._revisions.ids[1]}`;
+
+            try {
+              // Отримати попередню версію документа
+              const previousDoc = await db.get(doc._id, { rev: previousRev });
+
+              // Порівняти зміни між поточною та попередньою версіями
+              console.log('Попередній документ:', previousDoc);
+              console.log('Поточний документ:', currentDoc);
+
+              const previousStatus = previousDoc.status;
+              const currentStatus = currentDoc.status;
+              const previousPoints = previousDoc.points || [];
+              const currentPoints = currentDoc.points || [];
+
+              // Створимо об'єкт для швидкого доступу до точок попередньої версії за їх id
+              const previousPointsMap = previousPoints.reduce((map, point) => {
+                map[point.id] = point;
+                return map;
+              }, {});
+
+              // Перевіряємо на розбіжності в статусах
+              const differences = currentPoints.filter(point => {
+                const prevPoint = previousPointsMap[point.id];
+                return prevPoint && point.status !== prevPoint.status;
+              });
+
+              if (differences.length > 0) {
+                console.log('Знайдено розбіжності у статусах точок:', differences);
+                const preparedData = prepareData(currentDoc)
+                console.log('Підготовлені дані для відправки:', preparedData);
+                try {
+                  const res = await sendDataToTyphoon(preparedData)
+                } catch (error) {
+                  console.log('Помилка відправки даних до Typhoon:', error);
+                }
+              } else {
+                console.log('Розбіжностей у статусах точок не виявлено.');
+              }
+
+              // Додай свою логіку порівняння
+            } catch (err) {
+              console.log('Помилка при отриманні попереднього документа:', err);
+            }
+          } else {
+            console.log('Попередньої версії документа немає');
+          }
+        } catch (err) {
+          console.log('Помилка при отриманні поточного документа', err);
+        }
+      }
+    });
   } catch (error) {
     console.log('CouchDb sync error', error)
   }
 }
 
 syncData()
+
+const sendDataToTyphoon = async (data) => {
+  try {
+    console.log(JSON.stringify(data, null, 2));
+    console.log(`${Config.foxtrotApi.url}/tocan-requests`)
+    const authToken = await getAccessToken()
+    const res = await axios({
+      method: 'POST',
+      data,
+      url: `${Config.foxtrotApi.url}/tocan-requests`,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + authToken
+      }
+    })
+    if (res.data.error) {
+      throw new Error(res.data.error)
+    } else {
+      return res.data
+    }
+  } catch (error) {
+    throw error
+  }
+}
+
+const getAccessToken = async (sufix) => {
+  try {
+    const path = 'foxtrotOauth2' + (sufix ? sufix : '')
+    const { data } = await axios.post(
+      Config[path].url,
+      {
+        client_id: Config[path].client_id,
+        client_secret: Config[path].secret,
+        grant_type: 'client_credentials'
+      }, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    })
+    return data.access_token
+
+  } catch (error) {
+    throw error
+  }
+}
+
+const prepareData = (data) => {
+  const out = {
+    id: data._id,
+    status: data.status,
+    startTime: data.startTime,
+    finishTime: data.finishTime,
+    odometerStart: data.odometerStart,
+    odometerFinish: data.odometerFinish,
+    points: data.points,
+
+  }
+  return out
+}

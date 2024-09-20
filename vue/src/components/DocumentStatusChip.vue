@@ -1,5 +1,5 @@
 <template>
-    <v-chip :color="colors[status]" class="mr-5" variant="flat">
+    <v-chip :color="colors[status]" size="small" variant="flat">
         {{ appStore.documentStatusObj[status] }}
     </v-chip>
 </template>
@@ -11,8 +11,8 @@ const appStore = useAppStore()
 
 const props = defineProps({
     tripId: String,
-    pointId: String,
-    docId: String,
+    pointId: Number,
+    docId: Number,
 })
 const status = computed(() => {
     const trip = appStore.statuses.find((item) => item._id == props.tripId)
@@ -22,7 +22,7 @@ const status = computed(() => {
 })
 
 const colors = {
-    100: 'blue',
+    100: 'yellow',
     200: 'green',
     300: 'blue',
     400: 'error',
