@@ -1,6 +1,6 @@
 <template>
     <v-sheet v-if="point.id" style="cursor:pointer" @click="goToPoint(point.id)" elevation="4" max-width="600"
-        rounded="sm" width="100%" class="pa-2 pa-sm-4 mx-auto mb-0">
+        rounded width="100%" class="pa-4 mx-auto">
         <v-card flat>
             <v-card-title class="d-flex justify-space-between pa-0 pb-2">
                 <div># {{ point.sortNumber }}</div>
@@ -13,29 +13,19 @@
                 <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, <span
                         class="d-flex flex-nowrap"><v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1"
                             color="green" />
-                        <a :href="'tel:' + point.rcptPhone" @click.stop>{{ point.rcptPhone }}</a></span></div>
-                <v-table v-if="point.pointType != 'wh'" density="compact" class="my-2 text-center">
-                    <thead>
-                        <tr>
-                            <th class="text-center">
-                                Видачі
-                            </th>
-                            <th class="text-center">
-                                Забір
-                            </th>
-                            <th class="text-center">
-                                Завдання
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{{ docTypeOutPoint }}</td>
-                            <td>{{ docTypeInPoint }}</td>
-                            <td>{{ docTypeTaskPoint }}</td>
-                        </tr>
-                    </tbody>
-                </v-table>
+                        <a :href="'tel:' + point.rcptPhone" @click.stop>{{ point.rcptPhone }}</a></span>
+                </div>
+                <v-row v-if="point.pointType != 'wh'" class="my-2 text-left">
+                    <v-col class="d-flex flex-nowrap">
+                        Видача <v-badge :color="docTypeOutPoint == 0 ? `grey` : `info`" :content="docTypeOutPoint" inline></v-badge>
+                    </v-col>
+                    <v-col class="d-flex flex-nowrap">
+                        Забір <v-badge :color="docTypeInPoint == 0 ? `grey` : `info`" :content="docTypeInPoint" inline></v-badge>
+                    </v-col>
+                    <v-col class="d-flex flex-nowrap">
+                        Завдання <v-badge :color="docTypeTaskPoint == 0 ? `grey` : `info`" :content="docTypeTaskPoint" inline></v-badge>
+                    </v-col>
+                </v-row>
                 <div v-if="point.sortNumber != '1'" class="text-right"><v-icon icon="mdi-map-marker-distance" /> <span
                         v-if="distance">{{ distance }}</span><span v-else>-</span> км</div>
 
@@ -73,7 +63,7 @@ const docTypeInPoint = computed((id) => {
 
 const docTypeOutPoint = computed((id) => {
     return props.point.docs.reduce((acc, item) => {
-        if (item.docType == 'out') {
+        if (item.docType == 'out' || item.docType == 'out_RP') {
             return acc + 1
         } else {
             return acc

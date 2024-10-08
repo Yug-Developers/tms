@@ -37,13 +37,13 @@ export const useAppStore = defineStore('appStore', () => {
   const tripStatusObj = {
     0: 'Чернетка',
     100: 'Новий',
-    200: 'У работі',
+    200: 'У роботі',
     300: 'Завершений',
   }
 
   const pointStatusObj = {
     100: 'Нова',
-    200: 'У работі',
+    200: 'У роботі',
     300: 'Завершено',
   }
 
@@ -52,7 +52,7 @@ export const useAppStore = defineStore('appStore', () => {
     200: 'У дорозі',
     300: 'Видано',
     400: 'Відмова',
-    500: 'Скасування доставки',
+    500: 'Скасовано',
   }
 
   const carriers = [
@@ -149,7 +149,9 @@ export const useAppStore = defineStore('appStore', () => {
   
   // --------------------------------- actions --------------------------------
   const createCode = (phone) => {
-    const code = parseInt(Math.random() * 10000).toString().padStart(4, '0')
+    // const code = parseInt(Math.random() * 10000).toString().padStart(4, '0')
+    // FIXME: remove this line
+    const code = '1111'
     const hash = md5(code)
     return [code, hash]
   }
@@ -211,11 +213,9 @@ export const useAppStore = defineStore('appStore', () => {
           query_params: { editorId: user_id.value }
         }
         const pullRes = await Pouch.pull('routes', options)
-        console.log('pullRes', pullRes)
         const currTrips = await currentTrips({ fields: ['_id'] })
         const opt = { doc_ids: [...currTrips.map(trip => trip._id)] }
         const pullSt = await Pouch.pull('statuses', opt)
-        console.log('pullSt', pullSt)
       }
       statuses.value = await Pouch.fetchData('statuses')
       loading.value = false
@@ -228,7 +228,6 @@ export const useAppStore = defineStore('appStore', () => {
     try {
       if (online.value) {
         const pushRes = await Pouch.push('statuses')
-        console.log('pushRes', pushRes)
       }
     } catch (error) {
       throw error
@@ -273,6 +272,7 @@ export const useAppStore = defineStore('appStore', () => {
 
   const availableTrips = async (options) => {
     try {
+      console.log('options', JSON.stringify(options, null, 2))
       const dbName = 'routes'
       if (online.value) {
         return await Pouch.fetchRemoteData(dbName, options)
@@ -309,7 +309,6 @@ export const useAppStore = defineStore('appStore', () => {
         // use_index: ['driverId', 'addDriverId'] // Вказуємо використання попередньо створеного індексу
       }
       Object.assign(options, opt)
-      console.log('options', options)
       if (online.value) {
         return await Pouch.fetchRemoteData(dbName, options)
       } else {
@@ -325,11 +324,14 @@ export const useAppStore = defineStore('appStore', () => {
       userData.value = await Pouch.getUserData(user_name.value)
     }
     
+    
+
     const user_id = userData.value.typhoonId
     let selector = {}
     if (userData.value.role == 'manager') {
+      const carriers = userData.value.carrierId ? userData.value.carrierId.map(el => Number(el)) : []
       selector = {
-        carrierId: { $in: userData.value.carrierId }
+        carrierId: { $in: carriers }
       }
     } else {
       selector =
@@ -362,7 +364,8 @@ export const useAppStore = defineStore('appStore', () => {
             await getLocation()
             cPoint.coordinates = location.value
           } else {
-            cPoint.coordinates = point.coordinates
+            // cPoint.coordinates = point.coordinates
+            cPoint.coordinates = { latitude: '', longitude: '' }
           }
         } else {
           cPoint.id = point.id
@@ -400,21 +403,19 @@ export const useAppStore = defineStore('appStore', () => {
       for (let point of points) {
         if (point.id === pointId) {
           const cpoint = trip.points.find(point => point.id === pointId)
-          console.log('cpoint', cpoint)
           if (cpoint.sortNumber == 1) {
             const res = await Pouch.deleteDoc('statuses', tripId)
             // const res = await Pouch.updateDoc('statuses', tripId, {_id: st._id, _rev: st._rev})
             statuses.value = await Pouch.fetchData('statuses')
             await pushStatusesData()
-            console.log('res', res)
             return
           }
           point.status = 100
           point.arrivalTime = ''
           delete point.coordinates
-          for (let doc of point.docs) {
-            doc.status = 100
-          }
+          // for (let doc of point.docs) {
+          //   doc.status = 100
+          // }
         }
       }
       Object.assign(st, { points })
@@ -429,7 +430,7 @@ export const useAppStore = defineStore('appStore', () => {
   }
 
   const checkPointDocs = async (tripId, pointId) => {
-    //Якщо у Точки доставки всі документи мають status <> Отримано, Відмова, Скасування доставки
+    //Якщо у Точки доставки всі документи мають status <> Отримано, Відмова, Скасовано
     const st = await Pouch.getDoc('statuses', tripId) || {}
     const point = st.points.find(point => point.id === pointId)
     const docs = point.docs || []
@@ -445,7 +446,6 @@ export const useAppStore = defineStore('appStore', () => {
     try {
       const st = await Pouch.getDoc('statuses', tripId)
       const currentPoint = tripPoints.find(point => point.id === pointId)
-      console.log('currentPoint', currentPoint)
       const points = st.points
       for (let point of points) {
         if (point.id === pointId) {
@@ -455,8 +455,9 @@ export const useAppStore = defineStore('appStore', () => {
             await getLocation()
             point.coordinates = location.value
           } else {
-            console.log("trip", currentPoint)
-            point.coordinates = currentPoint && currentPoint.coordinates
+            // point.coordinates = currentPoint && currentPoint.coordinates
+            point.coordinates = { latitude: '', longitude: '' }
+
           }
           point.docs = []
           for (let doc of currentPoint.docs) {
@@ -492,7 +493,7 @@ export const useAppStore = defineStore('appStore', () => {
               doc.sumFact = config.sumFact
               doc.palletsFact = config.palletsFact
               doc.boxesFact = config.boxesFact
-              doc.statusConnection = config.statusConnection
+              doc.statusConnection = online.value
             }
           }
         }
@@ -519,6 +520,7 @@ export const useAppStore = defineStore('appStore', () => {
             if (doc.id === config.docId) {
               doc.status = 400
               doc.description = config.description
+              doc.statusConnection = online.value
             }
           }
         }
@@ -545,6 +547,7 @@ export const useAppStore = defineStore('appStore', () => {
             if (doc.id === config.docId) {
               doc.status = 500
               doc.description = config.description
+              doc.statusConnection = online.value
             }
           }
         }

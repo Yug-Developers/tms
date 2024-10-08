@@ -1,36 +1,41 @@
 <template>
-    <v-sheet v-if="point.id" elevation="0" max-width="600" rounded="sm" width="100%"
-        class="pa-0 mx-auto">
+    <v-sheet v-if="point.id" elevation="0" max-width="600" rounded="sm" width="100%" class="pa-0 mx-auto mb-4">
         <div class="text-grey text-caption">
-                Рейс № {{ tripId }}
+            Рейс № {{ tripId }}
         </div>
         <div class="text-h6 d-flex justify-space-between pb-2">
-                <div># {{ point.sortNumber }}</div>
-                <span v-if="point.pointType == 'wh'" class="mt-1 text-caption font-weight-bold">СКЛАД</span>
-                <StatusChip :tripId="tripId" :pointId="pointId"/>
+            <div># {{ point.sortNumber }}</div>
+            <span v-if="point.pointType == 'wh'" class="mt-1 text-caption font-weight-bold">СКЛАД</span>
+            <StatusChip :tripId="tripId" :pointId="pointId" />
         </div>
 
         <v-card flat color="headerBlk" elevation="2">
-            <v-card-text class="pa-2 text-left mx-auto">
+            <v-card-text class="pa-4 text-left mx-auto">
                 <div><b>Адреса:</b> {{ point.address }}</div>
-                <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, <span class="d-flex flex-nowrap"><v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1" color="green"/><a :href="'tel:' + point.rcptPhone">{{ point.rcptPhone }}</a></span></div>
+                <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, <span
+                        class="d-flex flex-nowrap"><v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1"
+                            color="green" /><a :href="'tel:' + point.rcptPhone">{{ point.rcptPhone }}</a></span></div>
                 <div class="mt-2">Кіль-ть місць: {{ allBoxesPallets }}</div>
                 <div>Сума COD: {{ allSum }}</div>
-                <div v-if="point.sortNumber != '1'" class="text-right"><v-icon icon="mdi-map-marker-distance" /> <span v-if="distance">{{ distance }}</span><span v-else>-</span> км</div>
+                <div v-if="point.sortNumber != '1'" class="text-right"><v-icon icon="mdi-map-marker-distance" /> <span
+                        v-if="distance">{{ distance }}</span><span v-else>-</span> км</div>
             </v-card-text>
         </v-card>
     </v-sheet>
-
-    <v-divider class="mt-4 mb-2"></v-divider>
-        <div v-if="editorId" class="d-flex justify-space-around">
-                <v-btn :disabled="disableInPlaceBtn" v-if="pointStatus == 100" variant="elevated" color="blue" @click="inPlace()">На місці </v-btn>
-                <v-btn v-if="pointStatus == 200" variant="elevated" color="error"
-                    @click="cancelDialog = true">Скасувати</v-btn>
-                <v-btn :disabled="uncomletedDocs" v-if="pointStatus == 200" @click="completePoint()" variant="elevated"
-                    color="success">Виконано</v-btn>
-                <div v-if="pointStatus == 300" class="text-center">Точка виконана.</div>
+    
+    <v-sheet v-if="editorId" elevation="0" max-width="600" class="pa-0 mx-auto mb-4">
+        <v-divider class="mb-2"></v-divider>
+        <div class="d-flex justify-space-around">
+        <v-btn :disabled="disableInPlaceBtn" v-if="pointStatus == 100" variant="elevated" color="blue"
+            @click="inPlace()">На місці </v-btn>
+        <v-btn v-if="pointStatus == 200" variant="elevated" color="error" @click="cancelDialog = true">Скасувати</v-btn>
+        <v-btn :disabled="uncomletedDocs" v-if="pointStatus == 200" @click="completePoint()" variant="elevated"
+            color="success">Виконано</v-btn>
+        <div v-if="pointStatus == 300" class="text-center">
+            <v-icon  icon="mdi-check-circle" color="green" class="mr-2 mb-1" />Точка виконана</div>
         </div>
-    <v-divider class="mb-4 mt-2"></v-divider>
+        <v-divider class="mt-2"></v-divider>
+    </v-sheet>
 
     <v-dialog v-model="odometerDialog" max-width="600" persistent>
         <v-card>
@@ -39,7 +44,8 @@
             </v-card-title>
             <v-card-text>
                 <v-form v-model="isFormValid">
-                    <v-text-field v-model="odometer" prepend-inner-icon="mdi-counter" :rules="[rules.number]" label="Км" outlined></v-text-field>
+                    <v-text-field v-model="odometer" prepend-inner-icon="mdi-counter" :rules="[rules.number]" label="Км"
+                        outlined></v-text-field>
                 </v-form>
             </v-card-text>
             <v-card-actions>
@@ -56,7 +62,8 @@
             </v-card-title>
             <v-card-text>
                 <v-form v-model="isFormValid">
-                    <v-text-field v-model="odometer" prepend-inner-icon="mdi-counter" :rules="[rules.number]" label="Км" outlined></v-text-field>                    
+                    <v-text-field v-model="odometer" prepend-inner-icon="mdi-counter" :rules="[rules.number]" label="Км"
+                        outlined></v-text-field>
                 </v-form>
             </v-card-text>
             <v-card-actions>
@@ -69,12 +76,12 @@
     <v-dialog scrim="error" v-model="cancelDialog" max-width="600">
         <v-card>
             <v-card-text>
-                Ви впевнені, що хочете скасувати виконання точки?
+                Ви впевнені, що хочете скасувати прибуття на точку?
             </v-card-text>
             <v-card-actions>
-                <!-- <v-btn @click="cancelDialog = false">Скасувати</v-btn> -->
+                <v-btn @click="cancelDialog = false">Ні</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn color="primary" @click="cancelPoint()">OK</v-btn>
+                <v-btn color="primary" @click="cancelPoint()">ТАК</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -178,7 +185,7 @@ const cancelPoint = async () => {
             appStore.setSnackbar({ text: "Очищено координати та час", type: 'success' })
             cancelDialog.value = false
         } else {
-            appStore.setSnackbar({ text: "Не можливо виконати скасування точки", type: 'error' })
+            appStore.setSnackbar({ text: "Точка містить виконані доставки. Скасування прибуття на точку неможливе.", type: 'error' })
         }
     } catch (error) {
         console.error(error)
@@ -192,7 +199,7 @@ const existsTripStatus = computed(() => {
 const uncomletedDocs = computed(() => {
     if (existsTripStatus.value) {
         const docsStatuses = existsTripStatus.value.points.find((item) => item.id == pointId.value).docs
-        return docsStatuses.filter((item) => item.status <= 200).length
+        return docsStatuses.filter((item) => item.status <= 200).length ? true : false
     }
 })
 
@@ -207,13 +214,13 @@ const allBoxesPallets = computed(() => {
     // Кількість кор / пал = Сума по документах з docType = Видача та Завдання (boxes / palletes)
     let boxes = 0
     let palletes = 0
-    if (props.point && props.point.docs ) {
-            props.point.docs.forEach((doc) => {
-                if (doc.docType == 'out' || doc.docType == 'task') {
-                    if (doc.boxQty) boxes += doc.boxQty
-                    if (doc.pallQty) palletes += doc.pallQty
-                }
-            })
+    if (props.point && props.point.docs) {
+        props.point.docs.forEach((doc) => {
+            if (doc.docType == 'out' || doc.docType == 'out_RP' || doc.docType == 'task') {
+                if (doc.boxQty) boxes += doc.boxQty
+                if (doc.pallQty) palletes += doc.pallQty
+            }
+        })
     }
     return `${boxes} / ${palletes}`
 })
@@ -221,12 +228,12 @@ const allBoxesPallets = computed(() => {
 const allSum = computed(() => {
     // Сума COD = Сума по документах з docType = Видача та Завдання (sum)
     let sum = 0
-    if (props.point && props.point.docs ) {
-            props.point.docs.forEach((doc) => {
-                if (doc.docType == 'out' || doc.docType == 'task') {
-                    sum += doc.sum
-                }
-            })
+    if (props.point && props.point.docs) {
+        props.point.docs.forEach((doc) => {
+            if (doc.docType == 'out' || doc.docType == 'out_RP' || doc.docType == 'task') {
+                sum += doc.sum
+            }
+        })
     }
     return sum
 })
@@ -235,16 +242,41 @@ const previousePointStatus = computed(() => {
     if (existsTripStatus.value && existsTripStatus.value.points) {
         const index = existsTripStatus.value.points.findIndex((item) => item.id == props.point.id)
         if (index > 0) {
-            return existsTripStatus.value.points[index-1].status
+            return existsTripStatus.value.points[index - 1].status
         }
     }
 })
 
-const disableInPlaceBtn = computed(() => {
-    if (!previousePointStatus.value) {
-        return props.point.sortNumber == 1 ? false : true
+// Знайти статус у работі по всіх точках
+const existsWorkPoint = computed(() => {
+    if (existsTripStatus.value && existsTripStatus.value.points) {
+        return existsTripStatus.value.points.find((item) => item.status == 200) ? true : false
     } else {
-        return previousePointStatus.value == 300  ? false : true
+        return true
     }
 })
+
+const disableInPlaceBtn = computed(() => {
+    if (existsWorkPoint.value) {
+        return props.point.sortNumber == 1 ? false : true
+    } else {
+        return false
+    }
+})
+
+const distance = computed(() => {
+    let distance = 0
+    if (props.points) {
+        const index = props.points.findIndex((item) => item.id == props.point.id)
+        if (index > 0) {
+            distance = props.points[index - 1].distance
+        }
+    }
+    return distance
+})
+
 </script>
+
+<style>
+.v-sheet, .v-card {background-color: white}
+</style>

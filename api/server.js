@@ -8,6 +8,15 @@ const remoteDB = new PouchDB(Config.remoteCouchDb + dbName, {
     password: 'defred098'
   }
 })
+const dbNameRoutes = 'tms_routes'
+const remoteDBRoutes = new PouchDB(Config.remoteCouchDb + dbNameRoutes, {
+  auth: {
+    username: 'admin',
+    password
+      : 'defred098'
+  }
+})
+
 const axios = require('axios')
 
 const syncData = async () => {
@@ -51,7 +60,11 @@ const syncData = async () => {
               const currentStatus = currentDoc.status;
               const previousPoints = previousDoc.points || [];
               const currentPoints = currentDoc.points || [];
-
+              // Якщо документ має статус 300 (виконано) і він змінився з попереднього статусу закриваємо документ в базі рейсів
+              if (currentStatus === 300 &&  previousStatus !== 300) {
+                console.log('Статус документа змінився з виконано на інший:', currentStatus);
+                await closeDocInDb(doc._id)
+              }
               // Створимо об'єкт для швидкого доступу до точок попередньої версії за їх id
               const previousPointsMap = previousPoints.reduce((map, point) => {
                 map[point.id] = point;
@@ -69,7 +82,7 @@ const syncData = async () => {
                 const preparedData = prepareData(currentDoc)
                 console.log('Підготовлені дані для відправки:', preparedData);
                 try {
-                  const res = await sendDataToTyphoon(preparedData)
+                  // const res = await sendDataToTyphoon(preparedData)
                 } catch (error) {
                   console.log('Помилка відправки даних до Typhoon:', error);
                 }
@@ -95,6 +108,17 @@ const syncData = async () => {
 }
 
 syncData()
+
+const closeDocInDb = async (id) => {
+  try {
+    const doc = await remoteDBRoutes.get(id)
+    doc.status = 'closed'
+    await remoteDBRoutes.put(doc)
+    console.log(`Документ ${id} закрито в базі рейсів`);
+  } catch (error) {
+    throw error
+  }
+}
 
 const sendDataToTyphoon = async (data) => {
   try {

@@ -1,29 +1,33 @@
 <template>
     <MainNavigation />
     <v-layout full-height class="align-center">
-        <v-container class="align-self-stretch">
-            <v-sheet elevation="0" max-width="600" class="mx-auto mb-4">
+        <v-container class="align-self-stretch" max-width="600">
+            <v-sheet elevation="0" class="mx-auto mb-4">
                 <h2 class="mb-4">Рейси</h2>
             </v-sheet>
-            <v-sheet elevation="0" max-width="600" class="d-flex mx-auto mb-4">
-                <v-text-field v-model="tripId" label="№" @keyup.enter="getAvailableTripsById()" outlined
-                    clearable></v-text-field>
-                <v-menu v-model="menu" :close-on-content-click="false">
-                    <template v-slot:activator="{ props }">
-                        <v-text-field v-model="formatedDate2" label="На дату" prepend-icon="event" readonly
-                            v-bind="props"></v-text-field>
-                    </template>
-                    <v-date-picker v-model="date" :allowed-dates="allowedDates" title="Рейси на дату"
-                        header="Оберіть дату" max="2030-03-20" min="2024-01-01"></v-date-picker>
-                </v-menu>
-            </v-sheet>
+            <v-row elevation="0" class="d-flex mx-auto mb-4" no-gutters>
+                <v-col col="6" class="pr-2">
+                    <v-text-field v-model="tripId" label="№" @keyup.enter="getAvailableTripsById()" outlined
+                        clearable></v-text-field>
+                </v-col>
+                <v-col col="6" class="pl-2">
+                    <v-menu v-model="menu" :close-on-content-click="false">
+                        <template v-slot:activator="{ props }">
+                            <v-text-field v-model="formatedDate2" label="На дату" readonly
+                                v-bind="props"></v-text-field>
+                        </template>
+                        <v-date-picker @update:modelValue="getAvailableTrips()" v-model="date" :allowed-dates="allowedDates" title="Рейси на дату"
+                            header="Оберіть дату" max="2030-03-20" min="2024-01-01"></v-date-picker>
+                    </v-menu>
+                </v-col>
+            </v-row>
             <div v-for="trip in currentTrips">
                 <TripBlk :trip="trip" />
             </div>
             <div v-if="currentTrips.length == 0" class="text-center">
                 <span v-if="tripIdError">По № <b>{{tripId }}</b> </span>
                 <span v-else>На дату <b>{{ formatedDate2 }}</b> </span>
-                рейсів не знайдено
+                рейси не знайдено
             </div>
         </v-container>
     </v-layout>
@@ -45,6 +49,7 @@ const menu = ref(false)
 const tripIdError = ref(false)
 
 const getAvailableTripsById = async () => {
+    date.value = null
     const options = {
         selector: {
             ... await appStore.getUserSelector(),
@@ -110,18 +115,16 @@ const formatedDate = () => {
     return adapter.format(date.value, 'keyboardDate').split('.').reverse().join('-')
 }
 const formatedDate2 = computed(() => {
-    return adapter.format(date.value, 'keyboardDate')
+    return date.value ? adapter.format(date.value, 'keyboardDate') : ''
 })
 
 const allowedDates = computed(() => {
     return allTrips.value.map(el => el.date)
 })
 
-watch(date, async () => {
-    await getAvailableTrips()
-})
 
 onMounted(async () => {
+    date.value = new Date()
     await appStore.pullTripsData()
     await allAvailableTrips()
     await getAvailableTrips()

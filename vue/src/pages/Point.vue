@@ -1,19 +1,19 @@
 <template>
     <MainNavigation />
-    <v-layout full-height class="align-center">
-        <v-container class="align-self-stretch">
-            <template v-if="trip && pointData && pointData.id">
+    <v-layout full-height>
+        <template v-if="trip && pointData && pointData.id">
+            <v-container>
                 <PointHeader :point="pointData" :tripId="tripId" :points="points" :editorId="isEditor" />
                 <v-sheet v-if="pointData.pointType != 'wh'" elevation="0" max-width="600" width="100%" class="mx-auto">
                     <template v-for="(type) in types" :key="type">
                         <v-expansion-panels v-model="panel[type]" multiple class="mb-2">
                             <v-expansion-panel v-if="docsData[type].length != 0">
-                                <template v-slot:title>
+                                <v-expansion-panel-title disable-icon-rotate>
                                     <div class="text-subtitle">{{ typesObj[type] }}
                                         <v-badge color="info" :content="docsData[type].length" inline></v-badge>
                                     </div>
-                                </template>
-                                <template v-slot:text>
+                                </v-expansion-panel-title>
+                                <v-expansion-panel-text>
                                     <template v-if="docsData[type].length">
                                         <div class="text-left pa-0" flat v-for="doc in docsData[type]" :key="doc.id"
                                             :style="isEditor ? `cursor: pointer` : ``" :elevation="1"
@@ -21,41 +21,44 @@
                                             :class="docsSelected[doc.id] ? `bg-teal-lighten-5` : ``">
                                             <div class="d-flex justify-space-between">
                                                 <div>
-                                                    <v-icon
+                                                    <v-icon v-if="pointStatus == 200 && docStatuses[doc.id] && docStatuses[doc.id].status == 200"
                                                         :icon="docsSelected[doc.id] ? `mdi-check-circle-outline` : `mdi-circle-outline`"
                                                         color="green" class="mr-2 mb-1" />
                                                     <b>{{ doc.id }}</b>
+                                                    <span v-if="doc.docType == 'out_RP'"> (з РП)</span>
                                                 </div>
                                                 <StatusChip :tripId="tripId" :pointId="pointId" :docId="doc.id" />
                                             </div>
-                                            <div v-if="type == 'out' && doc.taxNumber" class="pl-8 text-caption">
-                                                / ВН {{ doc.taxNumber }}
+                                            <!-- {{docStatuses[doc.id].status }} -->
+                                            <div v-if="(doc.docType == 'out' || doc.docType == 'out_RP') && doc.taxNumber" class="text-caption">
+                                                ВН {{ doc.taxNumber }}
                                             </div>
                                             <v-table density="compact"
-                                                :class="`my-2 text-center ` + (docsSelected[doc.id] ? `bg-teal-lighten-5` : ``)">
+                                                :class="`details my-2 text-center ` + (docsSelected[doc.id] ? `bg-teal-lighten-5` : ``)">
                                                 <thead>
                                                     <tr>
-                                                        <th v-if="type != 'task'" class="text-center">
+                                                        <th v-if="doc.docType != 'task'" class="text-center">
                                                             Вага, кг
                                                         </th>
-                                                        <th v-if="type != 'task'" class="text-center">
+                                                        <th v-if="doc.docType != 'task'" class="text-center">
                                                             Об'єм, м3
                                                         </th>
-                                                        <th v-if="type == 'out'" class="text-center">
+                                                        <th v-if="doc.docType == 'out' || doc.docType == 'out_RP'" class="text-center">
                                                             Місць
                                                         </th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     <tr>
-                                                        <td v-if="type != 'task'">{{ doc.weight }}</td>
-                                                        <td v-if="type != 'task'">{{ doc.volume }}</td>
-                                                        <td v-if="type == 'out'">{{ doc.boxQty }} / {{ doc.pallQty }}
+                                                        <td v-if="doc.docType != 'task'">{{ doc.weight }}</td>
+                                                        <td v-if="doc.docType != 'task'">{{ doc.volume }}</td>
+                                                        <td v-if="doc.docType == 'out' || doc.docType == 'out_RP'">
+                                                            <span v-if="doc.boxQty">{{ doc.boxQty }}</span><span v-if="!doc.boxQty">-</span> / <span v-if="doc.pallQty">{{ doc.pallQty }}</span><span v-if="!doc.pallQty">-</span>
                                                         </td>
                                                     </tr>
                                                 </tbody>
                                             </v-table>
-                                            <div v-if="type != 'in' && doc.sum">Сума COD: {{ doc.sum }} грн.</div>
+                                            <div v-if="doc.docType != 'in' && doc.sum">Сума COD: {{ doc.sum }} грн.</div>
                                             <v-table density="compact">
                                                 <tbody>
                                                     <tr v-if="doc.tasks && doc.tasks.length">
@@ -69,12 +72,11 @@
                                                                 :label="task.name"></v-checkbox></td>
                                                     </tr>
                                                     <tr @click.stop="">
-                                                        <td colspan="2">
+                                                        <td colspan="2" class="px-0">
                                                             <v-card-actions
-                                                                v-if="isEditor && docStatuses[doc.id] && docStatuses[doc.id].status == '200' && btnsRules">
+                                                                v-if="isEditor && docStatuses[doc.id] && docStatuses[doc.id].status == '200' && btnsRules" class="mb-2 px-0 pt-0">
                                                                 <v-btn prepend-icon="mdi-account-check-outline"
-                                                                    @click="release(doc.id)"
-                                                                    color="success">Видано</v-btn>
+                                                                    @click="release(doc.id)" color="success"></v-btn>
                                                                 <v-spacer></v-spacer>
                                                                 <v-btn color="grey"
                                                                     prepend-icon="mdi-account-remove-outline"
@@ -83,19 +85,16 @@
                                                                     <template v-slot:prepend>
                                                                         <v-icon color="primary"></v-icon>
                                                                     </template>
-
-                                                                    Відм.</v-btn>
-                                                                <v-btn color="grey"
-                                                                    prepend-icon="mdi-truck-remove-outline"
+                                                                </v-btn>
+                                                                <v-spacer></v-spacer>
+                                                                <v-btn color="grey" prepend-icon="mdi-cancel"
                                                                     class="text-none text-subtitle-2"
                                                                     @click="cancel(doc.id)">
                                                                     <template v-slot:prepend>
                                                                         <v-icon color="primary"></v-icon>
                                                                     </template>
-
-                                                                    Скас.</v-btn>
+                                                                </v-btn>
                                                             </v-card-actions>
-
                                                         </td>
                                                     </tr>
                                                 </tbody>
@@ -108,29 +107,37 @@
                                             <div>Документів немає</div>
                                         </v-card-text>
                                     </template>
-                                </template>
+                                </v-expansion-panel-text>
                             </v-expansion-panel>
                         </v-expansion-panels>
                     </template>
                 </v-sheet>
-            </template>
+            </v-container>
+        </template>
 
-            <template v-if="!trip">
-                <v-row>
-                    <v-col class="text-center pa-10 text-h6">
-                        <v-alert color="error">Немає даних по рейсу {{ tripId }}</v-alert>
-                    </v-col>
-                </v-row>
-            </template>
+        <template v-if="!trip">
+            <v-container class="d-flex align-self-center">
+                <v-card elevation="0" max-width="400" class="mx-auto">
+                    <v-icon class="mx-4 text-primary" size="x-large">mdi-alert</v-icon>
+                    <v-card-text class="text-primary py-0">Рейс не знайдено</v-card-text>
+                    <v-card-text class="pt-4 font-weight-bold">Рейса {{ tripId }} не існує!</v-card-text>
+                    <v-card-text>Неправильно вказано номер рейса або такого рейса не існує</v-card-text>
+                    <v-card-text>Перейдіть на головну сторінку або оберіть потрібний розділ</v-card-text>
+                </v-card>
+            </v-container>
+        </template>
 
-            <template v-if="points.length && !pointData">
-                <v-row>
-                    <v-col class="text-center pa-10 text-h6">
-                        <v-alert color="error">Немає даних по точці {{ pointId }}</v-alert>
-                    </v-col>
-                </v-row>
-            </template>
-        </v-container>
+        <template v-if="points.length && !pointData">
+            <v-container class="d-flex align-self-center">
+                <v-card elevation="0" max-width="400" class="mx-auto">
+                    <v-icon class="mx-4 text-primary" size="x-large">mdi-alert</v-icon>
+                    <v-card-text class="text-primary py-0">Точку доставки не знайдено</v-card-text>
+                    <v-card-text class="pt-4 font-weight-bold">Точка {{ pointId }} не існує!</v-card-text>
+                    <v-card-text>Неправильно вказано точку або такої точки доставки не існує</v-card-text>
+                    <v-card-text>Перейдіть на головну сторінку або оберіть потрібний розділ</v-card-text>
+                </v-card>
+            </v-container>
+        </template>
     </v-layout>
     <!-- <pre>{{ appStore.statuses.filter(el => el._id == tripId) }}</pre> -->
     <v-bottom-navigation :active="bottomNavigation" v-model="bottomModel">
@@ -144,19 +151,21 @@
         </v-btn>
 
         <v-btn :disabled="cancelBottomBtn" @click="massCancelDialog = true">
-            <v-icon color="primary">mdi-truck-remove-outline</v-icon>
+            <v-icon color="primary">mdi-cancel</v-icon>
             Скасування
         </v-btn>
     </v-bottom-navigation>
 
     <v-dialog v-model="acceptDocDialog" max-width="600" persistent>
         <v-card>
-            <v-card-title>
+            <v-card-title v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP'">
                 Видано
             </v-card-title>
-
+            <v-card-title v-if="curDoc.docType == 'in'">
+                Прийнято
+            </v-card-title>
             <v-form v-model="isFormValid">
-                <v-card-text v-if="curDoc.docType == 'out' || curDoc.docType == 'in'">
+                <v-card-text v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP' || curDoc.docType == 'in'" class="pb-0">
                     <v-row>
                         <v-col>
                             <v-text-field v-model="curBoxes" :rules="[rules.number]" label="Коробок"
@@ -170,7 +179,7 @@
                 </v-card-text>
                 <v-card-text v-if="curDoc.sum">
                     Прийнято COD:
-                    <v-row>
+                    <v-row class="mt-2">
                         <v-col>
                             <v-text-field v-model="sumPack" label="Пакет №" outlined></v-text-field>
                         </v-col>
@@ -199,7 +208,7 @@
             <v-card-actions>
                 <v-btn @click="rejectDialog = false" color="grey">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn @click="rejectDoc()">Підтвердити</v-btn>
+                <v-btn :disabled="rejectText ? false : true" @click="rejectDoc()">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -216,7 +225,7 @@
             <v-card-actions>
                 <v-btn color="grey" @click="cancelDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn @click="cancelDoc()">Підтвердити</v-btn>
+                <v-btn :disabled="cancelText ? false : true" @click="cancelDoc()">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -230,9 +239,9 @@
                 <v-textarea v-model="rejectText" label="Причина відмови одержувача" outlined></v-textarea>
             </v-card-text>
             <v-card-actions>
-                <v-btn color="grey" @click="rejectDialog = false">Скасувати</v-btn>
+                <v-btn color="grey" @click="massRejectDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn @click="massReject()">Підтвердити</v-btn>
+                <v-btn :disabled="rejectText ? false : true" @click="massReject()">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -247,9 +256,9 @@
                     outlined></v-textarea>
             </v-card-text>
             <v-card-actions>
-                <v-btn color="grey" @click="cancelDialog = false">Скасувати</v-btn>
+                <v-btn color="grey" @click="massCancelDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn @click="massCancel()">Підтвердити</v-btn>
+                <v-btn :disabled="cancelText ? false : true" @click="massCancel()">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -283,7 +292,7 @@
             <v-card-actions>
                 <v-btn color="grey" @click="massReleaseDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="allSum && (!allSumPack || !allSumFact)"
+                <v-btn :disabled="allSum && (!allSumPack || !allSumFact) ? true : false"
                     @click="acceptMassRelease()">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
@@ -292,18 +301,20 @@
     <v-dialog v-model="acceptSmsDialog" max-width="600" persistent>
         <v-card>
             <v-card-title>
-                Код підтвердження
+                Підтвердження
             </v-card-title>
             <v-card-text v-if="statusConnection" class="px-2">
-                <div class="mb-4">Одержувачу на тел. було надіслано SMS з Кодом підтвердження.</div>
-                <div class="d-flex justify-space-between align-center">
-                    <v-text-field label="Код з SMS" v-model="smsCode" style="width: 120px" outlined></v-text-field>
+                <div class="mb-4 px-2">Одержувачу на тел. було надіслано SMS з Кодом підтвердження.</div>
+                <div class="text-center">
+                    <v-text-field label="Код з SMS" v-model="smsCode" style="width: 120px" outlined class="mx-auto"></v-text-field>
                     <v-progress-circular v-if="timer !== 0" :model-value="timer" :rotate="360" :size="50" :width="5"
                         color="teal">
                         {{ timer / 100 * 60 }}
                     </v-progress-circular>
                 </div>
-                <v-btn v-if="timer === 0" @click="sendSMS()">Відправити SMS повторно</v-btn>
+                <div class="text-center">
+                    <v-btn v-if="timer === 0" @click="sendSMS()">Відправити SMS повторно</v-btn>
+                </div>
             </v-card-text>
             <v-card-actions>
                 <v-btn color="grey" @click="acceptSmsDialog = false">Скасувати</v-btn>
@@ -332,7 +343,7 @@ const docs = ref([])
 const panel = ref({})
 const types = ['out', 'in', 'task']
 const typesObj = {
-    out: 'Видача',
+    out: 'Видачі',
     in: 'Забір',
     task: 'Завдання'
 }
@@ -400,7 +411,7 @@ const rules = {
 
 
 const selectDoc = (id) => {
-    if (!isEditor.value) return
+    if (!isEditor.value || pointStatus.value !== 200) return
     if (docsSelected.value[id]) {
         delete docsSelected.value[id]
     } else {
@@ -438,7 +449,7 @@ const sendSMS = async () => {
     //Відправити SMS
     const [code, hash] = await appStore.createCode()
     checkSmsHash.value = hash
-    const message = curDoc.value.docType == 'out' ?
+    const message = curDoc.value.docType == 'out' || curDoc.value.docType == 'out_RP' ?
         `видав ${curBoxes.value} кор / ${curPallets.value} пал` :
         (curDoc.value.docType == 'in' ? `прийняв ${curBoxes.value} кор / ${curPallets.value} пал` : ``)
     const messageSum = sumFact.value ? `прийняв ${sumFact.value} грн (№ пакету ${sumPack.value})` : ``
@@ -518,8 +529,7 @@ const releaseDoc = async () => {
                 sumPack: sumPack.value,
                 sumFact: sumFact.value,
                 palletsFact: curPallets.value,
-                boxesFact: curBoxes.value,
-                statusConnection: statusConnection.value
+                boxesFact: curBoxes.value
             })
             acceptSmsDialog.value = false
             acceptDocDialog.value = false
@@ -606,7 +616,7 @@ const massRelease = async () => {
             await appStore.releaseDoc({
                 tripId: tripId.value,
                 pointId: pointId.value,
-                docId,
+                docId: Number(docId),
                 palletsFact: curDoc.pallQty,
                 boxesFact: curDoc.boxQty,
                 sumFact: allSumFact.value,
@@ -628,7 +638,7 @@ const massReject = async () => {
             await appStore.rejectDoc({
                 tripId: tripId.value,
                 pointId: pointId.value,
-                docId,
+                docId: Number(docId),
                 description: rejectText.value
             })
         }
@@ -645,7 +655,7 @@ const massCancel = async () => {
             await appStore.cancelDoc({
                 tripId: tripId.value,
                 pointId: pointId.value,
-                docId,
+                docId: Number(docId),
                 description: cancelText.value
             })
         }
@@ -661,7 +671,7 @@ const statuses = computed(() => {
 })
 
 const outData = computed(() => {
-    return docs.value.filter((item) => item.docType == 'out').sort((a, b) => a.id - b.id)
+    return docs.value.filter((item) => item.docType == 'out' || item.docType == 'out_RP').sort((a, b) => a.id - b.id)
 })
 
 const inData = computed(() => {
@@ -682,7 +692,7 @@ const docsData = computed(() => {
 
 const bottomNavigation = computed(() => {
     // є хоч один вибраний документ selectDoc
-    return btnsRules.value && Object.keys(docsSelected.value).length
+    return btnsRules.value && Object.keys(docsSelected.value).length ? true : false
 })
 
 const pointStatus = computed(() => {
@@ -733,7 +743,7 @@ const releaseBottomBtn = computed(() => {
     let result = true
     for (let item of Object.keys(docsSelected.value)) {
         const docData = docs.value.find((doc) => doc.id == item)
-        if (docStatuses.value[item] && docStatuses.value[item].status == 200 && (docData.docType == 'out' || docData.docType == 'task')
+        if (docStatuses.value[item] && docStatuses.value[item].status == 200 && (docData.docType == 'out' || docData.docType == 'out_RP' || docData.docType == 'task')
             && completeAllSelectedTasks.value) {
             result = false
         } else {
@@ -806,3 +816,20 @@ const isEditor = computed(() => {
 })
 
 </script>
+
+<style scoped>
+.v-expansion-panel-title {
+padding: 16px;
+min-height: inherit !important;
+}
+.v-expansion-panel-title.v-expansion-panel-title--active {
+    border-bottom: 1px solid #e3e1e1 !important;
+    margin-bottom: 16px !important;
+}
+.v-table.details th:not(:last-child), .v-table.details td:not(:last-child) {
+    border-right: 1px solid #e3e1e1 !important;
+}
+.v-expansion-panel-text .v-expansion-panel-text__wrapper {
+    padding: 16px !important;
+}
+</style>

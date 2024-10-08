@@ -9,7 +9,7 @@
                         <v-icon class="mx-4 text-primary" size="x-large">mdi-weather-cloudy-alert</v-icon>
                         <v-card-text class="text-primary py-0">Помилка 404</v-card-text>
                         <v-card-title class="py-4">Сторінку не знайдено!</v-card-title>
-                        <v-card-text>Неправильно набрано адресу або такої сторінки на сайті не існує</v-card-text>
+                        <v-card-text>Неправильно набрано адресу або такої сторінки не існує</v-card-text>
                         <v-card-text>Перейдіть на головну сторінку або оберіть потрібний розділ</v-card-text>
                     </v-card>
 

@@ -1,4 +1,5 @@
 FROM node:18
+RUN ln -fs /usr/share/zoneinfo/Europe/Kiev /etc/localtime
    
 WORKDIR /node/tms/vue
    

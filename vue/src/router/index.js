@@ -100,7 +100,7 @@ router.beforeEach(async (to, from, next) => {
           appStore.userData = user
           next()
         } else {
-          next({ name: '403' })
+          next({ name: 'Login' })
         }
       } else {
         next({ name: 'Login' })

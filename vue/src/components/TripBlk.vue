@@ -1,9 +1,9 @@
 <template>
     <v-sheet v-if="trip.id" style="cursor:pointer" @click="goToTrip(trip.id)" elevation="12" max-width="600" rounded="lg" width="100%"
-        class="pa-4 mx-auto">
+        class="pa-4 mx-auto my-4">
         <v-card flat class="text-left">
             <v-card-title class="d-flex justify-space-between">
-                <div>№ {{ trip.id }} <v-icon v-if="trip.doc.isCircular" size="small" icon="mdi-rotate-360" color="green" class="ml-4 mb-1" title="Кільцевий маршрут"/></div>
+                <div>№ {{ trip.id }} <!-- v-icon v-if="trip.doc.isCircular" size="small" icon="mdi-rotate-360" color="green" class="ml-4 mb-1" title="Кільцевий маршрут"/ --></div>
                 <StatusChip :tripId="trip.id"/>
             </v-card-title>
             <v-card-text class="text-grey text-caption">
@@ -11,12 +11,13 @@
             </v-card-text>
             <v-card-text class="py-0 d-flex justify-space-between align-end">
                 <div>
+                    <div v-if="trip.doc.isCircular">Кільцевий рейс</div>
                     <div>На маршруті: {{ trip.doc.points && trip.doc.points.length }} точок</div>
-                    <div>Загальний кілометраж: {{ tripLength(trip.doc._id) }} км</div>
+                    <div>Загальний кілометраж:<br>{{ tripLength(trip.doc._id) }} км</div>
                 </div>
-                <!-- <div v-if="trip.doc.isCircular">
-                    <v-icon icon="mdi-rotate-360" color="green"/>
-                </div> -->
+                <div class="text-right">
+                    <div v-if="trip.doc.isCircular" class="text-caption text-grey">кільцевий</div>
+                </div>
 
             </v-card-text>
         </v-card>

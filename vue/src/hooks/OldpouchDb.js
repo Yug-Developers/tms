@@ -221,7 +221,7 @@ export function usePouchDB() {
           reject(err)
         } else if (!response.userCtx.name) {
           console.log("Не авторизований");
-          appStore.setSnackbar({ text: "Користувач не авторизован", type: 'error' })
+          appStore.setSnackbar({ text: "ч не авторизован", type: 'error' })
           reject(response)
         } else {
           console.log("Авторизований", response.userCtx.name);

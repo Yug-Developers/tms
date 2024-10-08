@@ -25,13 +25,14 @@
                             </v-form>
                         </v-card-text>
                         <v-card-text v-if="!check">
+                            На вказаний телефон було надіслано код підтвердження. Введіть його
+                        </v-card-text>
+                        <v-card-text v-if="!check" class="text-center">
                             <v-form ref="form">
-                                На вказаний телефон було надіслано код підтвердження. Введіть його
                                 <v-text-field @keyup.enter="resetPassword()" prepend-icon="mdi-key" variant="underlined"
                                     v-model="code" name="code" label="Код підтвердження" type="text" append-icon="mdi"
                                     placeholder="0000" density="default"></v-text-field>
                             </v-form>
-
                         </v-card-text>
                         <v-card-actions class="pa-4">
                             <!-- <v-btn color="grey" density="default" @click="resetData()">Очистити</v-btn> -->

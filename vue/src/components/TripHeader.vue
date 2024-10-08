@@ -2,8 +2,8 @@
     <v-sheet v-if="trip.id" elevation="0" max-width="600" rounded="lg" width="100%"
         class="pa-0 mx-auto">
         <v-card flat>
-            <v-card-title class="d-flex justify-space-between pa-0">
-                <div>Рейс № {{ trip.id }} <v-icon v-if="trip.doc.isCircular" size="small" icon="mdi-rotate-360" color="green" class="ml-4 mb-1" title="Кільцевий маршрут"/></div>
+            <v-card-title class="d-flex justify-space-between pa-0 pb-1">
+                <div>Рейс № {{ trip.id }}</div>
                 <StatusChip :tripId="trip.id"/>
             </v-card-title>
             <v-card-text class="text-grey text-caption pa-0">
@@ -14,7 +14,10 @@
                     <div>На маршруті: {{ trip.doc.points && trip.doc.points.length }} точок</div>
                     <div>Загальний кілометраж: {{ tripLength(trip.doc._id) }} км</div>
                 </div>
-                <v-btn :disabled="checkMapBtn() ? false : true" icon @click="openGoogleMap()" class="mb-2" title="На карті"><v-icon>mdi-map-search-outline</v-icon></v-btn>
+                <div class="text-right">
+                    <v-btn :disabled="checkMapBtn() ? false : true" @click="openGoogleMap()" title="На карті" variant="text" icon="mdi-map-search-outline"></v-btn>
+                    <div v-if="trip.doc.isCircular" class="text-caption text-grey">кільцевий</div>
+                </div>
             </v-card-text>
 
         </v-card>
@@ -68,3 +71,7 @@ const openGoogleMap = () => {
 }
 
 </script>
+
+<style>
+.v-sheet, .v-card {background-color: white}
+</style>
