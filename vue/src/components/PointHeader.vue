@@ -260,7 +260,7 @@ const disableInPlaceBtn = computed(() => {
     if (existsWorkPoint.value) {
         return props.point.sortNumber == 1 ? false : true
     } else {
-        return false
+        return true
     }
 })
 
