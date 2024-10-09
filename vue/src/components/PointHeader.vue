@@ -15,8 +15,8 @@
                 <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, <span
                         class="d-flex flex-nowrap"><v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1"
                             color="green" /><a :href="'tel:' + point.rcptPhone">{{ point.rcptPhone }}</a></span></div>
-                <div class="mt-2">Кіль-ть місць: {{ allBoxesPallets }}</div>
-                <div>Сума COD: {{ allSum }}</div>
+                <div class="mt-2"><v-icon size="small" color="grey" class="mr-2">mdi-package-variant-closed</v-icon>Місць: {{ allBoxesPallets }}</div>
+                <div><v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>Сума COD: {{ allSum }}</div>
                 <div v-if="point.sortNumber != '1'" class="text-right"><v-icon icon="mdi-map-marker-distance" /> <span
                         v-if="distance">{{ distance }}</span><span v-else>-</span> км</div>
             </v-card-text>

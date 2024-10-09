@@ -50,7 +50,7 @@ export const useAppStore = defineStore('appStore', () => {
   const documentStatusObj = {
     100: 'Новий',
     200: 'У дорозі',
-    300: 'Видано',
+    300: 'Отримано', //Видано
     400: 'Відмова',
     500: 'Скасовано',
   }
@@ -234,6 +234,18 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
+  const pullStatusesData = async (docIds) => {
+    try {
+      if (online.value) {
+        const opt = { doc_ids: docIds }
+        const pullSt = await Pouch.pull('statuses', opt)
+      }
+      statuses.value = await Pouch.fetchData('statuses')
+    } catch (error) {
+      throw error
+    }
+  }
+
   // ---------------------- робота з локальними даними ---------------------
 
   const getTripDoc = async (tripId) => {
@@ -272,7 +284,6 @@ export const useAppStore = defineStore('appStore', () => {
 
   const availableTrips = async (options) => {
     try {
-      console.log('options', JSON.stringify(options, null, 2))
       const dbName = 'routes'
       if (online.value) {
         return await Pouch.fetchRemoteData(dbName, options)
@@ -605,7 +616,7 @@ export const useAppStore = defineStore('appStore', () => {
     checkOpenTrip, pullTripsData, initNewTripStatus, cancelPoint, inPlace, checkPointDocs, releaseDoc, rejectDoc, cancelDoc,
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
-    availableStatuses, pushStatusesData, checkRecaptcha, formatDate
+    availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData
   }
 })
 

@@ -59,6 +59,9 @@ const getAvailableTripsById = async () => {
     try {
         appStore.loading = true
         trips.value = await appStore.availableTrips(options)
+        const docIds = trips.value.map(el => el._id) || []
+        await appStore.pullStatusesData(docIds)
+
         if (trips.value.length == 0) {
             tripIdError.value = true
         } else {
@@ -84,6 +87,8 @@ const getAvailableTrips = async () => {
     try {
         appStore.loading = true
         trips.value = await appStore.availableTrips(options)
+        const docIds = trips.value.map(el => el._id) || []
+        await appStore.pullStatusesData(docIds)
     } catch (e) {
         console.log(e)
     }
@@ -100,6 +105,7 @@ const allAvailableTrips = async () => {
         fields: ['_id', 'date']
     }
     try {
+        console.log('options', JSON.stringify(options, null, 2))
         allTrips.value = await appStore.availableTrips(options)
     } catch (e) {
         console.log(e)

@@ -58,7 +58,7 @@
                                                     </tr>
                                                 </tbody>
                                             </v-table>
-                                            <div v-if="doc.docType != 'in' && doc.sum">Сума COD: {{ doc.sum }} грн.</div>
+                                            <div v-if="doc.docType != 'in' && doc.sum"><v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>Сума COD: {{ doc.sum }} грн.</div>
                                             <v-table density="compact">
                                                 <tbody>
                                                     <tr v-if="doc.tasks && doc.tasks.length">
@@ -75,24 +75,15 @@
                                                         <td colspan="2" class="px-0">
                                                             <v-card-actions
                                                                 v-if="isEditor && docStatuses[doc.id] && docStatuses[doc.id].status == '200' && btnsRules" class="mb-2 px-0 pt-0">
-                                                                <v-btn prepend-icon="mdi-account-check-outline"
-                                                                    @click="release(doc.id)" color="success"></v-btn>
+                                                                <v-btn icon="mdi-account-check-outline"
+                                                                    @click="release(doc.id)" color="success" :disabled="docsSelected[doc.id]"></v-btn>
                                                                 <v-spacer></v-spacer>
-                                                                <v-btn color="grey"
-                                                                    prepend-icon="mdi-account-remove-outline"
-                                                                    class="text-none text-subtitle-2"
-                                                                    @click="reject(doc.id)">
-                                                                    <template v-slot:prepend>
-                                                                        <v-icon color="primary"></v-icon>
-                                                                    </template>
+                                                                <v-btn icon="mdi-account-remove-outline"
+                                                                    @click="reject(doc.id)" color="primary" :disabled="docsSelected[doc.id]">
                                                                 </v-btn>
                                                                 <v-spacer></v-spacer>
-                                                                <v-btn color="grey" prepend-icon="mdi-cancel"
-                                                                    class="text-none text-subtitle-2"
-                                                                    @click="cancel(doc.id)">
-                                                                    <template v-slot:prepend>
-                                                                        <v-icon color="primary"></v-icon>
-                                                                    </template>
+                                                                <v-btn icon="mdi-cancel"
+                                                                    @click="cancel(doc.id)" color="primary" :disabled="docsSelected[doc.id]">
                                                                 </v-btn>
                                                             </v-card-actions>
                                                         </td>
@@ -158,11 +149,11 @@
 
     <v-dialog v-model="acceptDocDialog" max-width="600" persistent>
         <v-card>
-            <v-card-title v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP'">
-                Видано
+            <v-card-title v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP'" class="mt-2">
+                Видано по документу {{ curDoc.id}}:
             </v-card-title>
-            <v-card-title v-if="curDoc.docType == 'in'">
-                Прийнято
+            <v-card-title v-if="curDoc.docType == 'in' || curDoc.docType == 'task'">
+                Прийнято по документу {{ curDoc.id}}:
             </v-card-title>
             <v-form v-model="isFormValid">
                 <v-card-text v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP' || curDoc.docType == 'in'" class="pb-0">
@@ -177,8 +168,8 @@
                         </v-col>
                     </v-row>
                 </v-card-text>
-                <v-card-text v-if="curDoc.sum">
-                    Прийнято COD:
+                <v-card-text v-if="curDoc.sum" class="pt-0">
+                    <v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>Прийнято COD:
                     <v-row class="mt-2">
                         <v-col>
                             <v-text-field v-model="sumPack" label="Пакет №" outlined></v-text-field>
@@ -265,10 +256,10 @@
 
     <v-dialog v-model="massReleaseDialog" max-width="600">
         <v-card>
-            <v-card-title>
-                Видано загалом
+            <v-card-title class="mt-2">
+                Видано по вибраним документам
             </v-card-title>
-            <v-card-text v-if="allBoxes || allPallets">
+            <v-card-text v-if="allBoxes || allPallets" class="pb-2 px-4">
                 <v-row>
                     <v-col>
                         <v-text-field v-model="allBoxes" readonly label="Коробок" outlined></v-text-field>
@@ -278,9 +269,9 @@
                     </v-col>
                 </v-row>
             </v-card-text>
-            <v-card-text v-if="allSum">
-                Прийнято COD:
-                <v-row>
+            <v-card-text v-if="allSum" class="pt-0 px-4">
+                <v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>Прийнято COD:
+                <v-row class="mt-2">
                     <v-col>
                         <v-text-field v-model="allSumPack" label="Пакет №" outlined></v-text-field>
                     </v-col>
@@ -533,7 +524,7 @@ const releaseDoc = async () => {
             })
             acceptSmsDialog.value = false
             acceptDocDialog.value = false
-            appStore.setSnackbar({ text: "Документ відпущено", type: 'success' })
+            appStore.setSnackbar({ text: "Документ отримано", type: 'success' })
         } else {
             appStore.setSnackbar({ text: "Невірний код з SMS", type: 'error' })
         }
