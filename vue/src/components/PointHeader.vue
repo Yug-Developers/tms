@@ -257,11 +257,15 @@ const existsWorkPoint = computed(() => {
 })
 
 const disableInPlaceBtn = computed(() => {
-    if (existsWorkPoint.value) {
-        return props.point.sortNumber == 1 ? false : true
-    } else {
-        return true
-    }
+        if (!existsTripStatus.value && props.point.sortNumber == 1) {
+            return false
+        }
+        
+        if (existsWorkPoint.value) {
+            return props.point.sortNumber == 1 ? false : true
+        } else {
+            return false
+        }
 })
 
 const distance = computed(() => {
