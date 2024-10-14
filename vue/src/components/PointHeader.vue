@@ -11,14 +11,19 @@
 
         <v-card flat color="headerBlk" elevation="2">
             <v-card-text class="pa-4 text-left mx-auto">
-                <div><b>Адреса:</b> {{ point.address }}</div>
+                <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">(<b>Дод. до адреси:</b> {{ point.description }})</span></div>
                 <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, <span
                         class="d-flex flex-nowrap"><v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1"
                             color="green" /><a :href="'tel:' + point.rcptPhone">{{ point.rcptPhone }}</a></span></div>
                 <div class="mt-2"><v-icon size="small" color="grey" class="mr-2">mdi-package-variant-closed</v-icon>Місць: {{ allBoxesPallets }}</div>
-                <div><v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>Сума COD: {{ allSum }}</div>
+                <div><v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>COD: {{ allSum }}</div>
                 <div v-if="point.sortNumber != '1'" class="text-right"><v-icon icon="mdi-map-marker-distance" /> <span
                         v-if="distance">{{ distance }}</span><span v-else>-</span> км</div>
+                <div v-if="pointStatus != 100">
+                    <div><b>Факт виконання:</b></div>
+                <div><v-icon size="small" color="green" class="mr-2">mdi-package-variant-closed</v-icon>Місць: {{ allBoxesPalletsFact }} </div>
+                <div><v-icon size="small" color="green" class="mr-2">mdi-email-outline</v-icon>COD: {{ allSumFact }} <span v-if="sumPack">(Пакети: {{ sumPack }})</span></div>
+                </div>
             </v-card-text>
         </v-card>
     </v-sheet>
@@ -26,9 +31,9 @@
     <v-sheet v-if="editorId" elevation="0" max-width="600" class="pa-0 mx-auto mb-4">
         <v-divider class="mb-2"></v-divider>
         <div class="d-flex justify-space-around">
-        <v-btn :disabled="disableInPlaceBtn" v-if="pointStatus == 100" variant="elevated" color="blue"
+        <v-btn :disabled="disableInPlaceBtn" v-if="pointStatus == 100" variant="elevated" color="blue" 
             @click="inPlace()">На місці </v-btn>
-        <v-btn v-if="pointStatus == 200" variant="elevated" color="error" @click="cancelDialog = true">Скасувати</v-btn>
+        <v-btn v-if="pointStatus == 200" variant="elevated" color="error"  @click="cancelDialog = true">Скасувати</v-btn>
         <v-btn :disabled="uncomletedDocs" v-if="pointStatus == 200" @click="completePoint()" variant="elevated"
             color="success">Виконано</v-btn>
         <div v-if="pointStatus == 300" class="text-center">
@@ -134,11 +139,12 @@ const inPlace = async () => {
 
 const completePoint = async () => {
     try {
-        await appStore.completePoint(props.tripId, props.point.id)
-        appStore.setSnackbar({ text: "Точка завершена", type: 'success' })
         if (!uncompetedPoints.value) {
             odometrFinishDialog.value = true
             odometer.value = ''
+        } else {
+            await appStore.completePoint(props.tripId, props.point.id)
+            appStore.setSnackbar({ text: "Точка завершена", type: 'success' })
         }
     } catch (error) {
         appStore.setSnackbar({ text: "Помилка збереження", type: 'error' })
@@ -159,6 +165,8 @@ const odometerSet = async () => {
 
 const completeTrip = async () => {
     try {
+        await appStore.completePoint(props.tripId, props.point.id)
+        appStore.setSnackbar({ text: "Точка завершена", type: 'success' })
         await appStore.completeTrip(props.tripId, { odometerFinish: odometer.value })
         appStore.setSnackbar({ text: "Рейс виконано", type: 'success' })
         router.push('/')
@@ -204,9 +212,8 @@ const uncomletedDocs = computed(() => {
 })
 
 const uncompetedPoints = computed(() => {
-    console.log(existsTripStatus.value)
     if (existsTripStatus.value) {
-        return existsTripStatus.value.points.filter((item) => item.status < 300).length
+        return existsTripStatus.value.points.filter((item) => item.id !== pointId.value && item.status < 300 ).length
     }
 })
 
@@ -217,12 +224,43 @@ const allBoxesPallets = computed(() => {
     if (props.point && props.point.docs) {
         props.point.docs.forEach((doc) => {
             if (doc.docType == 'out' || doc.docType == 'out_RP' || doc.docType == 'task') {
-                if (doc.boxQty) boxes += doc.boxQty
-                if (doc.pallQty) palletes += doc.pallQty
+                if (doc.boxQty) boxes += Number(doc.boxQty)
+                if (doc.pallQty) palletes += Number(doc.pallQty)
             }
         })
     }
     return `${boxes} / ${palletes}`
+})
+
+const allBoxesPalletsFact = computed(() => {
+    // Кількість кор / пал = Сума з бази статусів по документах з docType = Видача та Завдання (boxes / palletes)
+    let boxes = 0
+    let palletes = 0
+    if (existsTripStatus.value && existsTripStatus.value.points) {
+        const point = existsTripStatus.value.points.find((item) => item.id == pointId.value)
+        if (point && point.docs) {
+            point.docs.forEach((doc) => {
+                console.log(doc)
+                if (doc.palletsFact) palletes += Number(doc.palletsFact)
+                if (doc.boxesFact) boxes += Number(doc.boxesFact)
+            })
+        }
+    }
+    return `${boxes} / ${palletes}`
+})
+
+const sumPack = computed(() => {
+    // sumPack (вивести суму сумарну по всіх доках з баси статусів, номери пакетів через кому)
+    const packs = []
+    if (existsTripStatus.value && existsTripStatus.value.points) {
+        const point = existsTripStatus.value.points.find((item) => item.id == pointId.value)
+        if (point && point.docs) {
+            point.docs.forEach((doc) => {
+                if (doc.sumPack) packs.push(doc.sumPack)
+            })
+        }
+    }
+    return packs.length ? '(' + packs.join(', ') + ')' : ''
 })
 
 const allSum = computed(() => {
@@ -231,21 +269,27 @@ const allSum = computed(() => {
     if (props.point && props.point.docs) {
         props.point.docs.forEach((doc) => {
             if (doc.docType == 'out' || doc.docType == 'out_RP' || doc.docType == 'task') {
-                sum += doc.sum
+                sum += Number(doc.sum)
             }
         })
     }
     return sum
 })
 
-const previousePointStatus = computed(() => {
+const allSumFact = computed(() => {
+    // Сума факт = Сума з бази статусів по документах з docType = Видача та Завдання (sumFact)
+    let sum = 0
     if (existsTripStatus.value && existsTripStatus.value.points) {
-        const index = existsTripStatus.value.points.findIndex((item) => item.id == props.point.id)
-        if (index > 0) {
-            return existsTripStatus.value.points[index - 1].status
+        const point = existsTripStatus.value.points.find((item) => item.id == pointId.value)
+        if (point && point.docs) {
+            point.docs.forEach((doc) => {
+                    if (doc.sumFact) sum += Number(doc.sumFact)
+            })
         }
     }
+    return sum
 })
+
 
 // Знайти статус у работі по всіх точках
 const existsWorkPoint = computed(() => {

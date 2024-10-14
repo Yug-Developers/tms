@@ -59,6 +59,7 @@ const finishedStatuses = ref([])
 const curTrips = ref([])
 const tripsLoading = ref(true) 
 const finishedStatusesLoading = ref(true)
+const allTrips = ref([])
 
 
 onMounted(async () => {
@@ -74,8 +75,11 @@ onMounted(async () => {
         trips.value = await appStore.availableTrips(options)
         tripsLoading.value = false
         // Кілометрів усього
+        await allAvailableTrips()
+        const docIds = allTrips.value.map(el => el._id) || []
         const optionsF = {
             selector: {
+                _id: { $in: docIds },
                 odometerStart: { $exists: true },
                 odometerFinish: { $exists: true },
                 odometerFinish: { $gt: 0 },
@@ -103,6 +107,20 @@ const odometrTotal = computed(() => {
 const currentTrips = computed(() => {
     return curTrips.value && curTrips.value.map(el => { return { doc: el, id: el._id, key: el._id } }) || []
 })
+
+const allAvailableTrips = async () => {
+    const options = {
+        selector: {
+            ... await appStore.getUserSelector()
+        },
+        fields: ['_id', 'date']
+    }
+    try {
+        allTrips.value = await appStore.availableTrips(options)
+    } catch (e) {
+        console.error(e)
+    }
+}
 
 
 </script>

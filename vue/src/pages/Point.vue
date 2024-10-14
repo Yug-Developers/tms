@@ -15,6 +15,15 @@
                                 </v-expansion-panel-title>
                                 <v-expansion-panel-text>
                                     <template v-if="docsData[type].length">
+                                        <div class="pb-5 d-flex justify-space-between" v-if="pointStatus == 200 && allDocsCompleteByType[type]" @click="selectAllDocs(type)">
+                                            <v-btn text size="small" variant="tonal" :color="selectAll[type] ? `primary` : `green`" 
+                                            :prepend-icon="selectAll[type] ? `mdi-close` : `mdi-check`">
+                                                        <!-- <span v-if="selectAll[type]">Очистити всі документи</span> 
+                                                        <span v-else class="body-2">Вибрати всі документи</span>  -->
+                                                        <span v-if="selectAll[type]" class="text-caption">Очистити всі</span> 
+                                                        <span v-else class="text-caption">Вибрати всі</span> 
+                                                    </v-btn>
+                                        </div>
                                         <div class="text-left pa-0" flat v-for="doc in docsData[type]" :key="doc.id"
                                             :style="isEditor ? `cursor: pointer` : ``" :elevation="1"
                                             @click="selectDoc(doc.id)"
@@ -27,9 +36,12 @@
                                                     <b>{{ doc.id }}</b>
                                                     <span v-if="doc.docType == 'out_RP'"> (з РП)</span>
                                                 </div>
+                                                <div class="d-flex flex-column">
                                                 <StatusChip :tripId="tripId" :pointId="pointId" :docId="doc.id" />
+                                                <span v-if="docStatuses[doc.id] && docStatuses[doc.id].status == 300"
+                                                    :class="`text-center text-caption ${docStatuses[doc.id].statusConnection ? 'text-success' : 'text-error'}`">{{docStatuses[doc.id].statusConnection ? 'online' : 'offline'}}</span>
+                                                </div>
                                             </div>
-                                            <!-- {{docStatuses[doc.id].status }} -->
                                             <div v-if="(doc.docType == 'out' || doc.docType == 'out_RP') && doc.taxNumber" class="text-caption">
                                                 ВН {{ doc.taxNumber }}
                                             </div>
@@ -58,7 +70,7 @@
                                                     </tr>
                                                 </tbody>
                                             </v-table>
-                                            <div v-if="doc.docType != 'in' && doc.sum"><v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>Сума COD: {{ doc.sum }} грн.</div>
+                                            <div v-if="doc.docType != 'in' && doc.sum"><v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>COD: {{ doc.sum }} </div>
                                             <v-table density="compact">
                                                 <tbody>
                                                     <tr v-if="doc.tasks && doc.tasks.length">
@@ -172,10 +184,10 @@
                     <v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>Прийнято COD:
                     <v-row class="mt-2">
                         <v-col>
-                            <v-text-field v-model="sumPack" label="Пакет №" outlined></v-text-field>
+                            <v-text-field v-model="sumPack" label="Пакет №" :rules="[rules.isNotEmpty]" outlined></v-text-field>
                         </v-col>
                         <v-col>
-                            <v-text-field v-model="sumFact" label="Сума" outlined></v-text-field>
+                            <v-text-field v-model="sumFact" label="Сума" :rules="[rules.isNotEmpty]" outlined></v-text-field>
                         </v-col>
                     </v-row>
                 </v-card-text>
@@ -183,7 +195,7 @@
             <v-card-actions>
                 <v-btn color="grey" @click="cancelSmsDialog()">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn @click="acceptRelease()" :disabled="isFormValid ? false : true">Підтвердити</v-btn>
+                <v-btn @click="acceptRelease()" :disabled="isFormValid ? false : true" :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -199,7 +211,7 @@
             <v-card-actions>
                 <v-btn @click="rejectDialog = false" color="grey">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="rejectText ? false : true" @click="rejectDoc()">Підтвердити</v-btn>
+                <v-btn :disabled="rejectText ? false : true" @click="rejectDoc()" :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -216,7 +228,7 @@
             <v-card-actions>
                 <v-btn color="grey" @click="cancelDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="cancelText ? false : true" @click="cancelDoc()">Підтвердити</v-btn>
+                <v-btn :disabled="cancelText ? false : true" :loading="loading" @click="cancelDoc()">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -232,7 +244,7 @@
             <v-card-actions>
                 <v-btn color="grey" @click="massRejectDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="rejectText ? false : true" @click="massReject()">Підтвердити</v-btn>
+                <v-btn :disabled="rejectText ? false : true" @click="massReject()" :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -249,7 +261,7 @@
             <v-card-actions>
                 <v-btn color="grey" @click="massCancelDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="cancelText ? false : true" @click="massCancel()">Підтвердити</v-btn>
+                <v-btn :disabled="cancelText ? false : true" @click="massCancel()" :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -284,7 +296,7 @@
                 <v-btn color="grey" @click="massReleaseDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
                 <v-btn :disabled="allSum && (!allSumPack || !allSumFact) ? true : false"
-                    @click="acceptMassRelease()">Підтвердити</v-btn>
+                    @click="acceptMassRelease()" :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -310,7 +322,7 @@
             <v-card-actions>
                 <v-btn color="grey" @click="acceptSmsDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn v-if="timer != 0" @click="accept()">Підтвердити</v-btn>
+                <v-btn v-if="timer != 0" @click="accept()" :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -320,7 +332,7 @@
 import MainNavigation from '@/components/MainNavigation.vue'
 import PointHeader from '@/components/PointHeader.vue'
 import StatusChip from '@/components/DocumentStatusChip.vue'
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, reactive} from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import cyrillicToTranslit from 'cyrillic-to-translit-js'
@@ -367,6 +379,8 @@ const timer = ref(100)
 const isFormValid = ref(false)
 const allSumPack = ref('')
 const allSumFact = ref('')
+const selectAll = reactive({})
+const loading = ref(false)
 
 onMounted(async () => {
     try {
@@ -397,7 +411,8 @@ onMounted(async () => {
 })
 
 const rules = {
-    number: v => (v === 0 || (v && !isNaN(v) && !/\s+/.test(v))) || 'Тільки цифри'
+    number: v => (v === 0 || (v && !isNaN(v) && !/\s+/.test(v))) || 'Тільки цифри',
+    isNotEmpty: v => !!v || 'Поле не може бути порожнім'
 }
 
 
@@ -420,10 +435,10 @@ const release = (docId) => {
         const curDocument = docs.value.find((item) => item.id == docId)
         curDoc.value = curDocument
         statusConnection.value = navigator.onLine
-        curPallets.value = curDocument.pallQty
-        curBoxes.value = curDocument.boxQty
+        curPallets.value = Number(curDocument.pallQty)
+        curBoxes.value = Number(curDocument.boxQty)
         sumPack.value = curDocument.sumPack
-        sumFact.value = curDocument.sumFact
+        sumFact.value = Number(curDocument.sum)
         acceptDocDialog.value = true
     } else {
         appStore.setSnackbar({ text: "Не всі завдання виконані", type: 'error' })
@@ -438,6 +453,7 @@ const cancelSmsDialog = () => {
 
 const sendSMS = async () => {
     //Відправити SMS
+    smsCode.value = ''
     const [code, hash] = await appStore.createCode()
     checkSmsHash.value = hash
     const message = curDoc.value.docType == 'out' || curDoc.value.docType == 'out_RP' ?
@@ -462,6 +478,7 @@ const sendSMS = async () => {
 
 const sendMassSMS = async () => {
     //Відправити SMS
+    smsCode.value = ''
     const [code, hash] = await appStore.createCode()
     checkSmsHash.value = hash
     const message = `видав ${allBoxes.value} кор / ${allPallets.value} пал`
@@ -513,15 +530,17 @@ const acceptRelease = async () => {
 const releaseDoc = async () => {
     try {
         if (checkSmsCode.value) {
+            loading.value = true
             await appStore.releaseDoc({
                 tripId: tripId.value,
                 pointId: pointId.value,
-                docId: curDoc.value.id,
-                sumPack: sumPack.value,
-                sumFact: sumFact.value,
-                palletsFact: curPallets.value,
-                boxesFact: curBoxes.value
+                docId: Number(curDoc.value.id),
+                sumPack: Number(sumPack.value),
+                sumFact: Number(sumFact.value),
+                palletsFact: Number(curPallets.value),
+                boxesFact: Number(curBoxes.value)
             })
+            loading.value = false
             acceptSmsDialog.value = false
             acceptDocDialog.value = false
             appStore.setSnackbar({ text: "Документ отримано", type: 'success' })
@@ -541,12 +560,14 @@ const reject = (docId) => {
 
 const rejectDoc = async () => {
     try {
+        loading.value = true
         await appStore.rejectDoc({
             tripId: tripId.value,
             pointId: pointId.value,
             docId: curDoc.value.id,
             description: rejectText.value
         })
+        loading.value = false
         rejectDialog.value = false
     } catch (error) {
         console.error(error)
@@ -561,12 +582,14 @@ const cancel = (docId) => {
 
 const cancelDoc = async () => {
     try {
+        loading.value = true
         await appStore.cancelDoc({
             tripId: tripId.value,
             pointId: pointId.value,
             docId: curDoc.value.id,
             description: cancelText.value
         })
+        loading.value = false
         cancelDialog.value = false
     } catch (error) {
         console.error(error)
@@ -602,19 +625,21 @@ const acceptMassRelease = async () => {
 
 const massRelease = async () => {
     try {
+        loading.value = true
         for (let docId of Object.keys(docsSelected.value)) {
             const curDoc = docs.value.find((item) => item.id == docId)
             await appStore.releaseDoc({
                 tripId: tripId.value,
                 pointId: pointId.value,
                 docId: Number(docId),
-                palletsFact: curDoc.pallQty,
-                boxesFact: curDoc.boxQty,
-                sumFact: allSumFact.value,
+                palletsFact: Number(curDoc.pallQty),
+                boxesFact: Number(curDoc.boxQty),
+                sumFact: Number(allSumFact.value),
                 sumPack: allSumPack.value,
                 statusConnection: navigator.onLine
             })
         }
+        loading.value = false
         docsSelected.value = {}
         massReleaseDialog.value = false
         acceptSmsDialog.value = false
@@ -625,6 +650,7 @@ const massRelease = async () => {
 
 const massReject = async () => {
     try {
+        loading.value = true
         for (let docId of Object.keys(docsSelected.value)) {
             await appStore.rejectDoc({
                 tripId: tripId.value,
@@ -633,6 +659,7 @@ const massReject = async () => {
                 description: rejectText.value
             })
         }
+        loading.value = false
         docsSelected.value = {}
         massRejectDialog.value = false
     } catch (error) {
@@ -642,6 +669,7 @@ const massReject = async () => {
 
 const massCancel = async () => {
     try {
+        loading.value = true
         for (let docId of Object.keys(docsSelected.value)) {
             await appStore.cancelDoc({
                 tripId: tripId.value,
@@ -650,10 +678,25 @@ const massCancel = async () => {
                 description: cancelText.value
             })
         }
+        loading.value = false
         docsSelected.value = {}
         massCancelDialog.value = false
     } catch (error) {
         console.error(error)
+    }
+}
+
+const selectAllDocs = (type) => {
+    if (selectAll[type]) {
+        docsSelected.value = {}
+        selectAll[type] = false
+    } else {
+        docs.value.forEach((item) => {
+            if (item.docType == type && pointStatus.value == 200 && docStatuses.value[item.id] && docStatuses.value[item.id].status == 200) {
+                docsSelected.value[item.id] = true
+            }
+        })
+        selectAll[type] = true
     }
 }
 
@@ -804,6 +847,16 @@ const checkSmsCode = computed(() => {
 
 const isEditor = computed(() => {
     return trip.value.editorId == appStore.user_id
+})
+
+const allDocsCompleteByType = computed(() => {
+    // хоч один має статус 200
+    return {
+        out: outData.value.find((item) => docStatuses.value[item.id] && docStatuses.value[item.id].status == 200),
+        in: inData.value.find((item) => docStatuses.value[item.id] && docStatuses.value[item.id].status == 200),
+        task: taskData.value.find((item) => docStatuses.value[item.id] && docStatuses.value[item.id].status == 200)
+    }
+
 })
 
 </script>

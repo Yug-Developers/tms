@@ -6,7 +6,7 @@
         <template v-slot:image>
 
         </template>
-        <v-toolbar-title><div class="d-none d-sm-block">
+        <v-toolbar-title><div class="d-none d-sm-block" @click="router.push('/')" >
             TMS.Доставки</div>
             <!-- <v-img title="Головна сторінка" @click="router.push('/')" style="cursor:pointer" height="30" position="left center" contain src="/img/icons/logo_sun_n_sm.png" /> -->
         </v-toolbar-title>

@@ -146,7 +146,7 @@ export const useAppStore = defineStore('appStore', () => {
       throw error
     }
   }
-  
+
   // --------------------------------- actions --------------------------------
   const createCode = (phone) => {
     // const code = parseInt(Math.random() * 10000).toString().padStart(4, '0')
@@ -334,8 +334,8 @@ export const useAppStore = defineStore('appStore', () => {
     if (userData.value && !userData.value._id && online.value) {
       userData.value = await Pouch.getUserData(user_name.value)
     }
-    
-    
+
+
 
     const user_id = userData.value.typhoonId
     let selector = {}
@@ -371,7 +371,8 @@ export const useAppStore = defineStore('appStore', () => {
           cPoint.id = point.id
           cPoint.status = 200
           cPoint.arrivalTime = new Date().toISOString()
-          if (isSecureConnection && online.value) {
+          // if (isSecureConnection && online.value) {
+          if (isSecureConnection) {
             await getLocation()
             cPoint.coordinates = location.value
           } else {
@@ -462,7 +463,8 @@ export const useAppStore = defineStore('appStore', () => {
         if (point.id === pointId) {
           point.status = 200
           point.arrivalTime = new Date().toISOString()
-          if (isSecureConnection && online.value) {
+          if (isSecureConnection) {
+            // if (isSecureConnection && online.value) {
             await getLocation()
             point.coordinates = location.value
           } else {

@@ -13,7 +13,8 @@
                 <div>
                     <div v-if="trip.doc.isCircular">Кільцевий рейс</div>
                     <div>На маршруті: {{ trip.doc.points && trip.doc.points.length }} точок</div>
-                    <div>Загальний кілометраж:<br>{{ tripLength(trip.doc._id) }} км</div>
+                    <div>Загальний кілометраж: {{ tripLength(trip.doc._id) }} км</div>
+                    <div v-if="tripSatatus == 300">Кілометраж факт: {{ tripLengthFact }}</div>
                 </div>
                 <div class="text-right">
                     <div v-if="trip.doc.isCircular" class="text-caption text-grey">кільцевий</div>
@@ -25,14 +26,18 @@
 </template>
 
 <script setup>
-import { defineProps, ref } from 'vue'
+import { defineProps, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import StatusChip from './TripStatusChip.vue'
+
+const statuses = ref({})
+const tripSatatus = ref(0)
 const router = useRouter()
 const props = defineProps({
     trip: Object
 })
+const tripLengthFact = ref(0)
 const appStore = useAppStore()
 
 const tripLength = (id) => {
@@ -47,8 +52,20 @@ const tripLength = (id) => {
     return length
 }
 
+const getTripLengthFact = async () => {
+    statuses.value = await appStore.getTripStatusesDoc(props.trip.id)
+    if(statuses.value && statuses.value.odometerStart && statuses.value.odometerFinish) {
+        tripSatatus.value = statuses.value.status
+        return statuses.value.odometerStart + '/' + statuses.value.odometerFinish + ' ' + (statuses.value.odometerFinish - statuses.value.odometerStart) + ' км'
+    } 
+}
+
 const goToTrip = (id) => {
     router.push(`/trip/${id}`)
 }
+onMounted(async () => {
+    tripLengthFact.value = await getTripLengthFact()
+})
+
 
 </script>

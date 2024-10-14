@@ -1,10 +1,9 @@
 <template>
-    <v-sheet v-if="trip.id" elevation="0" max-width="600" rounded="lg" width="100%"
-        class="pa-0 mx-auto">
+    <v-sheet v-if="trip.id" elevation="0" max-width="600" rounded="lg" width="100%" class="pa-0 mx-auto">
         <v-card flat>
             <v-card-title class="d-flex justify-space-between pa-0 pb-1">
                 <div>Рейс № {{ trip.id }}</div>
-                <StatusChip :tripId="trip.id"/>
+                <StatusChip :tripId="trip.id" />
             </v-card-title>
             <v-card-text class="text-grey text-caption pa-0">
                 Дата рейсу: {{ appStore.formatDate(trip.doc.date) }}
@@ -13,9 +12,11 @@
                 <div>
                     <div>На маршруті: {{ trip.doc.points && trip.doc.points.length }} точок</div>
                     <div>Загальний кілометраж: {{ tripLength(trip.doc._id) }} км</div>
+                    <div v-if="tripSatatus == 300">Кілометраж факт: {{ tripLengthFact }}</div>
                 </div>
                 <div class="text-right">
-                    <v-btn :disabled="checkMapBtn() ? false : true" @click="openGoogleMap()" title="На карті" variant="text" icon="mdi-map-search-outline"></v-btn>
+                    <v-btn :disabled="checkMapBtn() ? false : true" @click="openGoogleMap()" title="На карті"
+                        variant="text" icon="mdi-map-search-outline"></v-btn>
                     <div v-if="trip.doc.isCircular" class="text-caption text-grey">кільцевий</div>
                 </div>
             </v-card-text>
@@ -25,7 +26,7 @@
 </template>
 
 <script setup>
-import { defineProps, ref, computed } from 'vue'
+import { defineProps, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import StatusChip from './TripStatusChip.vue'
@@ -35,16 +36,27 @@ const router = useRouter()
 const props = defineProps({
     trip: Object
 })
+const statuses = ref({})
+const tripLengthFact = ref(0)
+const tripSatatus = ref(0)
 
 const tripLength = (id) => {
     let length = 0
     if (props.trip && props.trip.doc && props.trip.doc.points) {
         length = props.trip.doc.points.reduce((acc, item) => {
-                    return acc + item.distance
+            return acc + item.distance
         }, 0)
     }
     length = Math.round(length * 100) / 100
     return length
+}
+
+const getTripLengthFact = async () => {
+    statuses.value = await appStore.getTripStatusesDoc(props.trip.id)
+    if(statuses.value && statuses.value.odometerStart && statuses.value.odometerFinish) {
+        tripSatatus.value = statuses.value.status
+        return statuses.value.odometerStart + '/' + statuses.value.odometerFinish + ' ' + (statuses.value.odometerFinish - statuses.value.odometerStart) + ' км'
+    } 
 }
 const checkMapBtn = () => {
     //якщо хоч одна точка не містить координати, то кнопка посилання має бути неактивним
@@ -69,9 +81,15 @@ const mapUrl = computed(() => {
 const openGoogleMap = () => {
     window.open(mapUrl.value, '_blank')
 }
+onMounted(async () => {
+    tripLengthFact.value = await getTripLengthFact()
+})
 
 </script>
 
 <style>
-.v-sheet, .v-card {background-color: white}
+.v-sheet,
+.v-card {
+    background-color: white
+}
 </style>

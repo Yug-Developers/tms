@@ -9,7 +9,7 @@
             </v-card-title>
             <v-card-text class="pa-0 text-left mx-auto">
                 <!-- <div>Тип: {{ point.pointType }}</div> -->
-                <div><b>Адреса:</b> {{ point.address }}</div>
+                <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">(<b>Дод. до адреси:</b> {{ point.description }})</span></div>
                 <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, <span
                         class="d-flex flex-nowrap"><v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1"
                             color="green" />
