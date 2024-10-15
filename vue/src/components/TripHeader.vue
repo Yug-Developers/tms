@@ -10,9 +10,9 @@
             </v-card-text>
             <v-card-text class="pa-0 d-flex justify-space-between align-end">
                 <div>
-                    <div>На маршруті: {{ trip.doc.points && trip.doc.points.length }} точок</div>
-                    <div>Загальний кілометраж: {{ tripLength(trip.doc._id) }} км</div>
-                    <div v-if="tripSatatus == 300">Кілометраж факт: {{ tripLengthFact }}</div>
+                    <div><b>На маршруті:</b> {{ trip.doc.points && trip.doc.points.length }} точок</div>
+                    <div><v-icon size="x-small" color="grey"
+                        class="mr-2">mdi-counter</v-icon><b>Кілометраж:</b> {{ tripLength(trip.doc._id) }} км</div>
                 </div>
                 <div class="text-right">
                     <v-btn :disabled="checkMapBtn() ? false : true" @click="openGoogleMap()" title="На карті"
@@ -20,7 +20,14 @@
                     <div v-if="trip.doc.isCircular" class="text-caption text-grey">кільцевий</div>
                 </div>
             </v-card-text>
-
+            <v-card-text v-if="tripSatatus == 300" class="px-0 pb-0">
+                <div><b>Факт виконання:</b></div>
+                <div><v-icon size="x-small" color="green"
+                    class="mr-2">mdi-counter</v-icon>Кілометраж: {{ tripLengthFact }} км</div>
+                <div v-if="tripSatatus == 300">Показники одометру: <v-icon
+                        size="x-small">mdi-contain-start</v-icon>{{ statuses.odometerStart }} ... {{
+                            statuses.odometerFinish }}<v-icon size="x-small">mdi-contain-end</v-icon></div>
+            </v-card-text>
         </v-card>
     </v-sheet>
 </template>
@@ -53,10 +60,10 @@ const tripLength = (id) => {
 
 const getTripLengthFact = async () => {
     statuses.value = await appStore.getTripStatusesDoc(props.trip.id)
-    if(statuses.value && statuses.value.odometerStart && statuses.value.odometerFinish) {
+    if (statuses.value && statuses.value.odometerStart && statuses.value.odometerFinish) {
         tripSatatus.value = statuses.value.status
-        return statuses.value.odometerStart + '/' + statuses.value.odometerFinish + ' ' + (statuses.value.odometerFinish - statuses.value.odometerStart) + ' км'
-    } 
+        return statuses.value.odometerFinish - statuses.value.odometerStart
+    }
 }
 const checkMapBtn = () => {
     //якщо хоч одна точка не містить координати, то кнопка посилання має бути неактивним

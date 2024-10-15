@@ -11,10 +11,22 @@
 
         <v-card flat color="headerBlk" elevation="2">
             <v-card-text class="pa-4 text-left mx-auto">
-                <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">(<b>Дод. до адреси:</b> {{ point.description }})</span></div>
+                <div class="d-flex justify-space-between align-end">
+                    <div>
+                        <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">({{ point.description }})</span></div>
+                        <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, <span
+                                class="d-flex flex-nowrap"><v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1"
+                                    color="green" />
+                                <a :href="'tel:' + point.rcptPhone" @click.stop>{{ point.rcptPhone }}</a></span>
+                        </div>
+                    </div>
+                        <v-btn :disabled="coordinates ? false : true" @click.stop="openGoogleMap(coordinates)" title="На карті"
+                        variant="text" icon="mdi-google-maps"></v-btn>                        
+                </div>
+                <!-- <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">(<b>Дод. до адреси:</b> {{ point.description }})</span></div>
                 <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, <span
                         class="d-flex flex-nowrap"><v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1"
-                            color="green" /><a :href="'tel:' + point.rcptPhone">{{ point.rcptPhone }}</a></span></div>
+                            color="green" /><a :href="'tel:' + point.rcptPhone">{{ point.rcptPhone }}</a></span></div> -->
                 <div class="mt-2"><v-icon size="small" color="grey" class="mr-2">mdi-package-variant-closed</v-icon>Місць: {{ allBoxesPallets }}</div>
                 <div><v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>COD: {{ allSum }}</div>
                 <div v-if="point.sortNumber != '1'" class="text-right"><v-icon icon="mdi-map-marker-distance" /> <span
@@ -176,6 +188,10 @@ const completeTrip = async () => {
     }
 }
 
+const openGoogleMap = (url) => {
+    window.open(url, '_blank')
+}
+
 const pointId = computed(() => {
     return props.point.id
 })
@@ -322,6 +338,14 @@ const distance = computed(() => {
     }
     return distance
 })
+
+const coordinates = computed(() => {
+    if (!props.point.coordinates) {
+        return
+    }
+    return 'https://www.google.com/maps?q=' + props.point.coordinates.latitude + ',' + props.point.coordinates.longitude 
+})
+
 
 </script>
 

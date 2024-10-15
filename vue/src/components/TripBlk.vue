@@ -11,10 +11,9 @@
             </v-card-text>
             <v-card-text class="py-0 d-flex justify-space-between align-end">
                 <div>
-                    <div v-if="trip.doc.isCircular">Кільцевий рейс</div>
-                    <div>На маршруті: {{ trip.doc.points && trip.doc.points.length }} точок</div>
-                    <div>Загальний кілометраж: {{ tripLength(trip.doc._id) }} км</div>
-                    <div v-if="tripSatatus == 300">Кілометраж факт: {{ tripLengthFact }}</div>
+                    <div><b>На маршруті:</b> {{ trip.doc.points && trip.doc.points.length }} точок</div>
+                    <div><b>Кілометраж:</b> {{ tripLength(trip.doc._id) }} км</div>
+                    <!-- <div v-if="tripSatatus == 300"><b>Кілометраж факт:</b> {{ tripLengthFact }} км</div> -->
                 </div>
                 <div class="text-right">
                     <div v-if="trip.doc.isCircular" class="text-caption text-grey">кільцевий</div>
@@ -56,7 +55,7 @@ const getTripLengthFact = async () => {
     statuses.value = await appStore.getTripStatusesDoc(props.trip.id)
     if(statuses.value && statuses.value.odometerStart && statuses.value.odometerFinish) {
         tripSatatus.value = statuses.value.status
-        return statuses.value.odometerStart + '/' + statuses.value.odometerFinish + ' ' + (statuses.value.odometerFinish - statuses.value.odometerStart) + ' км'
+        return statuses.value.odometerFinish - statuses.value.odometerStart
     } 
 }
 
