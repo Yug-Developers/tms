@@ -8,7 +8,7 @@
                         <TripHeader :trip="tripData" />
                     </v-col>
                 </v-row>
-                <v-row v-if="tripData.doc.points" v-for="point in tripData.doc.points" class="my-0">
+                <v-row v-if="tripData.doc.points" v-for="point in tripData.doc.points" :key="point.id" class="my-0">
                     <v-col class="pt-2">
                         <PointBlk :point="point" :points="tripData.doc.points" :statuses="statuses"
                             :tripId="tripData && tripData.id" />
@@ -35,7 +35,7 @@ import MainNavigation from '@/components/MainNavigation.vue'
 import TripHeader from '@/components/TripHeader.vue'
 import PointBlk from '@/components/PointBlk.vue'
 import { useAppStore } from '../store/appStore'
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, toRaw } from 'vue'
 import { useRoute } from 'vue-router'
 import { useRouter } from 'vue-router'
 const router = useRouter()
@@ -68,6 +68,11 @@ onMounted(async () => {
         await appStore.pullStatusesData([tripId.value])
         doc.value = await appStore.getTripDoc(tripId.value)
         statuses.value = await appStore.getTripStatusesDoc(tripId.value)
+        if (doc.value.isCircular){
+            const firstPointCopy = { ...doc.value.points[0], id: -1, status: 100, sortNumber: doc.value.points.length + 1 }
+            doc.value.points = [...doc.value.points, firstPointCopy];
+        }
+        console.log(doc.value)
         tripData.value = {
             doc: doc.value,
             statuses: statuses.value,

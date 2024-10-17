@@ -96,8 +96,9 @@ router.beforeEach(async (to, from, next) => {
         console.log('Авторизований', response.userCtx.name)
         const user = await Pouch.getUserData(response.userCtx.name)
         if (user.isActive) {
-          appStore.user_id = user.typhoonId
-          appStore.userData = user
+          appStore.localStg.userData = user
+          appStore.localStg.user_name = response.userCtx.name
+          appStore.localStg.user_id = user.typhoonId
           next()
         } else {
           next({ name: 'Login' })

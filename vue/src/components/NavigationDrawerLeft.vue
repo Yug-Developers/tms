@@ -6,9 +6,9 @@
         </v-toolbar>
         <v-card elevation="0">
             <v-card-subtitle>Вітаємо,</v-card-subtitle>
-                        <v-card-title class="font-weight-bold text-body2">{{ appStore.userData && appStore.userData.pib }}!</v-card-title>
+                        <v-card-title class="font-weight-bold text-body2">{{ appStore.localStg.userData && appStore.localStg.userData.pib }}!</v-card-title>
                         <v-card-text class="mt-2"><v-icon icon="mdi-phone" color="grey"></v-icon>
-                            {{ appStore.userData && appStore.userData.phone }}
+                            {{ appStore.localStg.userData && appStore.localStg.userData.phone }}
             </v-card-text>
             <v-card-text>
                 <v-list>

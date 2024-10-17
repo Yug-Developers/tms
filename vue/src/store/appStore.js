@@ -6,6 +6,13 @@ import useGeolocation from '@/hooks/geolocation'
 import axios from 'axios'
 import Config from '@/Config'
 import md5 from 'md5'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
+// ініціалізація локального сховища
+const localStg = useLocalStorage({
+  'userData': {},
+  'user_name': '',
+  'user_id': '',
+})
 
 const { location, locationError, getLocation } = useGeolocation();
 const Pouch = usePouchDB()
@@ -24,9 +31,6 @@ export const useAppStore = defineStore('appStore', () => {
   })
   const data = reactive({})
   const statuses = ref([])
-  const user_name = ref('')
-  const user_id = ref('')
-  const userData = ref({})
   const navigationDrawerRightShow = ref(false)
 
   const menuItems = ref([
@@ -181,6 +185,13 @@ export const useAppStore = defineStore('appStore', () => {
   //------------------------ login logout ----------------------------------
   const login = async (user, pass) => {
     try {
+      Pouch.destroyDB('statuses')
+      Pouch.destroyDB('routes')
+      Pouch.destroyDB('users')
+      localStg.userData = {}
+      localStg.user_name = ''
+      localStg.user_id = ''
+
       return await Pouch.login(user, pass)
     } catch (error) {
       throw error
@@ -193,9 +204,9 @@ export const useAppStore = defineStore('appStore', () => {
       Pouch.destroyDB('statuses')
       Pouch.destroyDB('routes')
       Pouch.destroyDB('users')
-      user_name.value = ''
-      user_id.value = ''
-      userData.value = {}
+      localStg.userData = {}
+      localStg.user_name = ''
+      localStg.user_id = ''
       return res
     } catch (error) {
       throw error
@@ -210,7 +221,7 @@ export const useAppStore = defineStore('appStore', () => {
       if (online.value) {
         const options = {
           filter: 'filter/by_status_editor',
-          query_params: { editorId: user_id.value }
+          query_params: { editorId: localStg.user_id }
         }
         const pullRes = await Pouch.pull('routes', options)
         const currTrips = await currentTrips({ fields: ['_id'] })
@@ -331,16 +342,16 @@ export const useAppStore = defineStore('appStore', () => {
   }
 
   const getUserSelector = async () => {
-    if (userData.value && !userData.value._id && online.value) {
-      userData.value = await Pouch.getUserData(user_name.value)
+    if (localStg.userData && !localStg.userData._id && online.value) {
+      localStg.userData = await Pouch.getUserData(localStg.user_name)
     }
 
 
 
-    const user_id = userData.value.typhoonId
+    const user_id = localStg.userData.typhoonId
     let selector = {}
-    if (userData.value.role == 'manager') {
-      const carriers = userData.value.carrierId ? userData.value.carrierId.map(el => Number(el)) : []
+    if (localStg.userData.role == 'manager') {
+      const carriers = localStg.userData.carrierId ? localStg.userData.carrierId.map(el => Number(el)) : []
       selector = {
         carrierId: { $in: carriers }
       }
@@ -614,11 +625,11 @@ export const useAppStore = defineStore('appStore', () => {
   }
 
   return {
-    snackbar, setSnackbar, online, data, user_id, user_name, statuses, navigationDrawerRightShow, menuItems, loading,
+    snackbar, setSnackbar, online, data, statuses, navigationDrawerRightShow, menuItems, loading,
     checkOpenTrip, pullTripsData, initNewTripStatus, cancelPoint, inPlace, checkPointDocs, releaseDoc, rejectDoc, cancelDoc,
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
-    availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData
+    availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg
   }
 })
 

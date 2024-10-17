@@ -23,15 +23,11 @@
                         <v-btn :disabled="coordinates ? false : true" @click.stop="openGoogleMap(coordinates)" title="На карті"
                         variant="text" icon="mdi-google-maps"></v-btn>                        
                 </div>
-                <!-- <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">(<b>Дод. до адреси:</b> {{ point.description }})</span></div>
-                <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, <span
-                        class="d-flex flex-nowrap"><v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1"
-                            color="green" /><a :href="'tel:' + point.rcptPhone">{{ point.rcptPhone }}</a></span></div> -->
                 <div class="mt-2"><v-icon size="small" color="grey" class="mr-2">mdi-package-variant-closed</v-icon>Місць: {{ allBoxesPallets }}</div>
                 <div><v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>COD: {{ allSum }}</div>
                 <div v-if="point.sortNumber != '1'" class="text-right"><v-icon icon="mdi-map-marker-distance" /> <span
                         v-if="distance">{{ distance }}</span><span v-else>-</span> км</div>
-                <div v-if="pointStatus != 100">
+                <div v-if="pointStatus != 100 && point.pointType != 'wh'">
                     <div><b>Факт виконання:</b></div>
                 <div><v-icon size="small" color="green" class="mr-2">mdi-package-variant-closed</v-icon>Місць: {{ allBoxesPalletsFact }} </div>
                 <div><v-icon size="small" color="green" class="mr-2">mdi-email-outline</v-icon>COD: {{ allSumFact }} <span v-if="sumPack">(Пакети: {{ sumPack }})</span></div>
@@ -310,22 +306,34 @@ const allSumFact = computed(() => {
 // Знайти статус у работі по всіх точках
 const existsWorkPoint = computed(() => {
     if (existsTripStatus.value && existsTripStatus.value.points) {
-        return existsTripStatus.value.points.find((item) => item.status == 200) ? true : false
+        return existsTripStatus.value.points.find((item) => item.status == 200 ) ? true : false
     } else {
         return true
     }
 })
 
+// Статус завершено по всіх точках
+const existsTripComplete = computed(() => {
+    if (existsTripStatus.value && existsTripStatus.value.points) {
+        return existsTripStatus.value.points.find((item) => item.status < 300 && item.id != -1) ? false : true
+    } else {
+        return false
+    }
+})
+
 const disableInPlaceBtn = computed(() => {
-        if (!existsTripStatus.value && props.point.sortNumber == 1) {
+    if (props.point.id == -1) {
+        return existsTripComplete.value ? false : true
+    } else {
+        if (!existsTripStatus.value && props.point.sortNumber == 1 ) {
             return false
         }
-        
         if (existsWorkPoint.value) {
             return props.point.sortNumber == 1 ? false : true
         } else {
             return false
         }
+    }
 })
 
 const distance = computed(() => {

@@ -18,8 +18,6 @@
                                         <div class="pb-5 d-flex justify-space-between" v-if="pointStatus == 200 && allDocsCompleteByType[type]" @click="selectAllDocs(type)">
                                             <v-btn text size="small" variant="tonal" :color="selectAll[type] ? `primary` : `green`" 
                                             :prepend-icon="selectAll[type] ? `mdi-close` : `mdi-check`">
-                                                        <!-- <span v-if="selectAll[type]">Очистити всі документи</span> 
-                                                        <span v-else class="body-2">Вибрати всі документи</span>  -->
                                                         <span v-if="selectAll[type]" class="text-caption">Очистити всі</span> 
                                                         <span v-else class="text-caption">Вибрати всі</span> 
                                                     </v-btn>
@@ -389,6 +387,10 @@ onMounted(async () => {
         //Поточні данні документу рейсу
         if (trip.value && trip.value.points) {
             //точки документу рейсу
+            if (trip.value.isCircular){
+                const firstPointCopy = { ...trip.value.points[0], id: -1, status: 100, sortNumber: trip.value.points.length + 1}
+                trip.value.points = [...trip.value.points, firstPointCopy]
+            }            
             points.value = trip.value.points
             //поточна точка документу рейсу
             pointData.value = trip.value.points.find((item) => item.id == pointId.value)
@@ -690,13 +692,26 @@ const selectAllDocs = (type) => {
     if (selectAll[type]) {
         docsSelected.value = {}
         selectAll[type] = false
+        if(type == 'out'){
+            selectAll['out_RP'] = false
+        }
     } else {
         docs.value.forEach((item) => {
-            if (item.docType == type && pointStatus.value == 200 && docStatuses.value[item.id] && docStatuses.value[item.id].status == 200) {
-                docsSelected.value[item.id] = true
+            if (pointStatus.value == 200 && docStatuses.value[item.id] && docStatuses.value[item.id].status == 200) {
+                if (item.docType == type){
+                    docsSelected.value[item.id] = true
+                }
+                if(type == 'out'){
+                    if(item.docType == 'out_RP'){
+                        docsSelected.value[item.id] = true
+                    }
+                }
             }
         })
         selectAll[type] = true
+        if(type == 'out'){
+            selectAll['out_RP'] = true
+        }
     }
 }
 
