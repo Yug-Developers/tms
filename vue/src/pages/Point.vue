@@ -15,12 +15,15 @@
                                 </v-expansion-panel-title>
                                 <v-expansion-panel-text>
                                     <template v-if="docsData[type].length">
-                                        <div class="pb-5 d-flex justify-space-between" v-if="pointStatus == 200 && allDocsCompleteByType[type]" @click="selectAllDocs(type)">
-                                            <v-btn text size="small" variant="tonal" :color="selectAll[type] ? `primary` : `green`" 
-                                            :prepend-icon="selectAll[type] ? `mdi-close` : `mdi-check`">
-                                                        <span v-if="selectAll[type]" class="text-caption">Очистити всі</span> 
-                                                        <span v-else class="text-caption">Вибрати всі</span> 
-                                                    </v-btn>
+                                        <div class="pb-5 d-flex justify-space-between"
+                                            v-if="pointStatus == 200 && allDocsCompleteByType[type]"
+                                            @click="selectAllDocs(type)">
+                                            <v-btn text size="small" variant="tonal"
+                                                :color="selectAll[type] ? `primary` : `green`"
+                                                :prepend-icon="selectAll[type] ? `mdi-close` : `mdi-check`">
+                                                <span v-if="selectAll[type]" class="text-caption">Очистити всі</span>
+                                                <span v-else class="text-caption">Вибрати всі</span>
+                                            </v-btn>
                                         </div>
                                         <div class="text-left pa-0" flat v-for="doc in docsData[type]" :key="doc.id"
                                             :style="isEditor ? `cursor: pointer` : ``" :elevation="1"
@@ -28,19 +31,23 @@
                                             :class="docsSelected[doc.id] ? `bg-teal-lighten-5` : ``">
                                             <div class="d-flex justify-space-between">
                                                 <div>
-                                                    <v-icon v-if="pointStatus == 200 && docStatuses[doc.id] && docStatuses[doc.id].status == 200"
+                                                    <v-icon
+                                                        v-if="pointStatus == 200 && docStatuses[doc.id] && docStatuses[doc.id].status == 200"
                                                         :icon="docsSelected[doc.id] ? `mdi-check-circle-outline` : `mdi-circle-outline`"
                                                         color="green" class="mr-2 mb-1" />
                                                     <b>{{ doc.id }}</b>
                                                     <span v-if="doc.docType == 'out_RP'"> (з РП)</span>
                                                 </div>
                                                 <div class="d-flex flex-column">
-                                                <StatusChip :tripId="tripId" :pointId="pointId" :docId="doc.id" />
-                                                <span v-if="docStatuses[doc.id] && docStatuses[doc.id].status == 300"
-                                                    :class="`text-center text-caption ${docStatuses[doc.id].statusConnection ? 'text-success' : 'text-error'}`">{{docStatuses[doc.id].statusConnection ? 'online' : 'offline'}}</span>
+                                                    <StatusChip :tripId="tripId" :pointId="pointId" :docId="doc.id" />
+                                                    <span
+                                                        v-if="docStatuses[doc.id] && docStatuses[doc.id].status == 300"
+                                                        :class="`text-center text-caption ${docStatuses[doc.id].statusConnection ? 'text-success' : 'text-error'}`">{{ docStatuses[doc.id].statusConnection
+                                                        ? 'online' : 'offline'}}</span>
                                                 </div>
                                             </div>
-                                            <div v-if="(doc.docType == 'out' || doc.docType == 'out_RP') && doc.taxNumber" class="text-caption">
+                                            <div v-if="(doc.docType == 'out' || doc.docType == 'out_RP') && doc.taxNumber"
+                                                class="text-caption">
                                                 ВН {{ doc.taxNumber }}
                                             </div>
                                             <v-table density="compact"
@@ -53,7 +60,8 @@
                                                         <th v-if="doc.docType != 'task'" class="text-center">
                                                             Об'єм, м3
                                                         </th>
-                                                        <th v-if="doc.docType == 'out' || doc.docType == 'out_RP'" class="text-center">
+                                                        <th v-if="doc.docType == 'out' || doc.docType == 'out_RP'"
+                                                            class="text-center">
                                                             Місць
                                                         </th>
                                                     </tr>
@@ -63,12 +71,16 @@
                                                         <td v-if="doc.docType != 'task'">{{ doc.weight }}</td>
                                                         <td v-if="doc.docType != 'task'">{{ doc.volume }}</td>
                                                         <td v-if="doc.docType == 'out' || doc.docType == 'out_RP'">
-                                                            <span v-if="doc.boxQty">{{ doc.boxQty }}</span><span v-if="!doc.boxQty">-</span> / <span v-if="doc.pallQty">{{ doc.pallQty }}</span><span v-if="!doc.pallQty">-</span>
+                                                            <span v-if="doc.boxQty">{{ doc.boxQty }}</span><span
+                                                                v-if="!doc.boxQty">-</span> / <span
+                                                                v-if="doc.pallQty">{{ doc.pallQty }}</span><span
+                                                                v-if="!doc.pallQty">-</span>
                                                         </td>
                                                     </tr>
                                                 </tbody>
                                             </v-table>
-                                            <div v-if="doc.docType != 'in' && doc.sum"><v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>COD: {{ doc.sum }} </div>
+                                            <div v-if="doc.docType != 'in' && doc.sum"><v-icon size="small" color="grey"
+                                                    class="mr-2">mdi-email-outline</v-icon>COD: {{ doc.sum }} </div>
                                             <v-table density="compact">
                                                 <tbody>
                                                     <tr v-if="doc.tasks && doc.tasks.length">
@@ -84,16 +96,19 @@
                                                     <tr @click.stop="">
                                                         <td colspan="2" class="px-0">
                                                             <v-card-actions
-                                                                v-if="isEditor && docStatuses[doc.id] && docStatuses[doc.id].status == '200' && btnsRules" class="mb-2 px-0 pt-0">
+                                                                v-if="isEditor && docStatuses[doc.id] && docStatuses[doc.id].status == '200' && btnsRules"
+                                                                class="mb-2 px-0 pt-0">
                                                                 <v-btn icon="mdi-account-check-outline"
-                                                                    @click="release(doc.id)" color="success" :disabled="docsSelected[doc.id]"></v-btn>
+                                                                    @click="release(doc.id)" color="success"
+                                                                    :disabled="docsSelected[doc.id]"></v-btn>
                                                                 <v-spacer></v-spacer>
                                                                 <v-btn icon="mdi-account-remove-outline"
-                                                                    @click="reject(doc.id)" color="primary" :disabled="docsSelected[doc.id]">
+                                                                    @click="reject(doc.id)" color="primary"
+                                                                    :disabled="docsSelected[doc.id]">
                                                                 </v-btn>
                                                                 <v-spacer></v-spacer>
-                                                                <v-btn icon="mdi-cancel"
-                                                                    @click="cancel(doc.id)" color="primary" :disabled="docsSelected[doc.id]">
+                                                                <v-btn icon="mdi-cancel" @click="cancel(doc.id)"
+                                                                    color="primary" :disabled="docsSelected[doc.id]">
                                                                 </v-btn>
                                                             </v-card-actions>
                                                         </td>
@@ -160,13 +175,14 @@
     <v-dialog v-model="acceptDocDialog" max-width="600" persistent>
         <v-card>
             <v-card-title v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP'" class="mt-2">
-                Видано по документу {{ curDoc.id}}:
+                Видано по документу {{ curDoc.id }}:
             </v-card-title>
             <v-card-title v-if="curDoc.docType == 'in' || curDoc.docType == 'task'">
-                Прийнято по документу {{ curDoc.id}}:
+                Прийнято по документу {{ curDoc.id }}:
             </v-card-title>
             <v-form v-model="isFormValid">
-                <v-card-text v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP' || curDoc.docType == 'in'" class="pb-0">
+                <v-card-text v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP' || curDoc.docType == 'in'"
+                    class="pb-0">
                     <v-row>
                         <v-col>
                             <v-text-field v-model="curBoxes" :rules="[rules.number]" label="Коробок"
@@ -182,10 +198,12 @@
                     <v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>Прийнято COD:
                     <v-row class="mt-2">
                         <v-col>
-                            <v-text-field v-model="sumPack" label="Пакет №" :rules="[rules.isNotEmpty]" outlined></v-text-field>
+                            <v-text-field v-model="sumPack" label="Пакет №" :rules="[rules.isNotEmpty]"
+                                outlined></v-text-field>
                         </v-col>
                         <v-col>
-                            <v-text-field v-model="sumFact" label="Сума" :rules="[rules.isNotEmpty]" outlined></v-text-field>
+                            <v-text-field v-model="sumFact" label="Сума, грн" :rules="[rules.isNotEmpty, rules.number]"
+                                outlined></v-text-field>
                         </v-col>
                     </v-row>
                 </v-card-text>
@@ -193,7 +211,8 @@
             <v-card-actions>
                 <v-btn color="grey" @click="cancelSmsDialog()">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn @click="acceptRelease()" :disabled="isFormValid ? false : true" :loading="loading">Підтвердити</v-btn>
+                <v-btn @click="acceptRelease()" :disabled="isFormValid ? false : true"
+                    :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -242,7 +261,8 @@
             <v-card-actions>
                 <v-btn color="grey" @click="massRejectDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="rejectText ? false : true" @click="massReject()" :loading="loading">Підтвердити</v-btn>
+                <v-btn :disabled="rejectText ? false : true" @click="massReject()"
+                    :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -259,7 +279,8 @@
             <v-card-actions>
                 <v-btn color="grey" @click="massCancelDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="cancelText ? false : true" @click="massCancel()" :loading="loading">Підтвердити</v-btn>
+                <v-btn :disabled="cancelText ? false : true" @click="massCancel()"
+                    :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -272,10 +293,12 @@
             <v-card-text v-if="allBoxes || allPallets" class="pb-2 px-4">
                 <v-row>
                     <v-col>
-                        <v-text-field v-model="allBoxes" readonly label="Коробок" outlined></v-text-field>
+                        <v-text-field v-model="allBoxes" :rules="[rules.number]" readonly label="Коробок"
+                            outlined></v-text-field>
                     </v-col>
                     <v-col>
-                        <v-text-field v-model="allPallets" readonly label="Палет" outlined></v-text-field>
+                        <v-text-field v-model="allPallets" :rules="[rules.number]" readonly label="Палет"
+                            outlined></v-text-field>
                     </v-col>
                 </v-row>
             </v-card-text>
@@ -283,18 +306,20 @@
                 <v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>Прийнято COD:
                 <v-row class="mt-2">
                     <v-col>
-                        <v-text-field v-model="allSumPack" label="Пакет №" outlined></v-text-field>
+                        <v-text-field v-model="allSumPack" :rules="[rules.isNotEmpty]" label="Пакет №"
+                            outlined></v-text-field>
                     </v-col>
                     <v-col>
-                        <v-text-field v-model="allSumFact" label="Сума, грн" outlined></v-text-field>
+                        <v-text-field v-model="allSumFact" :rules="[rules.isNotEmpty, rules.number]" label="Сума, грн"
+                            outlined></v-text-field>
                     </v-col>
                 </v-row>
             </v-card-text>
             <v-card-actions>
                 <v-btn color="grey" @click="massReleaseDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="allSum && (!allSumPack || !allSumFact) ? true : false"
-                    @click="acceptMassRelease()" :loading="loading">Підтвердити</v-btn>
+                <v-btn :disabled="allSum && (!allSumPack || !allSumFact) ? true : false" @click="acceptMassRelease()"
+                    :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -307,7 +332,8 @@
             <v-card-text v-if="statusConnection" class="px-2">
                 <div class="mb-4 px-2">Одержувачу на тел. було надіслано SMS з Кодом підтвердження.</div>
                 <div class="text-center">
-                    <v-text-field label="Код з SMS" v-model="smsCode" style="width: 120px" outlined class="mx-auto"></v-text-field>
+                    <v-text-field label="Код з SMS" v-model="smsCode" style="width: 120px" outlined
+                        class="mx-auto"></v-text-field>
                     <v-progress-circular v-if="timer !== 0" :model-value="timer" :rotate="360" :size="50" :width="5"
                         color="teal">
                         {{ timer / 100 * 60 }}
@@ -330,7 +356,7 @@
 import MainNavigation from '@/components/MainNavigation.vue'
 import PointHeader from '@/components/PointHeader.vue'
 import StatusChip from '@/components/DocumentStatusChip.vue'
-import { onMounted, ref, computed, reactive} from 'vue'
+import { onMounted, ref, computed, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import cyrillicToTranslit from 'cyrillic-to-translit-js'
@@ -387,10 +413,10 @@ onMounted(async () => {
         //Поточні данні документу рейсу
         if (trip.value && trip.value.points) {
             //точки документу рейсу
-            if (trip.value.isCircular){
-                const firstPointCopy = { ...trip.value.points[0], id: -1, status: 100, sortNumber: trip.value.points.length + 1}
+            if (trip.value.isCircular) {
+                const firstPointCopy = { ...trip.value.points[0], id: -1, status: 100, sortNumber: trip.value.points.length + 1 }
                 trip.value.points = [...trip.value.points, firstPointCopy]
-            }            
+            }
             points.value = trip.value.points
             //поточна точка документу рейсу
             pointData.value = trip.value.points.find((item) => item.id == pointId.value)
@@ -627,24 +653,29 @@ const acceptMassRelease = async () => {
 
 const massRelease = async () => {
     try {
-        loading.value = true
-        for (let docId of Object.keys(docsSelected.value)) {
-            const curDoc = docs.value.find((item) => item.id == docId)
-            await appStore.releaseDoc({
-                tripId: tripId.value,
-                pointId: pointId.value,
-                docId: Number(docId),
-                palletsFact: Number(curDoc.pallQty),
-                boxesFact: Number(curDoc.boxQty),
-                sumFact: Number(allSumFact.value),
-                sumPack: allSumPack.value,
-                statusConnection: navigator.onLine
-            })
+        if (checkSmsCode.value) {
+            loading.value = true
+            for (let docId of Object.keys(docsSelected.value)) {
+                const curDoc = docs.value.find((item) => item.id == docId)
+                const sumDoc = docs.value.find((item) => item.sum > 0) || {}
+                await appStore.releaseDoc({
+                    tripId: tripId.value,
+                    pointId: pointId.value,
+                    docId: Number(docId),
+                    palletsFact: Number(curDoc.pallQty),
+                    boxesFact: Number(curDoc.boxQty),
+                    sumFact: sumDoc.id == docId ? Number(allSumFact.value) : 0,
+                    sumPack: sumDoc.id == docId ? allSumPack.value : 0,
+                    statusConnection: navigator.onLine
+                })
+            }
+            loading.value = false
+            docsSelected.value = {}
+            massReleaseDialog.value = false
+            acceptSmsDialog.value = false
+        } else {
+            appStore.setSnackbar({ text: "Невірний код з SMS", type: 'error' })
         }
-        loading.value = false
-        docsSelected.value = {}
-        massReleaseDialog.value = false
-        acceptSmsDialog.value = false
     } catch (error) {
         console.error(error)
     }
@@ -692,24 +723,24 @@ const selectAllDocs = (type) => {
     if (selectAll[type]) {
         docsSelected.value = {}
         selectAll[type] = false
-        if(type == 'out'){
+        if (type == 'out') {
             selectAll['out_RP'] = false
         }
     } else {
         docs.value.forEach((item) => {
             if (pointStatus.value == 200 && docStatuses.value[item.id] && docStatuses.value[item.id].status == 200) {
-                if (item.docType == type){
+                if (item.docType == type) {
                     docsSelected.value[item.id] = true
                 }
-                if(type == 'out'){
-                    if(item.docType == 'out_RP'){
+                if (type == 'out') {
+                    if (item.docType == 'out_RP') {
                         docsSelected.value[item.id] = true
                     }
                 }
             }
         })
         selectAll[type] = true
-        if(type == 'out'){
+        if (type == 'out') {
             selectAll['out_RP'] = true
         }
     }
@@ -861,7 +892,7 @@ const checkSmsCode = computed(() => {
 })
 
 const isEditor = computed(() => {
-    return trip.value.editorId == appStore.user_id
+    return trip.value.editorId == appStore.localStg.user_id
 })
 
 const allDocsCompleteByType = computed(() => {
@@ -878,16 +909,20 @@ const allDocsCompleteByType = computed(() => {
 
 <style scoped>
 .v-expansion-panel-title {
-padding: 16px;
-min-height: inherit !important;
+    padding: 16px;
+    min-height: inherit !important;
 }
+
 .v-expansion-panel-title.v-expansion-panel-title--active {
     border-bottom: 1px solid #e3e1e1 !important;
     margin-bottom: 16px !important;
 }
-.v-table.details th:not(:last-child), .v-table.details td:not(:last-child) {
+
+.v-table.details th:not(:last-child),
+.v-table.details td:not(:last-child) {
     border-right: 1px solid #e3e1e1 !important;
 }
+
 .v-expansion-panel-text .v-expansion-panel-text__wrapper {
     padding: 16px !important;
 }
