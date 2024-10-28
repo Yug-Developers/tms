@@ -42,7 +42,8 @@
                                                     <StatusChip :tripId="tripId" :pointId="pointId" :docId="doc.id" />
                                                     <span
                                                         v-if="docStatuses[doc.id] && docStatuses[doc.id].status == 300"
-                                                        :class="`text-center text-caption ${docStatuses[doc.id].statusConnection ? 'text-success' : 'text-error'}`">{{ docStatuses[doc.id].statusConnection
+                                                        :class="`text-center text-caption ${docStatuses[doc.id].statusConnection ? 'text-success' : 'text-error'}`">{{
+                                                            docStatuses[doc.id].statusConnection
                                                         ? 'online' : 'offline'}}</span>
                                                 </div>
                                             </div>
@@ -290,37 +291,39 @@
             <v-card-title class="mt-2">
                 Видано по вибраним документам
             </v-card-title>
-            <v-card-text v-if="allBoxes || allPallets" class="pb-2 px-4">
-                <v-row>
-                    <v-col>
-                        <v-text-field v-model="allBoxes" :rules="[rules.number]" readonly label="Коробок"
-                            outlined></v-text-field>
-                    </v-col>
-                    <v-col>
-                        <v-text-field v-model="allPallets" :rules="[rules.number]" readonly label="Палет"
-                            outlined></v-text-field>
-                    </v-col>
-                </v-row>
-            </v-card-text>
-            <v-card-text v-if="allSum" class="pt-0 px-4">
-                <v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>Прийнято COD:
-                <v-row class="mt-2">
-                    <v-col>
-                        <v-text-field v-model="allSumPack" :rules="[rules.isNotEmpty]" label="Пакет №"
-                            outlined></v-text-field>
-                    </v-col>
-                    <v-col>
-                        <v-text-field v-model="allSumFact" :rules="[rules.isNotEmpty, rules.number]" label="Сума, грн"
-                            outlined></v-text-field>
-                    </v-col>
-                </v-row>
-            </v-card-text>
-            <v-card-actions>
-                <v-btn color="grey" @click="massReleaseDialog = false">Скасувати</v-btn>
-                <v-spacer></v-spacer>
-                <v-btn :disabled="allSum && (!allSumPack || !allSumFact) ? true : false" @click="acceptMassRelease()"
-                    :loading="loading">Підтвердити</v-btn>
-            </v-card-actions>
+            <v-form v-model="isFormValid">
+                <v-card-text v-if="allBoxes || allPallets" class="pb-2 px-4">
+                    <v-row>
+                        <v-col>
+                            <v-text-field v-model="allBoxes" :rules="[rules.number]" readonly label="Коробок"
+                                outlined></v-text-field>
+                        </v-col>
+                        <v-col>
+                            <v-text-field v-model="allPallets" :rules="[rules.number]" readonly label="Палет"
+                                outlined></v-text-field>
+                        </v-col>
+                    </v-row>
+                </v-card-text>
+                <v-card-text v-if="allSum" class="pt-0 px-4">
+                    <v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>Прийнято COD:
+                    <v-row class="mt-2">
+                        <v-col>
+                            <v-text-field v-model="allSumPack" :rules="[rules.isNotEmpty]" label="Пакет №"
+                                outlined></v-text-field>
+                        </v-col>
+                        <v-col>
+                            <v-text-field v-model="allSumFact" :rules="[rules.isNotEmpty, rules.number]"
+                                label="Сума, грн" outlined></v-text-field>
+                        </v-col>
+                    </v-row>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn color="grey" @click="massReleaseDialog = false">Скасувати</v-btn>
+                    <v-spacer></v-spacer>
+                    <v-btn :disabled="isFormValid ? false : true" @click="acceptMassRelease()"
+                        :loading="loading">Підтвердити</v-btn>
+                </v-card-actions>
+            </v-form>
         </v-card>
     </v-dialog>
 

@@ -137,7 +137,7 @@ const inPlace = async () => {
     } else {
         try {
             await appStore.inPlace(props.tripId, props.point.id, props.points)
-            appStore.setSnackbar({ text: "Збережено координати та час", type: 'success' })
+            appStore.setSnackbar({ text: "Збережено координати та час", type: 'success'})
         } catch (error) {
             appStore.setSnackbar({ text: "Помилка збереження", type: 'error' })
             console.error(error)

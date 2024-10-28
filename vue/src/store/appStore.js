@@ -23,7 +23,7 @@ export const useAppStore = defineStore('appStore', () => {
   const isSecureConnection = window.location.protocol === "https:"
   const loading = ref(false)
   const snackbar = reactive({
-    timout: 4000,
+    timeout: 1500,
     text: '',
     model: false,
     color: 'accent-darken1',
@@ -90,7 +90,36 @@ export const useAppStore = defineStore('appStore', () => {
     const [year, month, day] = date.split('-')
     return `${day}-${month}-${year}`
   }
+  
+  const getCookie = (name) =>{
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+  }
 
+  const setCookie = (name, value, options = {}) => {
+    let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`;
+    if (options.expires) {
+        const expires = options.expires instanceof Date ? options.expires.toUTCString() : options.expires;
+        cookieString += `; expires=${expires}`;
+    }
+    if (options.path) {
+        cookieString += `; path=${options.path}`;
+    }
+    if (options.domain) {
+        cookieString += `; domain=${options.domain}`;
+    }
+    if (options.secure) {
+        cookieString += `; secure`;
+    }
+    if (options.sameSite) {
+        cookieString += `; samesite=${options.sameSite}`;
+    }
+    document.cookie = cookieString;
+}
+
+  
   // --------------------------------- getters --------------------------------
   const setSnackbar = (config = {}) => {
     const snackbarDefaults = {
@@ -151,6 +180,26 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
+  const getTmsTripsById = async (id) => {
+    try {
+      const session = getCookie('AuthSession')
+      const res = await axios.post(Config.misUrl + '/tms/get-tms-trips-by-id', {id, session})
+      return res.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const checkTmsTripsProcess = async () => {
+  //check-tms-trips-process
+    try {
+      const session = getCookie('AuthSession')
+      const res = await axios.post(Config.misUrl + '/tms/check-tms-trips-process', {session})
+      return res.data
+    } catch (error) {
+      throw error
+    }
+  }
   // --------------------------------- actions --------------------------------
   const createCode = (phone) => {
     // const code = parseInt(Math.random() * 10000).toString().padStart(4, '0')
@@ -200,14 +249,18 @@ export const useAppStore = defineStore('appStore', () => {
 
   const logout = async () => {
     try {
-      const res = await Pouch.logout()
+      if (online.value) {
+        await Pouch.logout()
+      } else {
+        setCookie('AuthSession', '', { expires: new Date(0) })
+      }
       Pouch.destroyDB('statuses')
       Pouch.destroyDB('routes')
       Pouch.destroyDB('users')
       localStg.userData = {}
       localStg.user_name = ''
       localStg.user_id = ''
-      return res
+      return 
     } catch (error) {
       throw error
     }
@@ -629,7 +682,7 @@ export const useAppStore = defineStore('appStore', () => {
     checkOpenTrip, pullTripsData, initNewTripStatus, cancelPoint, inPlace, checkPointDocs, releaseDoc, rejectDoc, cancelDoc,
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
-    availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg
+    availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg, getTmsTripsById, checkTmsTripsProcess
   }
 })
 

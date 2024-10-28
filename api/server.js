@@ -61,7 +61,7 @@ const syncData = async () => {
               const previousPoints = previousDoc.points || [];
               const currentPoints = currentDoc.points || [];
               // Якщо документ має статус 300 (виконано) і він змінився з попереднього статусу закриваємо документ в базі рейсів
-              if (currentStatus === 300 &&  previousStatus !== 300) {
+              if (currentStatus === 300 && previousStatus !== 300) {
                 console.log('Статус документа змінився з виконано на інший:', currentStatus);
                 await closeDocInDb(doc._id)
               }
@@ -80,17 +80,15 @@ const syncData = async () => {
               if (differences.length > 0) {
                 console.log('Знайдено розбіжності у статусах точок:', differences);
                 const preparedData = prepareData(currentDoc)
-                console.log('Підготовлені дані для відправки:', preparedData);
+                console.log('Підготовлені дані для відправки:', JSON.stringify(preparedData , null, 2));
                 try {
-                  // const res = await sendDataToTyphoon(preparedData)
+                  const res = await sendDataToTyphoon(preparedData)
                 } catch (error) {
-                  console.log('Помилка відправки даних до Typhoon:', error);
+                  console.log('Помилка відправки даних до Typhoon:', error.response.data);
                 }
               } else {
                 console.log('Розбіжностей у статусах точок не виявлено.');
               }
-
-              // Додай свою логіку порівняння
             } catch (err) {
               console.log('Помилка при отриманні попереднього документа:', err);
             }
@@ -123,12 +121,12 @@ const closeDocInDb = async (id) => {
 const sendDataToTyphoon = async (data) => {
   try {
     console.log(JSON.stringify(data, null, 2));
-    console.log(`${Config.foxtrotApi.url}/tocan-requests`)
+    console.log(`${Config.foxtrotApi.url}/trip-requests`)
     const authToken = await getAccessToken()
     const res = await axios({
       method: 'POST',
       data,
-      url: `${Config.foxtrotApi.url}/tocan-requests`,
+      url: `${Config.foxtrotApi.url}/trip-requests`,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + authToken
@@ -166,6 +164,19 @@ const getAccessToken = async (sufix) => {
 }
 
 const prepareData = (data) => {
+  const statusMap = {
+    300: 1,
+    400: 2,
+    500: 3
+  }
+  const points = data.points
+  // Змінюємо статуси документів в docs точок на відповідні для Т22
+  points.forEach(point => {
+    point.docs.forEach(doc => {
+      doc.status = statusMap[doc.status]
+    })
+  })
+
   const out = {
     id: data._id,
     status: data.status,
@@ -173,8 +184,7 @@ const prepareData = (data) => {
     finishTime: data.finishTime,
     odometerStart: data.odometerStart,
     odometerFinish: data.odometerFinish,
-    points: data.points,
-
+    points
   }
   return out
 }
