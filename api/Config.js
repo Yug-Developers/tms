@@ -1,10 +1,7 @@
 module.exports = {
     remoteCouchDb: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'dev_production' ? 
     'https://dev.sharp.com.ua/' : 'http://dev.tms.yugcontract.ua:5984/',
-    remoteCouchDbAuth: {
-        username: 'tms',
-        password: 'koputraPo5'
-    },
+
     foxtrotOauth2: {
         client_id: 'yugcontract-client',
         secret: 'd260a147-bada-4f04-9e6f-639f31fdd736',

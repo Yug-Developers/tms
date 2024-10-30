@@ -1,15 +1,8 @@
 export default {
-    remoteCouchDb: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'dev_production' ?
-        'https://dev.tms-db.yugcontract.ua/' : 'http://dev.tms.yugcontract.ua:5984/',
-    remoteCouchDbAuth: {
-        username: 'tms',
-        password: 'koputraPo5'
-    },
+    remoteCouchDb: process.env.NODE_ENV === 'production' ? 'https://tms-db.yugcontract.ua/' :  
+    (process.env.NODE_ENV === 'dev_production' ? 'https://dev.tms-db.yugcontract.ua/' : 'http://dev.tms.yugcontract.ua:5984/'),
+
     misUrl: process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'dev_production' ? 'https://mis.yugcontract.ua/api' : 'http://dev.mis.yugcontract.ua:4040/api',
-    jwt: {
-        secret: 'jlkjasd23032mlm342kjklj241lkjlkjlj243',
-        expire: 300 * 60
-    },
     messengerMs: {
         url: process.env.NODE_ENV === 'production' ? 'https://messenger.yugcontract.ua/api' : 'http://dev.yugcontract.ua:3077/api',
         alphaName: 'YUGcontract',
