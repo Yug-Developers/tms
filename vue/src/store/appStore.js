@@ -90,8 +90,8 @@ export const useAppStore = defineStore('appStore', () => {
     const [year, month, day] = date.split('-')
     return `${day}-${month}-${year}`
   }
-  
-  const getCookie = (name) =>{
+
+  const getCookie = (name) => {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(';').shift();
@@ -101,25 +101,25 @@ export const useAppStore = defineStore('appStore', () => {
   const setCookie = (name, value, options = {}) => {
     let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`;
     if (options.expires) {
-        const expires = options.expires instanceof Date ? options.expires.toUTCString() : options.expires;
-        cookieString += `; expires=${expires}`;
+      const expires = options.expires instanceof Date ? options.expires.toUTCString() : options.expires;
+      cookieString += `; expires=${expires}`;
     }
     if (options.path) {
-        cookieString += `; path=${options.path}`;
+      cookieString += `; path=${options.path}`;
     }
     if (options.domain) {
-        cookieString += `; domain=${options.domain}`;
+      cookieString += `; domain=${options.domain}`;
     }
     if (options.secure) {
-        cookieString += `; secure`;
+      cookieString += `; secure`;
     }
     if (options.sameSite) {
-        cookieString += `; samesite=${options.sameSite}`;
+      cookieString += `; samesite=${options.sameSite}`;
     }
     document.cookie = cookieString;
-}
+  }
 
-  
+
   // --------------------------------- getters --------------------------------
   const setSnackbar = (config = {}) => {
     const snackbarDefaults = {
@@ -182,8 +182,7 @@ export const useAppStore = defineStore('appStore', () => {
 
   const getTmsTripsById = async (id) => {
     try {
-      const session = getCookie('AuthSession')
-      const res = await axios.post(Config.misUrl + '/tms/get-tms-trips-by-id', {id, session})
+      const res = await axios.post(Config.misUrl + '/tms/get-tms-trips-by-id', { id }, { withCredentials: true })
       return res.data
     } catch (error) {
       throw error
@@ -191,10 +190,23 @@ export const useAppStore = defineStore('appStore', () => {
   }
 
   const checkTmsTripsProcess = async () => {
-  //check-tms-trips-process
+    //check-tms-trips-process
     try {
-      const session = getCookie('AuthSession')
-      const res = await axios.post(Config.misUrl + '/tms/check-tms-trips-process', {session})
+      const res = await axios.post(Config.misUrl + '/tms/check-tms-trips-process', {}, { withCredentials: true })
+      return res.data
+    } catch (error) {
+      throw error
+    }
+  }
+  const sendSMScode = async ({ phone, message }) => {
+    try {
+      const res = await axios.post(Config.misUrl + '/tms/send-sms', {
+        phone,
+        message,
+        alpha_name: Config.messengerMs.alphaName,
+        tag: Config.messengerMs.tag
+      }, 
+      { withCredentials: true })
       return res.data
     } catch (error) {
       throw error
@@ -207,28 +219,6 @@ export const useAppStore = defineStore('appStore', () => {
     const code = '1111'
     const hash = md5(code)
     return [code, hash]
-  }
-
-  const sendSMScode = async ({ phone, message }) => {
-    try {
-      const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGdvcml0aG0iOiJIUzI1NiIsImlkIjoxLCJpYXQiOjE3MDk4OTkxODgsImV4cCI6MjAyNTI1OTE4OH0.tcV9tyJbybTwtpZA515_LjXkaJLn6Tuulyd3vqqoCfk'
-      return axios({
-        method: 'POST',
-        url: Config.messengerMs.url + '/sendsms',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
-        data: {
-          phone,
-          message,
-          alpha_name: Config.messengerMs.alphaName,
-          tag: Config.messengerMs.tag
-        }
-      })
-    } catch (error) {
-      throw error
-    }
   }
 
   //------------------------ login logout ----------------------------------
@@ -252,7 +242,7 @@ export const useAppStore = defineStore('appStore', () => {
       if (online.value) {
         await Pouch.logout()
       } else {
-        setCookie('AuthSession', '', { expires: new Date(0) })
+        setCookie('AuthSession', '', { expires: new Date(0), domain: '.yugcontract.ua' })
       }
       Pouch.destroyDB('statuses')
       Pouch.destroyDB('routes')
@@ -260,7 +250,7 @@ export const useAppStore = defineStore('appStore', () => {
       localStg.userData = {}
       localStg.user_name = ''
       localStg.user_id = ''
-      return 
+      return
     } catch (error) {
       throw error
     }
