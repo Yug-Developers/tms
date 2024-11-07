@@ -11,7 +11,7 @@
             </v-card-text>
             <v-card-text class="py-0 d-flex justify-space-between align-end">
                 <div>
-                    <div><b>На маршруті:</b> {{ trip.doc.points && trip.doc.points.length }} точок</div>
+                    <div><b>На маршруті:</b> {{ pointsNumber }} точок</div>
                     <div><b>Кілометраж:</b> {{ tripLength(trip.doc._id) }} км</div>
                     <!-- <div v-if="tripSatatus == 300"><b>Кілометраж факт:</b> {{ tripLengthFact }} км</div> -->
                 </div>
@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { defineProps, ref, onMounted } from 'vue'
+import { defineProps, ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import StatusChip from './TripStatusChip.vue'
@@ -58,6 +58,14 @@ const getTripLengthFact = async () => {
         return statuses.value.odometerFinish - statuses.value.odometerStart
     } 
 }
+
+const pointsNumber = computed(() => {
+    if (props.trip && props.trip.doc && props.trip.doc.points){
+        return props.trip.doc.isCircular ? (props.trip.doc.points.length + 1) : props.trip.doc.points.length
+    } else {
+        return 0
+    }
+})
 
 const goToTrip = (id) => {
     router.push(`/trip/${id}`)
