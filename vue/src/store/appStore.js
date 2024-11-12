@@ -205,8 +205,8 @@ export const useAppStore = defineStore('appStore', () => {
         message,
         alpha_name: Config.messengerMs.alphaName,
         tag: Config.messengerMs.tag
-      }, 
-      { withCredentials: true })
+      },
+        { withCredentials: true })
       return res.data
     } catch (error) {
       throw error
@@ -425,12 +425,14 @@ export const useAppStore = defineStore('appStore', () => {
           cPoint.id = point.id
           cPoint.status = 200
           cPoint.arrivalTime = new Date().toISOString()
-          // if (isSecureConnection && online.value) {
-          if (isSecureConnection) {
-            await getLocation()
-            cPoint.coordinates = location.value
-          } else {
-            // cPoint.coordinates = point.coordinates
+          try {
+            if (isSecureConnection) {
+              await getLocation()
+              cPoint.coordinates = location.value
+            } else {
+              cPoint.coordinates = { latitude: '', longitude: '' }
+            }
+          } catch (error) {
             cPoint.coordinates = { latitude: '', longitude: '' }
           }
         } else {
@@ -517,14 +519,15 @@ export const useAppStore = defineStore('appStore', () => {
         if (point.id === pointId) {
           point.status = 200
           point.arrivalTime = new Date().toISOString()
-          if (isSecureConnection) {
-            // if (isSecureConnection && online.value) {
-            await getLocation()
-            point.coordinates = location.value
-          } else {
-            // point.coordinates = currentPoint && currentPoint.coordinates
+          try {
+            if (isSecureConnection) {
+              await getLocation()
+              point.coordinates = location.value
+            } else {
+              point.coordinates = { latitude: '', longitude: '' }
+            }
+          } catch (error) {
             point.coordinates = { latitude: '', longitude: '' }
-
           }
           point.docs = []
           for (let doc of currentPoint.docs) {
