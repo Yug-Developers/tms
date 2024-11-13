@@ -45,7 +45,7 @@
                                                         v-if="docStatuses[doc.id] && docStatuses[doc.id].status == 300"
                                                         :class="`text-center text-caption ${docStatuses[doc.id].statusConnection ? 'text-success' : 'text-error'}`">{{
                                                             docStatuses[doc.id].statusConnection
-                                                        ? 'online' : 'offline'}}</span>
+                                                                ? 'online' : 'offline' }}</span>
                                                 </div>
                                             </div>
                                             <div v-if="(doc.docType == 'out' || doc.docType == 'out_RP') && doc.taxNumber"
@@ -158,18 +158,26 @@
         </template>
     </v-layout>
     <!-- <pre>{{ appStore.statuses.filter(el => el._id == tripId) }}</pre> -->
-    <v-bottom-navigation :active="bottomNavigation" v-model="bottomModel">
-        <v-btn :disabled="releaseBottomBtn" @click="openMassReleaseDialog()">
-            <v-icon color="success">mdi-account-check-outline</v-icon>
+    <v-bottom-navigation :active="bottomNavigation" v-model="bottomModel" elevation="24" height="80">
+        <v-btn :disabled="releaseBottomBtn" @click="openMassReleaseDialog()" stacked
+            prepend-icon="mdi-account-check-outline" class="text-subtitle-2 mx-2">
+            <template v-slot:prepend>
+                <v-icon color="success"></v-icon>
+            </template>
             Видано
         </v-btn>
-        <v-btn :disabled="rejectBottomBtn" @click="massRejectDialog = true">
-            <v-icon color="primary">mdi-account-remove-outline</v-icon>
+        <v-btn :disabled="rejectBottomBtn" @click="massRejectDialog = true" stacked
+            prepend-icon="mdi-account-remove-outline" class="text-subtitle-2 mx-2">
+            <template v-slot:prepend>
+                <v-icon color="primary"></v-icon>
+            </template>
             Відмова
         </v-btn>
-
-        <v-btn :disabled="cancelBottomBtn" @click="massCancelDialog = true">
-            <v-icon color="primary">mdi-cancel</v-icon>
+        <v-btn :disabled="cancelBottomBtn" @click="massCancelDialog = true" stacked
+            prepend-icon="mdi-cancel" class="text-subtitle-2 mx-2">
+            <template v-slot:prepend>
+                <v-icon color="primary"></v-icon>
+            </template>
             Скасування
         </v-btn>
     </v-bottom-navigation>
