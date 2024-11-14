@@ -10,7 +10,7 @@
             <v-card-text class="pa-0 text-left mx-auto">
                 <div class="d-flex justify-space-between align-end">
                     <div>
-                        <div><b>Контрагент:</b> {{ point.counterpartyName }}</div>
+                        <div v-if="point.pointType != 'wh'"><b>Контрагент:</b> {{ point.counterpartyName }}</div>
                         <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">({{ point.description }})</span></div>
                         <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, <span
                                 class="d-flex flex-nowrap"><v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1"

@@ -35,8 +35,8 @@
                                                         v-if="pointStatus == 200 && docStatuses[doc.id] && docStatuses[doc.id].status == 200"
                                                         :icon="docsSelected[doc.id] ? `mdi-check-circle-outline` : `mdi-circle-outline`"
                                                         color="green" class="mr-2 mb-1" />
-                                                    <b v-if="doc.mainDocumentId">{{ doc.mainDocumentId }} - </b>
-                                                    <b>{{ doc.id }}</b>
+                                                    <b v-if="doc.mainDocumentId">{{ doc.mainDocumentId }}</b>
+                                                    <span v-if="doc.id != doc.mainDocumentId"> ({{ doc.id }})</span>
                                                     <span v-if="doc.docType == 'out_RP'"> (з РП)</span>
                                                 </div>
                                                 <div class="d-flex flex-column">
