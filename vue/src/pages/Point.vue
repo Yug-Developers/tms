@@ -173,8 +173,8 @@
             </template>
             Відмова
         </v-btn>
-        <v-btn :disabled="cancelBottomBtn" @click="massCancelDialog = true" stacked
-            prepend-icon="mdi-cancel" class="text-subtitle-2 mx-2">
+        <v-btn :disabled="cancelBottomBtn" @click="massCancelDialog = true" stacked prepend-icon="mdi-cancel"
+            class="text-subtitle-2 mx-2">
             <template v-slot:prepend>
                 <v-icon color="primary"></v-icon>
             </template>
@@ -209,8 +209,9 @@
                     <v-row class="mt-2">
                         <v-col>
                             <v-text-field v-model="sumPack" label="Пакет №" :rules="[rules.isNotEmpty]"
-                                outlined></v-text-field>
+                                outlined append-icon="mdi-barcode" @click="openScanDialog"></v-text-field>
                         </v-col>
+
                         <v-col>
                             <v-text-field v-model="sumFact" label="Сума, грн" :rules="[rules.isNotEmpty, rules.number]"
                                 outlined></v-text-field>
@@ -318,7 +319,7 @@
                     <v-row class="mt-2">
                         <v-col>
                             <v-text-field v-model="allSumPack" :rules="[rules.isNotEmpty]" label="Пакет №"
-                                outlined></v-text-field>
+                                outlined append-icon="mdi-barcode" @click="openScanDialog('all')"></v-text-field>
                         </v-col>
                         <v-col>
                             <v-text-field v-model="allSumFact" :rules="[rules.isNotEmpty, rules.number]"
@@ -362,17 +363,33 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
+    <v-dialog v-model="isDialogOpen" max-width="600">
+      <v-card>
+        <v-card-title>Відскануйте штрих-код</v-card-title>
+        <v-card-text>
+          <div
+            ref="scannerContainer"
+            style="width: 100%; height: 300px; background-color: #000"
+          ></div>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="red" text @click="closeDialog">Закрити</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
 </template>
 
 <script setup>
 import MainNavigation from '@/components/MainNavigation.vue'
 import PointHeader from '@/components/PointHeader.vue'
 import StatusChip from '@/components/DocumentStatusChip.vue'
-import { onMounted, ref, computed, reactive } from 'vue'
+import { onMounted, onBeforeUnmount, ref, computed, reactive, watch, nextTick  } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import cyrillicToTranslit from 'cyrillic-to-translit-js'
 import md5 from 'md5'
+import Quagga from 'quagga'
 
 const appStore = useAppStore()
 const route = useRoute()
@@ -417,9 +434,80 @@ const allSumPack = ref('')
 const allSumFact = ref('')
 const selectAll = reactive({})
 const loading = ref(false)
+const isDialogOpen = ref(false)
+const scannerContainer = ref(null)
+
+// Функція для ініціалізації Quagga
+const startScanner = () => {
+  if (!scannerContainer.value) {
+    console.error('Сканер контейнер ще не готовий')
+    return
+  }
+
+  Quagga.init(
+    {
+      inputStream: {
+        type: 'LiveStream',
+        target: scannerContainer.value, // Елемент для відображення камери
+        constraints: {
+          facingMode: 'environment', // Використовує задню камеру
+        },
+      },
+      decoder: {
+        readers: ['code_128_reader', 'ean_reader', 'upc_reader'], // Налаштування форматів
+      },
+    },
+    (err) => {
+      if (err) {
+        console.error('Помилка ініціалізації Quagga:', err)
+        return
+      }
+      Quagga.start()
+    }
+  )
+
+  // Підписка на подію розпізнавання штрих-коду
+  Quagga.onDetected((result) => {
+    sumPack.value = result.codeResult.code
+    allSumPack.value = result.codeResult.code
+    closeDialog()
+  })
+}
+
+// Зупинка сканера та очищення
+const stopScanner = () => {
+  Quagga.stop()
+  Quagga.offDetected()
+}
+
+// Відкрити попап
+const openScanDialog = () => {
+  isDialogOpen.value = true
+}
+
+// Закрити попап і зупинити сканер
+const closeDialog = () => {
+  isDialogOpen.value = false
+  stopScanner()
+}
+
+// Слідкуємо за станом попапу
+watch(isDialogOpen, (isOpen) => {
+  if (isOpen) {
+    // Переконуємося, що DOM оновлений перед запуском сканера
+    nextTick(() => startScanner())
+  } else {
+    stopScanner()
+  }
+})
+
+// Очистити все при виході з компонента
+onBeforeUnmount(() => {
+  stopScanner()
+})
 
 onMounted(async () => {
-    try {
+    try{
         await appStore.pullTripsData()
         trip.value = await appStore.getTripDoc(tripId.value)
         //Поточні данні документу рейсу

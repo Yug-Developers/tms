@@ -27,7 +27,7 @@
                                 <v-btn color="grey" density="default" @click="resetData()">Очистити</v-btn>
                                 <v-spacer></v-spacer>
                                 <v-btn density="default" :disabled="USER && PASS ? false : true" @click="Login()"
-                                    :loading="appStore.loading" variant="elevated">Увійти</v-btn>
+                                    :loading="loading" variant="elevated">Увійти</v-btn>
                             </v-card-actions>
                         </v-card>
                         <v-card-text class="text-center py-4 bg-grey-lighten-3"><router-link class="text-primary"
@@ -56,8 +56,10 @@ const resetData = () => {
     USER.value = ''
     PASS.value = ''
 }
+const loading = ref(false)
 const Login = async () => {
     try {
+        loading.value = true
         await recaptcha()
         await appStore.checkRecaptcha(reCAPTCHA.value)
         await appStore.login(USER.value, PASS.value)
@@ -66,10 +68,17 @@ const Login = async () => {
         setTimeout(() => {
             window.location.href = '/'
         }, 500)
-
+        loading.value = false
     } catch (err) {
-        appStore.setSnackbar({ text: "Некоректний логін чи пароль.", type: 'error' });
-        console.error(err);
+        if (err.status === 401) {
+            appStore.setSnackbar({ text: "Некоректний логін чи пароль.", type: 'error' })
+        } else if (err.status === 403) {
+            appStore.setSnackbar({ text: "Вибачте, але ви не маєте доступу до цієї сторінки.", type: 'error' })
+        } else {
+            appStore.setSnackbar({ text: "Помилка сервера. Спробуйте пізніше.", type: 'error' })
+        }
+        console.error(err)
+        loading.value = false
     }
 }
 const recaptcha = async () => {
