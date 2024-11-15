@@ -185,10 +185,10 @@
     <v-dialog v-model="acceptDocDialog" max-width="600" persistent>
         <v-card>
             <v-card-title v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP'" class="mt-2">
-                Видано по документу {{ curDoc.id }}:
+                Видано по {{ curDoc.id }}:
             </v-card-title>
             <v-card-title v-if="curDoc.docType == 'in' || curDoc.docType == 'task'">
-                Прийнято по документу {{ curDoc.id }}:
+                Прийнято по {{ curDoc.id }}:
             </v-card-title>
             <v-form v-model="isFormValid">
                 <v-card-text v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP' || curDoc.docType == 'in'"
@@ -207,12 +207,12 @@
                 <v-card-text v-if="curDoc.sum" class="pt-0">
                     <v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>Прийнято COD:
                     <v-row class="mt-2">
-                        <v-col>
+                        <v-col cols="12" lg="6" class="d-flex">
                             <v-text-field v-model="sumPack" label="Пакет №" :rules="[rules.isNotEmpty]"
-                                outlined append-icon="mdi-barcode" @click="openScanDialog"></v-text-field>
+                                outlined></v-text-field>
+                                <v-btn @click="openScanDialog()" variant="text" icon="mdi-barcode-scan" class="ml-2"></v-btn>
                         </v-col>
-
-                        <v-col>
+                        <v-col cols="12" lg="6">
                             <v-text-field v-model="sumFact" label="Сума, грн" :rules="[rules.isNotEmpty, rules.number]"
                                 outlined></v-text-field>
                         </v-col>
@@ -299,7 +299,7 @@
     <v-dialog v-model="massReleaseDialog" max-width="600">
         <v-card>
             <v-card-title class="mt-2">
-                Видано по вибраним документам
+                Видано по вибраним
             </v-card-title>
             <v-form v-model="isFormValid">
                 <v-card-text v-if="allBoxes || allPallets" class="pb-2 px-4">
@@ -365,11 +365,11 @@
     </v-dialog>
     <v-dialog v-model="isDialogOpen" max-width="600">
       <v-card>
-        <v-card-title>Відскануйте штрих-код</v-card-title>
+        <v-card-title>Сканер штрих-кода</v-card-title>
         <v-card-text>
           <div
             ref="scannerContainer"
-            style="width: 100%; height: 300px; background-color: #000"
+            style="width: 100%; height: 300px; background-color: #000; overflow: hidden;"
           ></div>
         </v-card-text>
         <v-card-actions>
