@@ -1,26 +1,30 @@
 const PouchDB = require('pouchdb')
+PouchDB.plugin(require('pouchdb-find'))
 const Config = require('./Config')
 const dbName = 'tms_statuses'
 const db = new PouchDB(dbName)
-const mes = require('./shared/messenger')
-const Token = require('./shared/token-class')
+const auth = Config.adminAuthCouchDb
+const Base = require('./shared/base-class')
 
-const remoteDB = new PouchDB(Config.remoteCouchDb + dbName, {
-  auth: {
-    username: 'admin',
-    password: 'defred098'
-  }
-})
-const dbNameRoutes = 'tms_routes'
-const remoteDBRoutes = new PouchDB(Config.remoteCouchDb + dbNameRoutes, {
-  auth: {
-    username: 'admin',
-    password
-      : 'defred098'
-  }
-})
+const remoteDB = new PouchDB(Config.remoteCouchDb + dbName, { auth })
+const remoteUsersDB = new PouchDB(Config.remoteCouchDb + '_users', { auth })
 
-const axios = require('axios')
+const initializeDatabase = async () => {
+  try {
+    await remoteUsersDB.createIndex({
+      index: { fields: ['typhoonId'] }
+    })
+    console.log('Індекс для typhoonId створено.')
+    await remoteUsersDB.createIndex({
+      index: { fields: ['carrierId'] }
+    })
+    console.log('Індекс для carrierId створено.')
+  } catch (error) {
+    console.error('Помилка при створенні індексу:', error)
+  }
+}
+initializeDatabase()
+
 
 const syncData = async () => {
   console.log('CouchDb sync')
@@ -66,7 +70,7 @@ const syncData = async () => {
               // Якщо документ має статус 300 (виконано) і він змінився з попереднього статусу закриваємо документ в базі рейсів
               if (currentStatus === 300 && previousStatus !== 300) {
                 console.log('Статус документа змінився з виконано на інший:', currentStatus);
-                await closeDocInDb(doc._id)
+                await Base.closeDocInDb(doc._id)
               }
               // Створимо об'єкт для швидкого доступу до точок попередньої версії за їх id
               const previousPointsMap = previousPoints.reduce((map, point) => {
@@ -79,16 +83,14 @@ const syncData = async () => {
                 const prevPoint = previousPointsMap[point.id];
                 return prevPoint && point.status !== prevPoint.status;
               });
+              // await Base.sendReportEmail(currentDoc)
 
               if (differences.length > 0) {
                 console.log('Знайдено розбіжності у статусах точок:', differences);
-                const preparedData = prepareData(currentDoc)
-
-await sendReportEmail(currentDoc)
-
-                console.log('Підготовлені дані для відправки:', JSON.stringify(preparedData, null, 2));
+                const preparedData = Base.prepareData(currentDoc)
+                // console.log('Підготовлені дані для відправки:', JSON.stringify(preparedData, null, 2));
                 try {
-                  const res = await sendDataToTyphoon(preparedData)
+                  const res = await Base.sendDataToTyphoon(preparedData)
                 } catch (error) {
                   console.log('Помилка відправки даних до Typhoon:', error.response.data);
                 }
@@ -112,128 +114,3 @@ await sendReportEmail(currentDoc)
 }
 
 syncData()
-
-const closeDocInDb = async (id) => {
-  try {
-    const doc = await remoteDBRoutes.get(id)
-    doc.status = 'closed'
-    await remoteDBRoutes.put(doc)
-    console.log(`Документ ${id} закрито в базі рейсів`);
-    //Відправити листа зі звітом про закриття документа
-    await sendReportEmail(doc)
-  } catch (error) {
-    throw error
-  }
-}
-
-const sendReportEmail = async (data) => {
-  try {
-    const token = await Token.createToken(1)
-    console.log('>>>>>>>>>>>>>>>>', token);
-    subject = 'Звіт про закриття документа'
-    message = `
-    <!DOCTYPE html>
-    <body>
-    <font face="Courier New" size="2">
-    <p>Документ ${data._id} закрито в базі рейсів</p>
-    <p>Статус: ${data.status}</p>
-    <p>Час початку: ${data.startTime}</p>
-    <p>Час закінчення: ${data.finishTime}</p>
-    <p>Пробіг на початку: ${data.odometerStart}</p>
-    <p>Пробіг на закінченні: ${data.odometerFinish}</p>
-    <p>Точки:</p>
-    <ul>
-    ${data.points.map(point => `<li>${point.id} - ${point.status}</li>`).join('')}
-    </ul>
-    </font>
-    </body>
-
-    `
-    mes.sendMail(req, {
-      from: 'order@yugcontract.ua',
-      to: Config.debugEmail,
-      subject,
-      html: message,
-      // attachments: [{
-      //   filename: attachment.fileName,
-      //   path: attachment.file,
-      //   content: attachment.content
-      // }]
-      token
-    })
-  }
-  catch (error) {
-    throw error
-  }
-}
-
-const sendDataToTyphoon = async (data) => {
-  try {
-    console.log(JSON.stringify(data, null, 2));
-    console.log(`${Config.foxtrotApi.url}/trip-requests`)
-    const authToken = await getAccessToken()
-    const res = await axios({
-      method: 'POST',
-      data,
-      url: `${Config.foxtrotApi.url}/trip-requests`,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + authToken
-      }
-    })
-    if (res.data.error) {
-      throw new Error(res.data.error)
-    } else {
-      return res.data
-    }
-  } catch (error) {
-    throw error
-  }
-}
-
-const getAccessToken = async (sufix) => {
-  try {
-    const path = 'foxtrotOauth2' + (sufix ? sufix : '')
-    const { data } = await axios.post(
-      Config[path].url,
-      {
-        client_id: Config[path].client_id,
-        client_secret: Config[path].secret,
-        grant_type: 'client_credentials'
-      }, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    })
-    return data.access_token
-
-  } catch (error) {
-    throw error
-  }
-}
-
-const prepareData = (data) => {
-  const statusMap = {
-    300: 1,
-    400: 2,
-    500: 3
-  }
-  const points = data.points
-  // Змінюємо статуси документів в docs точок на відповідні для Т22
-  points.forEach(point => {
-    point.docs.forEach(doc => {
-      doc.status = statusMap[doc.status]
-    })
-  })
-
-  const out = {
-    id: data._id,
-    status: data.status,
-    startTime: data.startTime,
-    finishTime: data.finishTime,
-    odometerStart: data.odometerStart,
-    odometerFinish: data.odometerFinish,
-    points
-  }
-  return out
-}

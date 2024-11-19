@@ -210,7 +210,8 @@
                         <v-col cols="12" lg="6" class="d-flex">
                             <v-text-field v-model="sumPack" label="Пакет №" :rules="[rules.isNotEmpty]"
                                 outlined></v-text-field>
-                                <v-btn @click="openScanDialog()" variant="text" icon="mdi-barcode-scan" class="ml-2"></v-btn>
+                            <v-btn @click="openScanDialog()" variant="text" icon="mdi-barcode-scan"
+                                class="ml-2"></v-btn>
                         </v-col>
                         <v-col cols="12" lg="6">
                             <v-text-field v-model="sumFact" label="Сума, грн" :rules="[rules.isNotEmpty, rules.number]"
@@ -319,8 +320,9 @@
                     <v-row class="mt-2">
                         <v-col cols="12" lg="6" class="d-flex">
                             <v-text-field v-model="allSumPack" :rules="[rules.isNotEmpty]" label="Пакет №"
-                                outlined ></v-text-field>
-                                <v-btn @click="openScanDialog()" variant="text" icon="mdi-barcode-scan" class="ml-2"></v-btn>
+                                outlined></v-text-field>
+                            <v-btn @click="openScanDialog()" variant="text" icon="mdi-barcode-scan"
+                                class="ml-2"></v-btn>
                         </v-col>
                         <v-col cols="12" lg="6">
                             <v-text-field v-model="allSumFact" :rules="[rules.isNotEmpty, rules.number]"
@@ -365,18 +367,17 @@
         </v-card>
     </v-dialog>
     <v-dialog v-model="isDialogOpen" max-width="600">
-      <v-card>
-        <v-card-title>Сканер штрих-кода</v-card-title>
-        <v-card-text>
-          <div
-            ref="scannerContainer"
-            style="width: 100%; height: 300px; background-color: #000; overflow: hidden;"
-          ></div>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn color="red" text @click="closeDialog">Закрити</v-btn>
-        </v-card-actions>
-      </v-card>
+        <v-card>
+            <v-card-title>Сканер штрих-кода</v-card-title>
+            <v-card-text>
+                <div ref="scannerContainer"
+                    style="width: 100%; height: 300px; background-color: #000; overflow: hidden;">
+                </div>
+            </v-card-text>
+            <v-card-actions>
+                <v-btn color="red" text @click="closeDialog">Закрити</v-btn>
+            </v-card-actions>
+        </v-card>
     </v-dialog>
 
 </template>
@@ -385,7 +386,7 @@
 import MainNavigation from '@/components/MainNavigation.vue'
 import PointHeader from '@/components/PointHeader.vue'
 import StatusChip from '@/components/DocumentStatusChip.vue'
-import { onMounted, onBeforeUnmount, ref, computed, reactive, watch, nextTick  } from 'vue'
+import { onMounted, onBeforeUnmount, ref, computed, reactive, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import cyrillicToTranslit from 'cyrillic-to-translit-js'
@@ -440,75 +441,79 @@ const scannerContainer = ref(null)
 
 // Функція для ініціалізації Quagga
 const startScanner = () => {
-  if (!scannerContainer.value) {
-    console.error('Сканер контейнер ще не готовий')
-    return
-  }
-
-  Quagga.init(
-    {
-      inputStream: {
-        type: 'LiveStream',
-        target: scannerContainer.value, // Елемент для відображення камери
-        constraints: {
-          facingMode: 'environment', // Використовує задню камеру
-        },
-      },
-      decoder: {
-        readers: ['code_128_reader', 'ean_reader', 'upc_reader'], // Налаштування форматів
-      },
-    },
-    (err) => {
-      if (err) {
-        console.error('Помилка ініціалізації Quagga:', err)
+    if (!scannerContainer.value) {
+        console.error('Сканер контейнер ще не готовий')
         return
-      }
-      Quagga.start()
     }
-  )
 
-  // Підписка на подію розпізнавання штрих-коду
-  Quagga.onDetected((result) => {
-    sumPack.value = result.codeResult.code
-    allSumPack.value = result.codeResult.code
-    closeDialog()
-  })
+    Quagga.init(
+        {
+            inputStream: {
+                type: 'LiveStream',
+                target: scannerContainer.value, // Елемент для відображення камери
+                constraints: {
+                    facingMode: 'environment', // Використовує задню камеру
+                },
+            },
+            decoder: {
+                readers: ['code_128_reader', 'ean_reader', 'upc_reader'], // Налаштування форматів
+            },
+        },
+        (err) => {
+            if (err) {
+                console.error('Помилка ініціалізації Quagga:', err)
+                return
+            }
+            Quagga.start()
+        }
+    )
+
+    // Підписка на подію розпізнавання штрих-коду
+    Quagga.onDetected((result) => {
+        sumPack.value = result.codeResult.code
+        allSumPack.value = result.codeResult.code
+        closeDialog()
+    })
 }
 
 // Зупинка сканера та очищення
 const stopScanner = () => {
-  Quagga.stop()
-  Quagga.offDetected()
+    Quagga.stop()
+    Quagga.offDetected()
 }
 
 // Відкрити попап
 const openScanDialog = () => {
-  isDialogOpen.value = true
+    isDialogOpen.value = true
 }
 
 // Закрити попап і зупинити сканер
 const closeDialog = () => {
-  isDialogOpen.value = false
-  stopScanner()
+    isDialogOpen.value = false
+    stopScanner()
 }
 
 // Слідкуємо за станом попапу
 watch(isDialogOpen, (isOpen) => {
-  if (isOpen) {
-    // Переконуємося, що DOM оновлений перед запуском сканера
-    nextTick(() => startScanner())
-  } else {
-    stopScanner()
-  }
+    if (window.location.protocol === "https:") {
+        if (isOpen) {
+            // Переконуємося, що DOM оновлений перед запуском сканера
+            nextTick(() => startScanner())
+        } else {
+            stopScanner()
+        }
+    }
 })
 
 // Очистити все при виході з компонента
 onBeforeUnmount(() => {
-  stopScanner()
+    if (window.location.protocol === "https:") {
+        stopScanner()
+    }
 })
 
 onMounted(async () => {
-    try{
+    try {
         await appStore.pullTripsData()
         trip.value = await appStore.getTripDoc(tripId.value)
         //Поточні данні документу рейсу

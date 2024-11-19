@@ -60,8 +60,8 @@ const loading = ref(false)
 const Login = async () => {
     try {
         loading.value = true
-        await recaptcha()
-        await appStore.checkRecaptcha(reCAPTCHA.value)
+        // await recaptcha()
+        // await appStore.checkRecaptcha(reCAPTCHA.value)
         await appStore.login(USER.value, PASS.value)
         appStore.user_name = USER.value
         appStore.setSnackbar({ text: "Вхід виконано успішно!", type: 'success' });
