@@ -317,11 +317,12 @@
                 <v-card-text v-if="allSum" class="pt-0 px-4">
                     <v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>Прийнято COD:
                     <v-row class="mt-2">
-                        <v-col>
+                        <v-col cols="12" lg="6" class="d-flex">
                             <v-text-field v-model="allSumPack" :rules="[rules.isNotEmpty]" label="Пакет №"
-                                outlined append-icon="mdi-barcode" @click="openScanDialog('all')"></v-text-field>
+                                outlined ></v-text-field>
+                                <v-btn @click="openScanDialog()" variant="text" icon="mdi-barcode-scan" class="ml-2"></v-btn>
                         </v-col>
-                        <v-col>
+                        <v-col cols="12" lg="6">
                             <v-text-field v-model="allSumFact" :rules="[rules.isNotEmpty, rules.number]"
                                 label="Сума, грн" outlined></v-text-field>
                         </v-col>

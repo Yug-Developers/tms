@@ -17,5 +17,11 @@ module.exports = {
       foxtrotApi_test: {
         url: 'http://api-yk.test.k8s.mc.gcf/api'
       },
-    
+      messengerMs: {
+        url: process.env.NODE_ENV === 'production' ? 'https://messenger.yugcontract.ua/api' : 'http://dev.yugcontract.ua:3077/api',
+        alphaName: 'YUGcontract',
+        tag: 'TMS',
+      },
+      debugEmail: "kuzminetskiy-a@yugcontract.ua"
+        
 }

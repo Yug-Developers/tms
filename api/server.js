@@ -2,6 +2,9 @@ const PouchDB = require('pouchdb')
 const Config = require('./Config')
 const dbName = 'tms_statuses'
 const db = new PouchDB(dbName)
+const mes = require('./shared/messenger')
+const Token = require('./shared/token-class')
+
 const remoteDB = new PouchDB(Config.remoteCouchDb + dbName, {
   auth: {
     username: 'admin',
@@ -80,7 +83,10 @@ const syncData = async () => {
               if (differences.length > 0) {
                 console.log('Знайдено розбіжності у статусах точок:', differences);
                 const preparedData = prepareData(currentDoc)
-                console.log('Підготовлені дані для відправки:', JSON.stringify(preparedData , null, 2));
+
+await sendReportEmail(currentDoc)
+
+                console.log('Підготовлені дані для відправки:', JSON.stringify(preparedData, null, 2));
                 try {
                   const res = await sendDataToTyphoon(preparedData)
                 } catch (error) {
@@ -113,7 +119,50 @@ const closeDocInDb = async (id) => {
     doc.status = 'closed'
     await remoteDBRoutes.put(doc)
     console.log(`Документ ${id} закрито в базі рейсів`);
+    //Відправити листа зі звітом про закриття документа
+    await sendReportEmail(doc)
   } catch (error) {
+    throw error
+  }
+}
+
+const sendReportEmail = async (data) => {
+  try {
+    const token = await Token.createToken(1)
+    console.log('>>>>>>>>>>>>>>>>', token);
+    subject = 'Звіт про закриття документа'
+    message = `
+    <!DOCTYPE html>
+    <body>
+    <font face="Courier New" size="2">
+    <p>Документ ${data._id} закрито в базі рейсів</p>
+    <p>Статус: ${data.status}</p>
+    <p>Час початку: ${data.startTime}</p>
+    <p>Час закінчення: ${data.finishTime}</p>
+    <p>Пробіг на початку: ${data.odometerStart}</p>
+    <p>Пробіг на закінченні: ${data.odometerFinish}</p>
+    <p>Точки:</p>
+    <ul>
+    ${data.points.map(point => `<li>${point.id} - ${point.status}</li>`).join('')}
+    </ul>
+    </font>
+    </body>
+
+    `
+    mes.sendMail(req, {
+      from: 'order@yugcontract.ua',
+      to: Config.debugEmail,
+      subject,
+      html: message,
+      // attachments: [{
+      //   filename: attachment.fileName,
+      //   path: attachment.file,
+      //   content: attachment.content
+      // }]
+      token
+    })
+  }
+  catch (error) {
     throw error
   }
 }
