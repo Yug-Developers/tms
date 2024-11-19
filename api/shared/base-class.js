@@ -81,7 +81,7 @@ module.exports = {
         })
 
         mes.sendMail({
-          from: 'order@yugcontract.ua',
+          from: 'support@yugcontract.ua',
           to: managersEmails,
           cc: Config.defaultManagerEmail,
           subject,
