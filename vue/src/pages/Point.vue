@@ -166,14 +166,14 @@
             </template>
             Видано
         </v-btn>
-        <v-btn :disabled="rejectBottomBtn" @click="massRejectDialog = true" stacked
+        <v-btn :disabled="rejectBottomBtn" @click="massRejectDialogOpen()" stacked
             prepend-icon="mdi-account-remove-outline" class="text-subtitle-2 mx-2">
             <template v-slot:prepend>
                 <v-icon color="primary"></v-icon>
             </template>
             Відмова
         </v-btn>
-        <v-btn :disabled="cancelBottomBtn" @click="massCancelDialog = true" stacked prepend-icon="mdi-cancel"
+        <v-btn :disabled="cancelBottomBtn" @click="massCancelDialogOpen()" stacked prepend-icon="mdi-cancel"
             class="text-subtitle-2 mx-2">
             <template v-slot:prepend>
                 <v-icon color="primary"></v-icon>
@@ -235,12 +235,17 @@
                 Відмова від отримання
             </v-card-title>
             <v-card-text>
+                <v-radio-group v-model="rejectReason" row>
+                    <v-radio v-for="(reason, index) in rejectReasons" :key="index" :label="reason"
+                        :value="index"></v-radio>
+                </v-radio-group>
                 <v-textarea v-model="rejectText" label="Причина відмови одержувача" outlined></v-textarea>
             </v-card-text>
             <v-card-actions>
                 <v-btn @click="rejectDialog = false" color="grey">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="rejectText ? false : true" @click="rejectDoc()" :loading="loading">Підтвердити</v-btn>
+                <v-btn :disabled="rejectReason ? false : true" @click="rejectDoc()"
+                    :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -251,13 +256,19 @@
                 Скасування доставки
             </v-card-title>
             <v-card-text>
+                <v-radio-group v-model="cancelReason" row>
+                    <v-radio v-for="(reason, index) in cancelReasons" :key="index" :label="reason"
+                        :value="index"></v-radio>
+                </v-radio-group>
+
                 <v-textarea v-model="cancelText" label="Причина, чому вантаж не доставлено одержувачу"
                     outlined></v-textarea>
             </v-card-text>
             <v-card-actions>
                 <v-btn color="grey" @click="cancelDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="cancelText ? false : true" :loading="loading" @click="cancelDoc()">Підтвердити</v-btn>
+                <v-btn :disabled="cancelReason ? false : true" :loading="loading"
+                    @click="cancelDoc()">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -268,12 +279,17 @@
                 Відмова від отримання загалом
             </v-card-title>
             <v-card-text>
+                <v-radio-group v-model="rejectReason" row>
+                    <v-radio v-for="(reason, index) in rejectReasons" :key="index" :label="reason"
+                        :value="index"></v-radio>
+                </v-radio-group>
+
                 <v-textarea v-model="rejectText" label="Причина відмови одержувача" outlined></v-textarea>
             </v-card-text>
             <v-card-actions>
                 <v-btn color="grey" @click="massRejectDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="rejectText ? false : true" @click="massReject()"
+                <v-btn :disabled="rejectReason ? false : true" @click="massReject()"
                     :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
@@ -285,13 +301,18 @@
                 Скасування доставки загалом
             </v-card-title>
             <v-card-text>
+                <v-radio-group v-model="cancelReason" row>
+                    <v-radio v-for="(reason, index) in cancelReasons" :key="index" :label="reason"
+                        :value="index"></v-radio>
+                </v-radio-group>
+
                 <v-textarea v-model="cancelText" label="Причина, чому вантаж не доставлено одержувачу:"
                     outlined></v-textarea>
             </v-card-text>
             <v-card-actions>
                 <v-btn color="grey" @click="massCancelDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="cancelText ? false : true" @click="massCancel()"
+                <v-btn :disabled="cancelReason ? false : true" @click="massCancel()"
                     :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
@@ -405,6 +426,21 @@ const typesObj = {
     in: 'Забір',
     task: 'Завдання'
 }
+const rejectReasons = {
+    1: 'Невірна адреса',
+    2: 'Відсутність клієнта',
+    3: 'Поломка авто',
+    4: 'Інше'
+}
+const cancelReasons = {
+    1: 'Невірна адреса',
+    2: 'Відсутність клієнта',
+    3: 'Поломка авто',
+    4: 'Інше'
+}
+const rejectReason = ref(null)
+const cancelReason = ref(null)
+
 const docsSelected = ref({})
 const bottomModel = ref(null)
 const trip = ref({})
@@ -689,7 +725,21 @@ const releaseDoc = async () => {
 const reject = (docId) => {
     const curDocument = docs.value.find((item) => item.id == docId)
     curDoc.value = curDocument
+    rejectReason.value = null
+    rejectText.value = ''
     rejectDialog.value = true
+}
+
+const massRejectDialogOpen = () => {
+    rejectReason.value = null
+    rejectText.value = ''
+    massRejectDialog.value = true
+}
+
+const massCancelDialogOpen = () => {
+    cancelReason.value = null
+    cancelText.value = ''
+    massCancelDialog.value = true
 }
 
 const rejectDoc = async () => {
@@ -699,9 +749,11 @@ const rejectDoc = async () => {
             tripId: tripId.value,
             pointId: pointId.value,
             docId: curDoc.value.id,
-            description: rejectText.value
+            description: rejectReasons[rejectReason.value] + '. ' + rejectText.value
         })
         loading.value = false
+        rejectReason.value = null
+        rejectText.value = ''
         rejectDialog.value = false
     } catch (error) {
         console.error(error)
@@ -711,6 +763,7 @@ const rejectDoc = async () => {
 const cancel = (docId) => {
     const curDocument = docs.value.find((item) => item.id == docId)
     curDoc.value = curDocument
+    cancelText.value = ''
     cancelDialog.value = true
 }
 
@@ -721,7 +774,7 @@ const cancelDoc = async () => {
             tripId: tripId.value,
             pointId: pointId.value,
             docId: curDoc.value.id,
-            description: cancelText.value
+            description: cancelReasons[cancelReason.value] + '. ' + cancelText.value
         })
         loading.value = false
         cancelDialog.value = false
@@ -795,7 +848,7 @@ const massReject = async () => {
                 tripId: tripId.value,
                 pointId: pointId.value,
                 docId: Number(docId),
-                description: rejectText.value
+                description: rejectReasons[rejectReason.value] + '. ' + rejectText.value
             })
         }
         loading.value = false
@@ -814,7 +867,7 @@ const massCancel = async () => {
                 tripId: tripId.value,
                 pointId: pointId.value,
                 docId: Number(docId),
-                description: cancelText.value
+                description: cancelReasons[cancelReason.value] + '. ' + cancelText.value
             })
         }
         loading.value = false
