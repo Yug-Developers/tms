@@ -16,7 +16,7 @@
                                 <v-expansion-panel-text>
                                     <template v-if="docsData[type].length">
                                         <div class="pb-5 d-flex justify-space-between"
-                                            v-if="pointStatus == 200 && allDocsCompleteByType[type]"
+                                            v-if="isEditor && pointStatus == 200 && allDocsCompleteByType[type]"
                                             @click="selectAllDocs(type)">
                                             <v-btn text size="small" variant="tonal"
                                                 :color="selectAll[type] ? `primary` : `green`"
@@ -32,7 +32,7 @@
                                             <div class="d-flex justify-space-between">
                                                 <div>
                                                     <v-icon
-                                                        v-if="pointStatus == 200 && docStatuses[doc.id] && docStatuses[doc.id].status == 200"
+                                                        v-if="isEditor && pointStatus == 200 && docStatuses[doc.id] && docStatuses[doc.id].status == 200"
                                                         :icon="docsSelected[doc.id] ? `mdi-check-circle-outline` : `mdi-circle-outline`"
                                                         color="green" class="mr-2 mb-1" />
                                                     <b v-if="doc.mainDocumentId">{{ doc.mainDocumentId }}</b>
