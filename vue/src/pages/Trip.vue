@@ -97,7 +97,9 @@ const reload = async () => {
 
 const points = computed(() => {
     const points = tripData.value.doc.points
-    return notClosedPoins.value && statuses.value && statuses.value.points ? points.filter(point => statuses.value.points.find(el => el.id == point.id).status !== 300) : points
+    return notClosedPoins.value && statuses.value && statuses.value.points ? points.filter(point => 
+    statuses.value.points.find(el => el.id == point.id) 
+    && statuses.value.points.find(el => el.id == point.id).status !== 300) : points
 })
 
 const notClosedPointsShow = computed(
