@@ -71,6 +71,14 @@ const syncData = async () => {
               if (currentStatus === 300 && previousStatus !== 300) {
                 console.log('Статус документа змінився з виконано на інший:', currentStatus);
                 await Base.closeDocInDb(doc._id)
+                // Відправимо дані до Typhoon якщо документ закрито
+                const preparedData = Base.prepareData(currentDoc)
+                try {
+                  const res = await Base.sendDataToTyphoon(preparedData)
+                } catch (error) {
+                  console.log('Помилка відправки даних до Typhoon:', error.response.data);
+                }
+
               }
               // Створимо об'єкт для швидкого доступу до точок попередньої версії за їх id
               const previousPointsMap = previousPoints.reduce((map, point) => {
@@ -81,7 +89,7 @@ const syncData = async () => {
               // Перевіряємо на розбіжності в статусах
               const differences = currentPoints.filter(point => {
                 const prevPoint = previousPointsMap[point.id];
-                return prevPoint && point.status !== prevPoint.status;
+                return prevPoint && point.status !== prevPoint.status && point.status === 300;
               });
               // await Base.sendReportEmail(currentDoc)
 
