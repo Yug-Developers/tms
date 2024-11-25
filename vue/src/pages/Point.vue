@@ -487,7 +487,7 @@ const setSMSstatusLoading = ref(false)
 const setSMSstatus = async () => {
     setSMSstatusLoading.value = true
     try {
-        await appStore.setSMSstatus(tripId.value)
+        await appStore.setSMSstatus(pointId.value)
         setSMSstatusLoading.value = false
     } catch (error) {
         console.error(error)
@@ -575,7 +575,7 @@ onMounted(async () => {
         //Поточні данні документу рейсу
         if (trip.value && trip.value.points) {
             //точки документу рейсу
-            if (trip.value.isCircular || trip.doc.circular) {
+            if (trip.value.isCircular || trip.value.circular) {
                 const firstPointCopy = { ...trip.value.points[0], id: -1, status: 100, sortNumber: trip.value.points.length + 1 }
                 trip.value.points = [...trip.value.points, firstPointCopy]
             }
