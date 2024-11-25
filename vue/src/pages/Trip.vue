@@ -135,7 +135,7 @@ onMounted(async () => {
         await appStore.pullStatusesData([tripId.value])
         doc.value = await appStore.getTripDoc(tripId.value)
         statuses.value = await appStore.getTripStatusesDoc(tripId.value)
-        if (doc.value.isCircular) {
+        if (doc.value.isCircular || doc.value.circular) {
             const firstPointCopy = { ...doc.value.points[0], id: -1, status: 100, sortNumber: doc.value.points.length + 1 }
             doc.value.points = [...doc.value.points, firstPointCopy];
         }

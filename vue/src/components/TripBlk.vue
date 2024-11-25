@@ -16,7 +16,7 @@
                     <!-- <div v-if="tripSatatus == 300"><b>Кілометраж факт:</b> {{ tripLengthFact }} км</div> -->
                 </div>
                 <div class="text-right">
-                    <div v-if="trip.doc.isCircular" class="text-caption text-grey">кільцевий</div>
+                    <div v-if="trip.doc.isCircular || trip.doc.circular" class="text-caption text-grey">кільцевий</div>
                 </div>
 
             </v-card-text>
@@ -61,7 +61,7 @@ const getTripLengthFact = async () => {
 
 const pointsNumber = computed(() => {
     if (props.trip && props.trip.doc && props.trip.doc.points){
-        return props.trip.doc.isCircular ? (props.trip.doc.points.length + 1) : props.trip.doc.points.length
+        return props.trip.doc.isCircular || props.trip.doc.circular ? (props.trip.doc.points.length + 1) : props.trip.doc.points.length
     } else {
         return 0
     }

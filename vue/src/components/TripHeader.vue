@@ -17,7 +17,7 @@
                 <div class="text-right">
                     <v-btn :disabled="checkMapBtn() ? false : true" @click="openGoogleMap()" title="На карті"
                         variant="text" icon="mdi-map-search-outline"></v-btn>
-                    <div v-if="trip.doc.isCircular" class="text-caption text-grey">кільцевий</div>
+                    <div v-if="trip.doc.isCircular || trip.doc.circular" class="text-caption text-grey">кільцевий</div>
                 </div>
             </v-card-text>
             <v-card-text v-if="tripSatatus == 300" class="px-0 pb-0">
