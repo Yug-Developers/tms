@@ -142,6 +142,7 @@ module.exports = {
   async sendDataToTyphoon(data) {
     try {
       // console.log(JSON.stringify(data, null, 2));
+      console.log('Відправка даних до Typhoon: --------------------------------------------------->');
       const authToken = await this.getAccessToken()
       const res = await axios({
         method: 'POST',
@@ -184,8 +185,8 @@ module.exports = {
   prepareData(data) {
     const statusMap = {
       300: 1,
-      400: 2,
-      500: 3
+      400: 3,
+      500: 2
     }
     const points = data.points
     // Змінюємо статуси документів в docs точок на відповідні для Т22

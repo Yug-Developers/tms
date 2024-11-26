@@ -158,6 +158,50 @@ export function usePouchDB() {
         return await dbObj[db].remove(doc, { _deleted: true })
     }
 
+    const updateDontSendSMS = async (dbName, docId, pointId) => {
+        try {
+            if (!docId) {
+                throw new Error('docId is required')
+            }
+    
+            const db = initDb(dbName)
+    
+            // Перевіряємо, чи існує документ
+            let doc
+            try {
+                doc = await dbObj[db].get(docId)
+            } catch (error) {
+                if (error.status === 404) {
+                    // Документ не знайдено, створюємо новий
+                    doc = {
+                        _id: docId,
+                        dontSendSMS: [],
+                    }
+                } else {
+                    throw error // Інша помилка, не пов'язана з відсутністю документа
+                }
+            }
+    
+            // Оновлюємо масив `dontSendSMS`
+            const updatedDontSendSMS = doc.dontSendSMS || []
+            if (!updatedDontSendSMS.includes(pointId)) {
+                updatedDontSendSMS.push(pointId)
+            }
+    
+            // Зберігаємо документ (новий або оновлений)
+            const updatedDoc = {
+                ...doc,
+                dontSendSMS: updatedDontSendSMS,
+            }
+    
+            return await dbObj[db].put(updatedDoc)
+        } catch (error) {
+            console.error('Error updating document:', error)
+            throw error
+        }
+    }
+
+    
     // ------------------ работа з віддаленними данними ------------------------
     const fetchRemoteData = async (dbName, options = { selector: {} }) => {
         try {
@@ -215,6 +259,6 @@ export function usePouchDB() {
 
     return {
         fetchData, pull, getDoc, putData, updateDoc, deleteDoc, destroyDB, login, logout, initUsersDb, allRemoteDocs, getUserSession,
-        getRemoteDoc, fetchRemoteData, push, getUserData
+        getRemoteDoc, fetchRemoteData, push, getUserData, updateDontSendSMS
     }
 }

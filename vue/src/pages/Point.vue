@@ -4,14 +4,18 @@
         <template v-if="trip && pointData && pointData.id">
             <v-container>
                 <PointHeader :point="pointData" :tripId="tripId" :points="points" :editorId="isEditor" />
-                <v-sheet elevation="0" max-width="600" rounded="lg" width="100%" v-if="appStore.localStg.userData.role == 'manager'"
+                <v-sheet elevation="0" max-width="600" rounded="lg" width="100%"
+                    v-if="appStore.localStg.userData.role == 'manager'"
                     class="pa-0 mb-5 mx-auto d-flex justify-space-between align-center">
-                    <v-btn prepend-icon="mdi-message-processing"
-                        @click="setSMSstatus()" :loading="setSMSstatusLoading" size="small">
+                    <v-btn prepend-icon="mdi-message-processing" @click="setSMSstatus()" :loading="setSMSstatusLoading" 
+                        :disabled="dontSendSms" size="small">                       
                         Без коду підтвердження
                     </v-btn>
                 </v-sheet>
-
+                <v-sheet elevation="0" max-width="600" rounded="lg" width="100%" v-if="dontSendSms"
+                    class="pa-0 mb-5 mx-auto d-flex justify-space-between align-center">
+                    <v-alert>Без коду підтвердження</v-alert>
+                </v-sheet>
                 <v-sheet v-if="pointData.pointType != 'wh'" elevation="0" max-width="600" width="100%" class="mx-auto">
                     <template v-for="(type) in types" :key="type">
                         <v-expansion-panels v-model="panel[type]" multiple class="mb-2">
@@ -483,17 +487,23 @@ const loading = ref(false)
 const isDialogOpen = ref(false)
 const scannerContainer = ref(null)
 const setSMSstatusLoading = ref(false)
+const managerPerm = ref({})
+
 
 const setSMSstatus = async () => {
     setSMSstatusLoading.value = true
     try {
-        await appStore.setSMSstatus(pointId.value)
+        await appStore.setSMSstatus(tripId.value, pointId.value)
         setSMSstatusLoading.value = false
     } catch (error) {
         console.error(error)
         setSMSstatusLoading.value = false
     }
 }
+
+const dontSendSms = computed(() => {
+    return managerPerm.value && managerPerm.value.dontSendSMS && managerPerm.value.dontSendSMS.includes(pointId.value) ? true : false
+})
 
 // Функція для ініціалізації Quagga
 const startScanner = () => {
@@ -572,6 +582,8 @@ onMounted(async () => {
     try {
         await appStore.pullTripsData()
         trip.value = await appStore.getTripDoc(tripId.value)
+        managerPerm.value = await appStore.getManagerPermDoc(tripId.value)
+
         //Поточні данні документу рейсу
         if (trip.value && trip.value.points) {
             //точки документу рейсу
@@ -703,7 +715,7 @@ const accept = async () => {
 }
 const acceptRelease = async () => {
     try {
-        if (navigator.onLine) {
+        if (navigator.onLine && !dontSendSms.value) {
             await sendSMS()
             acceptFunc.value = releaseDoc
             acceptDocDialog.value = false
@@ -815,7 +827,7 @@ const docTasks = (docId) => {
 
 const acceptMassRelease = async () => {
     try {
-        if (navigator.onLine) {
+        if (navigator.onLine && !dontSendSms.value) {
             await sendMassSMS()
             acceptFunc.value = massRelease
             massReleaseDialog.value = false
@@ -1067,7 +1079,7 @@ const allSum = computed(() => {
 })
 
 const checkSmsCode = computed(() => {
-    return navigator.onLine ? md5(smsCode.value) == checkSmsHash.value : true
+    return navigator.onLine && !dontSendSms.value ? md5(smsCode.value) == checkSmsHash.value : true
 })
 
 const isEditor = computed(() => {

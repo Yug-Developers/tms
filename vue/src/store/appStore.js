@@ -270,6 +270,7 @@ export const useAppStore = defineStore('appStore', () => {
         const currTrips = await currentTrips({ fields: ['_id'] })
         const opt = { doc_ids: [...currTrips.map(trip => trip._id)] }
         const pullSt = await Pouch.pull('statuses', opt)
+        await Pouch.pull('manager_perm', opt)
       }
       statuses.value = await Pouch.fetchData('statuses')
       loading.value = false
@@ -282,6 +283,16 @@ export const useAppStore = defineStore('appStore', () => {
     try {
       if (online.value) {
         const pushRes = await Pouch.push('statuses')
+      }
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const pushManagerPermData = async () => {
+    try {
+      if (online.value) {
+        const pushRes = await Pouch.push('manager_perm')
       }
     } catch (error) {
       throw error
@@ -309,6 +320,15 @@ export const useAppStore = defineStore('appStore', () => {
       return await Pouch.getRemoteDoc('routes', tripId)
     }
   }
+
+  const getManagerPermDoc = async (tripId) => {
+    try {
+      return await Pouch.getDoc('manager_perm', tripId)
+    } catch (error) {
+      return await Pouch.getRemoteDoc('manager_perm', tripId)
+    }
+  }
+
 
   const getTripStatusesDoc = async (tripId) => {
     try {
@@ -412,7 +432,16 @@ export const useAppStore = defineStore('appStore', () => {
     return selector
   }
 
-
+  // --------------------------- дозволи менеджера ------------------------------
+  const setSMSstatus = async (tripId, pointId) => {
+    try {
+      const res = await Pouch.updateDontSendSMS('manager_perm', tripId,  pointId )
+      await pushManagerPermData()
+      return res
+    } catch (error) {
+      throw error
+    }
+  }
 
   // --------------------------- статуси рейсів ------------------------------
 
@@ -675,7 +704,8 @@ export const useAppStore = defineStore('appStore', () => {
     checkOpenTrip, pullTripsData, initNewTripStatus, cancelPoint, inPlace, checkPointDocs, releaseDoc, rejectDoc, cancelDoc,
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
-    availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg, getTmsTripsById, checkTmsTripsProcess
+    availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg, getTmsTripsById, checkTmsTripsProcess, 
+    setSMSstatus, getManagerPermDoc
   }
 })
 

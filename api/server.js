@@ -42,7 +42,7 @@ const syncData = async () => {
       // totally unhandled error (shouldn't happen)
       console.log('CouchDb error ' + err)
     }).on('change', async (info) => {
-      console.log('Зміни в документі:', info.change);
+      // console.log('Зміни в документі:', info.change);
       const changedDocs = info.change.docs;
 
       for (let doc of changedDocs) {
@@ -60,8 +60,8 @@ const syncData = async () => {
               const previousDoc = await db.get(doc._id, { rev: previousRev });
 
               // Порівняти зміни між поточною та попередньою версіями
-              console.log('Попередній документ:', previousDoc);
-              console.log('Поточний документ:', currentDoc);
+              // console.log('Попередній документ:', previousDoc);
+              // console.log('Поточний документ:', currentDoc);
 
               const previousStatus = previousDoc.status;
               const currentStatus = currentDoc.status;
@@ -69,7 +69,7 @@ const syncData = async () => {
               const currentPoints = currentDoc.points || [];
               // Якщо документ має статус 300 (виконано) і він змінився з попереднього статусу закриваємо документ в базі рейсів
               if (currentStatus === 300 && previousStatus !== 300) {
-                console.log('Статус документа змінився з виконано на інший:', currentStatus);
+                console.log('Статус документа змінився з інший на виконано:', currentStatus);
                 await Base.closeDocInDb(doc._id)
                 // Відправимо дані до Typhoon якщо документ закрито
                 const preparedData = Base.prepareData(currentDoc)
@@ -79,31 +79,32 @@ const syncData = async () => {
                   console.log('Помилка відправки даних до Typhoon:', error.response.data);
                 }
 
-              }
-              // Створимо об'єкт для швидкого доступу до точок попередньої версії за їх id
-              const previousPointsMap = previousPoints.reduce((map, point) => {
-                map[point.id] = point;
-                return map;
-              }, {});
-
-              // Перевіряємо на розбіжності в статусах
-              const differences = currentPoints.filter(point => {
-                const prevPoint = previousPointsMap[point.id];
-                return prevPoint && point.status !== prevPoint.status && point.status === 300;
-              });
-              // await Base.sendReportEmail(currentDoc)
-
-              if (differences.length > 0) {
-                console.log('Знайдено розбіжності у статусах точок:', differences);
-                const preparedData = Base.prepareData(currentDoc)
-                // console.log('Підготовлені дані для відправки:', JSON.stringify(preparedData, null, 2));
-                try {
-                  const res = await Base.sendDataToTyphoon(preparedData)
-                } catch (error) {
-                  console.log('Помилка відправки даних до Typhoon:', error.response.data);
-                }
               } else {
-                console.log('Розбіжностей у статусах точок не виявлено.');
+                // Створимо об'єкт для швидкого доступу до точок попередньої версії за їх id
+                const previousPointsMap = previousPoints.reduce((map, point) => {
+                  map[point.id] = point;
+                  return map;
+                }, {});
+
+                // Перевіряємо на розбіжності в статусах
+                const differences = currentPoints.filter(point => {
+                  const prevPoint = previousPointsMap[point.id];
+                  return prevPoint && point.status !== prevPoint.status && point.status === 300 && point.id !== -1;
+                });
+                // await Base.sendReportEmail(currentDoc)
+
+                if (differences.length > 0) {
+                  console.log('Знайдено розбіжності у статусах точок:', differences);
+                  const preparedData = Base.prepareData(currentDoc)
+                  // console.log('Підготовлені дані для відправки:', JSON.stringify(preparedData, null, 2));
+                  try {
+                    const res = await Base.sendDataToTyphoon(preparedData)
+                  } catch (error) {
+                    console.log('Помилка відправки даних до Typhoon:', error.response.data);
+                  }
+                } else {
+                  console.log('Розбіжностей у статусах точок не виявлено.');
+                }
               }
             } catch (err) {
               console.log('Помилка при отриманні попереднього документа:', err);
