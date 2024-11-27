@@ -4,17 +4,16 @@
         <template v-if="trip && pointData && pointData.id">
             <v-container>
                 <PointHeader :point="pointData" :tripId="tripId" :points="points" :editorId="isEditor" />
-                <v-sheet elevation="0" max-width="600" rounded="lg" width="100%"
-                    v-if="appStore.localStg.userData.role == 'manager'"
-                    class="pa-0 mb-5 mx-auto d-flex justify-space-between align-center">
-                    <v-btn prepend-icon="mdi-message-processing" @click="setSMSstatus()" :loading="setSMSstatusLoading" 
-                        :disabled="dontSendSms" size="small">                       
-                        Без коду підтвердження
+                <v-sheet v-if="appStore.localStg.userData.role == 'manager' && !dontSendSms" elevation="0" max-width="600" rounded="lg" width="100%"
+                    class="pa-0 mx-auto mb-4 d-flex justify-center">
+                    <v-btn prepend-icon="mdi-cellphone-message-off" @click="setSMSstatus()" :loading="setSMSstatusLoading" 
+                        :disabled="pointStatus != 200" class="mx-auto">                       
+                        Без Коду SMS
                     </v-btn>
                 </v-sheet>
-                <v-sheet elevation="0" max-width="600" rounded="lg" width="100%" v-if="dontSendSms"
-                    class="pa-0 mb-5 mx-auto d-flex justify-space-between align-center">
-                    <v-alert>Без коду підтвердження</v-alert>
+                <v-sheet v-if="dontSendSms" elevation="0" max-width="600" rounded="lg" width="100%"
+                    class="pa-0 mx-auto mb-4 d-flex justify-center">
+                    <v-alert variant="tonal" type="success" border="start" icon="mdi-cellphone-message-off" class="mx-auto">Дозволено без підтвердження через Код SMS</v-alert>
                 </v-sheet>
                 <v-sheet v-if="pointData.pointType != 'wh'" elevation="0" max-width="600" width="100%" class="mx-auto">
                     <template v-for="(type) in types" :key="type">
@@ -251,7 +250,7 @@
                     <v-radio v-for="(reason, index) in rejectReasons" :key="index" :label="reason"
                         :value="index"></v-radio>
                 </v-radio-group>
-                <v-textarea v-model="rejectText" label="Причина відмови одержувача" outlined></v-textarea>
+                <v-textarea v-model="rejectText" label="Коментар" outlined></v-textarea>
             </v-card-text>
             <v-card-actions>
                 <v-btn @click="rejectDialog = false" color="grey">Скасувати</v-btn>
@@ -273,7 +272,7 @@
                         :value="index"></v-radio>
                 </v-radio-group>
 
-                <v-textarea v-model="cancelText" label="Причина, чому вантаж не доставлено одержувачу"
+                <v-textarea v-model="cancelText" label="Коментар"
                     outlined></v-textarea>
             </v-card-text>
             <v-card-actions>
@@ -296,7 +295,7 @@
                         :value="index"></v-radio>
                 </v-radio-group>
 
-                <v-textarea v-model="rejectText" label="Причина відмови одержувача" outlined></v-textarea>
+                <v-textarea v-model="rejectText" label="Коментар" outlined></v-textarea>
             </v-card-text>
             <v-card-actions>
                 <v-btn color="grey" @click="massRejectDialog = false">Скасувати</v-btn>
@@ -318,7 +317,7 @@
                         :value="index"></v-radio>
                 </v-radio-group>
 
-                <v-textarea v-model="cancelText" label="Причина, чому вантаж не доставлено одержувачу:"
+                <v-textarea v-model="cancelText" label="Коментар"
                     outlined></v-textarea>
             </v-card-text>
             <v-card-actions>
@@ -439,10 +438,10 @@ const typesObj = {
     task: 'Завдання'
 }
 const rejectReasons = {
-    1: 'Невірна адреса',
-    2: 'Відсутність клієнта',
-    3: 'Поломка авто',
-    4: 'Інше'
+    1: 'Помилка менеджера ЮК',
+    2: 'Товар в некондиційному стані',
+    3: 'Невірна кількість товару',
+    4: 'Помилка доставки (невчасно, не на ту адресу клієнта)'
 }
 const cancelReasons = {
     1: 'Невірна адреса',
@@ -495,6 +494,7 @@ const setSMSstatus = async () => {
     try {
         await appStore.setSMSstatus(tripId.value, pointId.value)
         setSMSstatusLoading.value = false
+        managerPerm.value = await appStore.getManagerPermDoc(tripId.value)
     } catch (error) {
         console.error(error)
         setSMSstatusLoading.value = false
