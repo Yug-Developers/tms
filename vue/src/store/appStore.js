@@ -198,10 +198,28 @@ export const useAppStore = defineStore('appStore', () => {
       throw error
     }
   }
+
+  const extractPhoneNumber = (input) => {
+    const phoneRegex = /\+\s*3\s*8/g
+    const barePhone = input.replace(/\D/g, '')
+    if (input.match(phoneRegex)){
+        const res = barePhone.slice(2,12)
+        return res.length === 10 ? res : null
+    } else {
+        const res = barePhone.slice(0,10)
+        return res.length === 10 ? res : null
+    }
+  }
+
   const sendSMScode = async ({ phone, message }) => {
     try {
+      const phoneNum = extractPhoneNumber(phone)
+      if (!phoneNum) {
+        throw new Error(`Номер телефону "${phone}" вказано невірно`)
+      }
+      return {} //fixme
       const res = await axios.post(Config.misUrl + '/tms/send-sms', {
-        phone,
+        phone: phoneNum,
         message,
         alpha_name: Config.messengerMs.alphaName,
         tag: Config.messengerMs.tag
@@ -212,6 +230,7 @@ export const useAppStore = defineStore('appStore', () => {
       throw error
     }
   }
+  
   // --------------------------------- actions --------------------------------
   const createCode = (phone) => {
     // const code = parseInt(Math.random() * 10000).toString().padStart(4, '0')

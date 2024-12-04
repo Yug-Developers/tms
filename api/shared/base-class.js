@@ -185,8 +185,8 @@ module.exports = {
   prepareData(data) {
     const statusMap = {
       300: 1,
-      400: 3,
-      500: 2
+      400: 2,
+      500: 3
     }
     const points = data.points
     // Змінюємо статуси документів в docs точок на відповідні для Т22

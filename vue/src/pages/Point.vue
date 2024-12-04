@@ -4,16 +4,17 @@
         <template v-if="trip && pointData && pointData.id">
             <v-container>
                 <PointHeader :point="pointData" :tripId="tripId" :points="points" :editorId="isEditor" />
-                <v-sheet v-if="appStore.localStg.userData.role == 'manager' && !dontSendSms" elevation="0" max-width="600" rounded="lg" width="100%"
-                    class="pa-0 mx-auto mb-4 d-flex justify-center">
-                    <v-btn prepend-icon="mdi-cellphone-message-off" @click="setSMSstatus()" :loading="setSMSstatusLoading" 
-                        :disabled="pointStatus != 200" class="mx-auto">                       
+                <v-sheet v-if="appStore.localStg.userData.role == 'manager' && !dontSendSms" elevation="0"
+                    max-width="600" rounded="lg" width="100%" class="pa-0 mx-auto mb-4 d-flex justify-center">
+                    <v-btn prepend-icon="mdi-cellphone-message-off" @click="setSMSstatus()"
+                        :loading="setSMSstatusLoading" :disabled="pointStatus != 200" class="mx-auto">
                         Без Коду SMS
                     </v-btn>
                 </v-sheet>
                 <v-sheet v-if="dontSendSms" elevation="0" max-width="600" rounded="lg" width="100%"
                     class="pa-0 mx-auto mb-4 d-flex justify-center">
-                    <v-alert variant="tonal" type="success" border="start" icon="mdi-cellphone-message-off" class="mx-auto">Дозволено без підтвердження через Код SMS</v-alert>
+                    <v-alert variant="tonal" type="success" border="start" icon="mdi-cellphone-message-off"
+                        class="mx-auto">Дозволено без підтвердження через Код SMS</v-alert>
                 </v-sheet>
                 <v-sheet v-if="pointData.pointType != 'wh'" elevation="0" max-width="600" width="100%" class="mx-auto">
                     <template v-for="(type) in types" :key="type">
@@ -272,8 +273,7 @@
                         :value="index"></v-radio>
                 </v-radio-group>
 
-                <v-textarea v-model="cancelText" label="Коментар"
-                    outlined></v-textarea>
+                <v-textarea v-model="cancelText" label="Коментар" outlined></v-textarea>
             </v-card-text>
             <v-card-actions>
                 <v-btn color="grey" @click="cancelDialog = false">Скасувати</v-btn>
@@ -317,8 +317,7 @@
                         :value="index"></v-radio>
                 </v-radio-group>
 
-                <v-textarea v-model="cancelText" label="Коментар"
-                    outlined></v-textarea>
+                <v-textarea v-model="cancelText" label="Коментар" outlined></v-textarea>
             </v-card-text>
             <v-card-actions>
                 <v-btn color="grey" @click="massCancelDialog = false">Скасувати</v-btn>
@@ -379,6 +378,9 @@
             </v-card-title>
             <v-card-text v-if="statusConnection" class="px-2">
                 <div class="mb-4 px-2">Одержувачу на тел. було надіслано SMS з Кодом підтвердження.</div>
+                <v-alert v-if="smsPhoneError" type="error" elevation="2" class="mx-2 mb-4">
+                    {{ smsPhoneError }}
+                </v-alert>
                 <div class="text-center">
                     <v-text-field label="Код з SMS" v-model="smsCode" style="width: 120px" outlined
                         class="mx-auto"></v-text-field>
@@ -441,13 +443,12 @@ const rejectReasons = {
     1: 'Помилка менеджера ЮК',
     2: 'Товар в некондиційному стані',
     3: 'Невірна кількість товару',
-    4: 'Помилка доставки (невчасно, не на ту адресу клієнта)'
+    4: 'Помилка доставки (невчасно)'
 }
 const cancelReasons = {
     1: 'Невірна адреса',
     2: 'Відсутність клієнта',
-    3: 'Поломка авто',
-    4: 'Інше'
+    3: 'Поломка авто'
 }
 const rejectReason = ref(null)
 const cancelReason = ref(null)
@@ -487,6 +488,7 @@ const isDialogOpen = ref(false)
 const scannerContainer = ref(null)
 const setSMSstatusLoading = ref(false)
 const managerPerm = ref({})
+const smsPhoneError = ref('')
 
 
 const setSMSstatus = async () => {
@@ -675,7 +677,13 @@ const sendSMS = async () => {
         }
     }, 600 * 5)
 
-    // await appStore.sendSMScode({ phone: pointData.value.rcptPhone, message: translit })
+    try {
+        smsPhoneError.value = ''
+        await appStore.sendSMScode({ phone: pointData.value.rcptPhone, message: translit })
+    } catch (error) {
+        console.error(error)
+        smsPhoneError.value = error
+    }
 }
 
 const sendMassSMS = async () => {
@@ -697,8 +705,13 @@ const sendMassSMS = async () => {
             timer.value -= 5
         }
     }, 600 * 5)
-
-    // await appStore.sendSMScode({ phone: pointData.value.rcptPhone, message: translit })
+    try {
+        smsPhoneError.value = ''
+        await appStore.sendSMScode({ phone: pointData.value.rcptPhone, message: translit })
+    } catch (error) {
+        console.error(error)
+        smsPhoneError.value = error
+    }
 }
 
 const openMassReleaseDialog = () => {
