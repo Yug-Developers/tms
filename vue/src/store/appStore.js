@@ -202,12 +202,12 @@ export const useAppStore = defineStore('appStore', () => {
   const extractPhoneNumber = (input) => {
     const phoneRegex = /\+\s*3\s*8/g
     const barePhone = input.replace(/\D/g, '')
-    if (input.match(phoneRegex)){
-        const res = barePhone.slice(2,12)
-        return res.length === 10 ? res : null
+    if (input.match(phoneRegex)) {
+      const res = barePhone.slice(2, 12)
+      return res.length === 10 ? res : null
     } else {
-        const res = barePhone.slice(0,10)
-        return res.length === 10 ? res : null
+      const res = barePhone.slice(0, 10)
+      return res.length === 10 ? res : null
     }
   }
 
@@ -230,7 +230,7 @@ export const useAppStore = defineStore('appStore', () => {
       throw error
     }
   }
-  
+
   // --------------------------------- actions --------------------------------
   const createCode = (phone) => {
     // const code = parseInt(Math.random() * 10000).toString().padStart(4, '0')
@@ -454,7 +454,7 @@ export const useAppStore = defineStore('appStore', () => {
   // --------------------------- дозволи менеджера ------------------------------
   const setSMSstatus = async (tripId, pointId) => {
     try {
-      const res = await Pouch.updateDontSendSMS('manager_perm', tripId,  pointId )
+      const res = await Pouch.updateDontSendSMS('manager_perm', tripId, pointId)
       await pushManagerPermData()
       return res
     } catch (error) {
@@ -472,7 +472,7 @@ export const useAppStore = defineStore('appStore', () => {
         if (point.sortNumber == 1) {
           cPoint.id = point.id
           cPoint.status = 200
-          cPoint.arrivalTime = new Date().toISOString()
+          cPoint.arrivalTime = getCurrentTime()
           try {
             if (isSecureConnection) {
               await getLocation()
@@ -499,7 +499,7 @@ export const useAppStore = defineStore('appStore', () => {
       const data = {
         _id: tripId,
         status: 200,
-        startTime: new Date().toISOString(),
+        startTime: getCurrentTime(),
         odometerStart: config.odometerStart,
         points
       }
@@ -566,7 +566,7 @@ export const useAppStore = defineStore('appStore', () => {
       for (let point of points) {
         if (point.id === pointId) {
           point.status = 200
-          point.arrivalTime = new Date().toISOString()
+          point.arrivalTime = getCurrentTime()
           try {
             if (isSecureConnection) {
               await getLocation()
@@ -688,7 +688,7 @@ export const useAppStore = defineStore('appStore', () => {
       for (let point of points) {
         if (point.id === pointId) {
           point.status = 300
-          point.departureTime = new Date().toISOString()
+          point.departureTime = getCurrentTime()
         }
       }
       Object.assign(st, { points })
@@ -706,7 +706,7 @@ export const useAppStore = defineStore('appStore', () => {
     try {
       const st = await Pouch.getDoc('statuses', tripId)
       st.status = 300
-      st.finishTime = new Date().toISOString()
+      st.finishTime = getCurrentTime()
       st.odometerFinish = config.odometerFinish
       delete st._id
       delete st._rev
@@ -718,12 +718,21 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
+  const getCurrentTime = () => {
+    const now = new Date()
+    const offset = now.getTimezoneOffset() // Різниця в хвилинах між UTC та локальним часом
+    const localTime = new Date(now.getTime() - offset * 60 * 1000).toISOString()
+    console.log(localTime) // Локальний час у форматі ISO
+    return localTime
+  }
+
+
   return {
     snackbar, setSnackbar, online, data, statuses, navigationDrawerRightShow, menuItems, loading,
     checkOpenTrip, pullTripsData, initNewTripStatus, cancelPoint, inPlace, checkPointDocs, releaseDoc, rejectDoc, cancelDoc,
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
-    availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg, getTmsTripsById, checkTmsTripsProcess, 
+    availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg, getTmsTripsById, checkTmsTripsProcess,
     setSMSstatus, getManagerPermDoc
   }
 })
