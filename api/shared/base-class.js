@@ -40,7 +40,8 @@ module.exports = {
     try {
       const token = await Token.create(1)
       const doc = await remoteDBRoutes.get(data._id)
-      const users = await getUsers({ typhoonId: String(doc.editorId) })
+      const editor = doc.addDriverId ? doc.addDriverId : doc.editorId
+      const users = await getUsers({ typhoonId: String(editor) })
       const managers = await getUsersByCarrierId(String(doc.carrierId))
       const managersEmails = managers.map(manager => manager.email) || []
       if (managersEmails.length === 0) {

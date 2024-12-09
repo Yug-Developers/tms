@@ -1096,7 +1096,7 @@ const checkSmsCode = computed(() => {
 })
 
 const isEditor = computed(() => {
-    return trip.value.editorId == appStore.localStg.user_id
+    return trip.value.addDriverId ? trip.value.addDriverId == appStore.localStg.user_id : trip.value.editorId == appStore.localStg.user_id 
 })
 
 const allDocsCompleteByType = computed(() => {
