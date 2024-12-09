@@ -217,7 +217,10 @@ export const useAppStore = defineStore('appStore', () => {
       if (!phoneNum) {
         throw new Error(`Номер телефону "${phone}" вказано невірно`)
       }
-      return {} //fixme
+      //Відправка смс тільки в режимі продакшен
+      if (process.env.NODE_ENV !== 'production') {
+        return {} //Якщо не продакшен, то просто повертаємо пустий об'єкт
+      }
       const res = await axios.post(Config.misUrl + '/tms/send-sms', {
         phone: phoneNum,
         message,
@@ -233,9 +236,7 @@ export const useAppStore = defineStore('appStore', () => {
 
   // --------------------------------- actions --------------------------------
   const createCode = (phone) => {
-    // const code = parseInt(Math.random() * 10000).toString().padStart(4, '0')
-    // FIXME: remove this line
-    const code = '1111'
+    const code = process.env.NODE_ENV === 'production' ? parseInt(Math.random() * 10000).toString().padStart(4, '0') : '1111'
     const hash = md5(code)
     return [code, hash]
   }

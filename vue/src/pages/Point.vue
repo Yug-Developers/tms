@@ -509,45 +509,53 @@ const dontSendSms = computed(() => {
 
 // Функція для ініціалізації Quagga
 const startScanner = () => {
+
     if (!scannerContainer.value) {
         console.error('Сканер контейнер ще не готовий')
         return
     }
-
-    Quagga.init(
-        {
-            inputStream: {
-                type: 'LiveStream',
-                target: scannerContainer.value, // Елемент для відображення камери
-                constraints: {
-                    facingMode: 'environment', // Використовує задню камеру
+    try {
+        Quagga.init(
+            {
+                inputStream: {
+                    type: 'LiveStream',
+                    target: scannerContainer.value, // Елемент для відображення камери
+                    constraints: {
+                        facingMode: 'environment', // Використовує задню камеру
+                    },
+                },
+                decoder: {
+                    readers: ['code_128_reader', 'ean_reader', 'upc_reader'], // Налаштування форматів
                 },
             },
-            decoder: {
-                readers: ['code_128_reader', 'ean_reader', 'upc_reader'], // Налаштування форматів
-            },
-        },
-        (err) => {
-            if (err) {
-                console.error('Помилка ініціалізації Quagga:', err)
-                return
+            (err) => {
+                if (err) {
+                    console.error('Помилка ініціалізації Quagga:', err)
+                    return
+                }
+                Quagga.start()
             }
-            Quagga.start()
-        }
-    )
+        )
 
-    // Підписка на подію розпізнавання штрих-коду
-    Quagga.onDetected((result) => {
-        sumPack.value = result.codeResult.code
-        allSumPack.value = result.codeResult.code
-        closeDialog()
-    })
+        // Підписка на подію розпізнавання штрих-коду
+        Quagga.onDetected((result) => {
+            sumPack.value = result.codeResult.code
+            allSumPack.value = result.codeResult.code
+            closeDialog()
+        })
+    } catch (error) {
+        console.error(error)
+    }
 }
 
 // Зупинка сканера та очищення
 const stopScanner = () => {
-    Quagga.stop()
-    Quagga.offDetected()
+    try {
+        Quagga.stop()
+        Quagga.offDetected()
+    } catch (error) {
+        console.error(error)
+    }
 }
 
 // Відкрити попап
@@ -1096,7 +1104,7 @@ const checkSmsCode = computed(() => {
 })
 
 const isEditor = computed(() => {
-    return trip.value.addDriverId ? trip.value.addDriverId == appStore.localStg.user_id : trip.value.editorId == appStore.localStg.user_id 
+    return trip.value.addDriverId ? trip.value.addDriverId == appStore.localStg.user_id : trip.value.editorId == appStore.localStg.user_id
 })
 
 const allDocsCompleteByType = computed(() => {
