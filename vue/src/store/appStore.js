@@ -204,13 +204,13 @@ export const useAppStore = defineStore('appStore', () => {
     const barePhone = input.replace(/\D/g, '')
     if (input.match(phoneRegex)) {
       const res = barePhone.slice(2, 12)
-      return res.length === 10 ? res : null
+      return res.length === 10 ? '38' + res : null
     } else {
       const res = barePhone.slice(0, 10)
-      return res.length === 10 ? res : null
+      return res.length === 10 ? '38' + res : null
     }
   }
-
+  
   const sendSMScode = async ({ phone, message }) => {
     try {
       const phoneNum = extractPhoneNumber(phone)
