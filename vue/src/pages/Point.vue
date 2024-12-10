@@ -384,19 +384,22 @@
                 <div class="text-center">
                     <v-text-field label="Код з SMS" v-model="smsCode" style="width: 120px" outlined
                         class="mx-auto"></v-text-field>
-                    <v-progress-circular v-if="timer !== 0" :model-value="timer" :rotate="360" :size="50" :width="5"
-                        color="teal">
-                        {{ timer / 100 * 60 }}
-                    </v-progress-circular>
+                    <div v-if="timer !== 0" class="text-grey">
+                        Повторно відправити SMS через
+                        <v-progress-circular :model-value="timer" :rotate="360" :size="40" :width="3"
+                            color="teal">
+                            {{ timer / 100 * 60 }}
+                        </v-progress-circular>
+                    </div>
                 </div>
                 <div class="text-center">
-                    <v-btn v-if="timer === 0" @click="sendSMS()">Відправити SMS повторно</v-btn>
+                    <v-btn v-if="timer === 0" @click="sendSMS()" variant="tonal" color="teal" append-icon="mdi-reload">Відправити SMS повторно</v-btn>
                 </div>
             </v-card-text>
             <v-card-actions>
                 <v-btn color="grey" @click="acceptSmsDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn v-if="timer != 0" @click="accept()" :loading="loading">Підтвердити</v-btn>
+                <v-btn @click="accept()" :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
