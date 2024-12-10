@@ -66,6 +66,6 @@ const logout = () => {
         })
 
 }
-const version = process.env.__VERSION__
+const version = process.env.__VERSION__ + ' ' + process.env.NODE_ENV
 </script>
   
