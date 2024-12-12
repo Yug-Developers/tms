@@ -80,7 +80,22 @@ module.exports = {
           dataList,
           extendedCols: {}
         })
-
+        console.log('Файл звіту про інкасацію створено')
+        console.log('Відправка листа звіту про інкасацію')
+        console.log({
+          from: 'support@yugcontract.ua',
+          to: managersEmails,
+          cc: Config.defaultManagerEmail,
+          subject,
+          html: message,
+          attachments: [
+            {
+              filename: `tms_report_${data._id}.xlsx`,
+              path: fileName
+            }],
+          token
+        })
+        
         mes.sendMail({
           from: 'support@yugcontract.ua',
           to: managersEmails,

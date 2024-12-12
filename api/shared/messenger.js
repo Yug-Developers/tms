@@ -49,7 +49,6 @@ module.exports = {
             return resp
         } catch (e) {
             throw new Error('Помилка відправки Email')
-            console.error('Помилка відправки Email', e)
         }
     }
 }
