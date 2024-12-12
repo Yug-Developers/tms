@@ -64,7 +64,6 @@ module.exports = {
           `
       const fileName = '/var/www/node-shared-files/' + `tms_report_${data._id}.xlsx`
       const dataList = await this.createReportData(data)
-      console.log('>>>>>>>>>>>>>>>dataList', dataList)
 
       if (dataList.length > 0) {
         await this.createExcelFile({
@@ -81,7 +80,6 @@ module.exports = {
           dataList,
           extendedCols: {}
         })
-        console.log('Файл звіту про інкасацію створено')
         console.log('Відправка листа звіту про інкасацію')
         console.log({
           from: 'support@yugcontract.ua',
@@ -119,8 +117,6 @@ module.exports = {
   async createReportData(data) {
     try {
       const tripDoc = await remoteDBRoutes.get(data._id)
-      console.log('>>>tripDoc', JSON.stringify(tripDoc, null, 2))
-      console.log('>>>data', JSON.stringify(data, null, 2))
       const tripPoints = {}
       tripDoc.points.forEach(point => {
         tripPoints[point.id] = point
@@ -128,9 +124,7 @@ module.exports = {
       const points = {}
       for (const point of data.points) {
         for (const doc of point.docs) {
-          console.log('>>>>>>>>>>>>>>>>>>>>>>doc', JSON.stringify(doc, null, 2))
           if (doc.sumFact && doc.sumPack) {
-
             points[point.id] = {
               docId: doc.id,
               rcpt: tripPoints[point.id].counterpartyName,

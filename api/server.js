@@ -91,7 +91,6 @@ const syncData = async () => {
                   const prevPoint = previousPointsMap[point.id];
                   return prevPoint && point.status !== prevPoint.status && point.status === 300 && point.id !== -1;
                 });
-                // await Base.sendReportEmail(currentDoc)
 
                 if (differences.length > 0) {
                   console.log('Знайдено розбіжності у статусах точок:', differences);
