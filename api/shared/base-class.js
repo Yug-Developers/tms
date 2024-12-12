@@ -148,13 +148,14 @@ module.exports = {
       throw error
     }
   },
-  async closeDocInDb(id) {
+  async closeDocInDb(data) {
     try {
+      const id = data._id
       const doc = await remoteDBRoutes.get(id)
       doc.status = 'closed'
       await remoteDBRoutes.put(doc)
       //Відправити листа зі звітом про закриття документа
-      await this.sendReportEmail(doc)
+      await this.sendReportEmail(data)
     } catch (error) {
       throw error
     }

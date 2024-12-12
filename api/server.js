@@ -70,7 +70,7 @@ const syncData = async () => {
               // Якщо документ має статус 300 (виконано) і він змінився з попереднього статусу закриваємо документ в базі рейсів
               if (currentStatus === 300 && previousStatus !== 300) {
                 console.log('Статус документа змінився з інший на виконано:', currentStatus);
-                await Base.closeDocInDb(doc._id)
+                await Base.closeDocInDb(doc)
                 // Відправимо дані до Typhoon якщо документ закрито
                 const preparedData = Base.prepareData(currentDoc)
                 try {
