@@ -64,6 +64,7 @@ module.exports = {
           `
       const fileName = '/var/www/node-shared-files/' + `tms_report_${data._id}.xlsx`
       const dataList = await this.createReportData(data)
+      console.log('>>>>>>>>>>>>>>>dataList', dataList)
 
       if (dataList.length > 0) {
         await this.createExcelFile({
@@ -95,7 +96,7 @@ module.exports = {
             }],
           token
         })
-        
+
         mes.sendMail({
           from: 'support@yugcontract.ua',
           to: managersEmails,
@@ -150,7 +151,9 @@ module.exports = {
       doc.status = 'closed'
       await remoteDBRoutes.put(doc)
       //Відправити листа зі звітом про закриття документа
+      console.log('++++Відправка листа звіту про закриття документа')
       await this.sendReportEmail(doc)
+      console.log('!!!!!Лист звіту про закриття документа відправлено')
     } catch (error) {
       throw error
     }
