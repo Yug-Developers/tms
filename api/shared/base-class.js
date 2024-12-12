@@ -120,6 +120,7 @@ module.exports = {
     try {
       const tripDoc = await remoteDBRoutes.get(data._id)
       console.log('>>>tripDoc', JSON.stringify(tripDoc, null, 2))
+      console.log('>>>data', JSON.stringify(data, null, 2))
       const tripPoints = {}
       tripDoc.points.forEach(point => {
         tripPoints[point.id] = point
@@ -127,6 +128,7 @@ module.exports = {
       const points = {}
       for (const point of data.points) {
         for (const doc of point.docs) {
+          console.log('>>>>>>>>>>>>>>>>>>>>>>doc', JSON.stringify(doc, null, 2))
           if (doc.sumFact && doc.sumPack) {
 
             points[point.id] = {
