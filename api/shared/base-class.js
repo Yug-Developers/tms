@@ -157,6 +157,10 @@ module.exports = {
   async sendDataToTyphoon(data) {
     try {
       // console.log(JSON.stringify(data, null, 2));
+      // відправляємо дані тільки в продакшені
+      if(process.env.NODE_ENV !== 'production') {
+        return
+      }
       console.log('Відправка даних до Typhoon: --------------------------------------------------->');
       const authToken = await this.getAccessToken()
       const res = await axios({
@@ -334,7 +338,8 @@ module.exports = {
     if (!isoString) {
       return ''
     }
-    const date = new Date(isoString)
+    const localISOString = isoString.replace('Z', '')
+    const date = new Date(localISOString)
   
     const day = String(date.getDate()).padStart(2, '0')
     const month = String(date.getMonth() + 1).padStart(2, '0') // Місяці починаються з 0

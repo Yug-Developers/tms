@@ -723,8 +723,8 @@ export const useAppStore = defineStore('appStore', () => {
     const now = new Date()
     const offset = now.getTimezoneOffset() // Різниця в хвилинах між UTC та локальним часом
     const localTime = new Date(now.getTime() - offset * 60 * 1000).toISOString()
-    console.log(localTime) // Локальний час у форматі ISO
-    return localTime
+    const localISOString = isoString.replace('Z', '')
+    return localISOString
   }
 
 
