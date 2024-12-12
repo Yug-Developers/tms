@@ -19,7 +19,7 @@ module.exports = {
             }
         })
     },
-    sendMail({ to, from, cc, subject, text, html, attachments, token }) {
+    async sendMail({ to, from, cc, subject, text, html, attachments, token }) {
         const debugEmail = Config.debugEmail
         let subjectSufix = ''
         if (debugEmail && process.env.NODE_ENV !== 'production') {
@@ -28,7 +28,7 @@ module.exports = {
             cc = null
         }
         try {
-            const resp = axios({
+            const resp = await axios({
                 method: 'POST',
                 url: Config.messengerMs.url + '/sendmail',
                 headers: {
@@ -48,7 +48,7 @@ module.exports = {
             })
             return resp
         } catch (e) {
-            throw new Error('Помилка відправки Email')
+            throw new Error('Помилка відправки Email' + e)
         }
     }
 }

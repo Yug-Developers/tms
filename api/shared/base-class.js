@@ -95,7 +95,7 @@ module.exports = {
           token
         })
 
-        mes.sendMail({
+        await mes.sendMail({
           from: 'support@yugcontract.ua',
           to: managersEmails,
           cc: Config.defaultManagerEmail,
