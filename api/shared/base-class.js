@@ -119,6 +119,7 @@ module.exports = {
   async createReportData(data) {
     try {
       const tripDoc = await remoteDBRoutes.get(data._id)
+      console.log('>>>tripDoc', tripDoc) 
       const tripPoints = {}
       tripDoc.points.forEach(point => {
         tripPoints[point.id] = point
@@ -151,9 +152,7 @@ module.exports = {
       doc.status = 'closed'
       await remoteDBRoutes.put(doc)
       //Відправити листа зі звітом про закриття документа
-      console.log('++++Відправка листа звіту про закриття документа')
       await this.sendReportEmail(doc)
-      console.log('!!!!!Лист звіту про закриття документа відправлено')
     } catch (error) {
       throw error
     }
