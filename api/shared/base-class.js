@@ -119,7 +119,7 @@ module.exports = {
   async createReportData(data) {
     try {
       const tripDoc = await remoteDBRoutes.get(data._id)
-      console.log('>>>tripDoc', tripDoc) 
+      console.log('>>>tripDoc', JSON.stringify(tripDoc, null, 2))
       const tripPoints = {}
       tripDoc.points.forEach(point => {
         tripPoints[point.id] = point
