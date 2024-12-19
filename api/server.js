@@ -104,6 +104,13 @@ const syncData = async () => {
                 } else {
                   console.log('Розбіжностей у статусах точок не виявлено.');
                 }
+                //перевірити чи всі точки виконані окрім точки з id -1
+                const allPointsDone = currentPoints.every(point => point.status === 300 || point.id === -1)
+                if(allPointsDone) {
+                  console.log('Всі точки виконані');
+                  //Відправити листа зі звітом про закриття документа
+                  await this.sendReportEmail(doc)
+                }
               }
             } catch (err) {
               console.log('Помилка при отриманні попереднього документа:', err);

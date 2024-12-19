@@ -52,13 +52,13 @@ module.exports = {
           <!DOCTYPE html>
           <body>
           <font face="Courier New" size="2">
-          <p>Вітаємо,</p><br/>
-          <p><b>Рейс № ${data._id} на ${this.formatDate(doc.date)} завершено.</b></p>
-          <p>Відповідальний: ${users[0] && users[0].pib}</p><br/>
-          <p>Початок: ${this.formatDateTime(data.startTime)}</p>
-          <p>Завершення: ${this.formatDateTime(data.finishTime)}</p>
+          Вітаємо,<br/><br/>
+          <b>Рейс № ${data._id} на ${this.formatDate(doc.date)} завершено.</b><br/>
+          Відповідальний: ${users[0] && users[0].pib}<br/><br/>
+          Початок: ${this.formatDateTime(data.startTime)}<br/>
+          Завершення: ${this.formatDateTime(data.finishTime)}<br/>
           <br/>
-          <p>У вкладенні - звіт про проведену інкасацію.</p>
+          У вкладенні - звіт про проведену інкасацію.
           </font>
           </body>
           `
@@ -149,7 +149,7 @@ module.exports = {
       doc.status = 'closed'
       await remoteDBRoutes.put(doc)
       //Відправити листа зі звітом про закриття документа
-      await this.sendReportEmail(data)
+      // await this.sendReportEmail(data)
     } catch (error) {
       throw error
     }
