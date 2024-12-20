@@ -47,6 +47,7 @@ module.exports = {
       if (managersEmails.length === 0) {
         managersEmails.push(Config.defaultManagerEmail)
       }
+      const currTime = new Date().toLocaleString()
       subject = `[TMS] Рейс № ${data._id} - звіт про інкасацію`
       message = `
           <!DOCTYPE html>
@@ -56,7 +57,7 @@ module.exports = {
           <b>Рейс № ${data._id} на ${this.formatDate(doc.date)} завершено.</b><br/>
           Відповідальний: ${users[0] && users[0].pib}<br/><br/>
           Початок: ${this.formatDateTime(data.startTime)}<br/>
-          Завершення: ${this.formatDateTime(data.finishTime)}<br/>
+          Завершення: ${this.formatLocalTime(currTime)}<br/>
           <br/>
           У вкладенні - звіт про проведену інкасацію.
           </font>
@@ -148,8 +149,6 @@ module.exports = {
       const doc = await remoteDBRoutes.get(id)
       doc.status = 'closed'
       await remoteDBRoutes.put(doc)
-      //Відправити листа зі звітом про закриття документа
-      // await this.sendReportEmail(data)
     } catch (error) {
       throw error
     }
@@ -354,5 +353,21 @@ module.exports = {
   formatDate(dateString) {
     const [year, month, day] = dateString.split('-')
     return `${day}-${month}-${year}`
+  },
+  formatLocalTime(localDateString) {
+    const date = new Date(localDateString)
+  
+    // Отримуємо компоненти дати та часу
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0') // Місяці починаються з 0
+    const year = date.getFullYear()
+  
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    const seconds = String(date.getSeconds()).padStart(2, '0')
+  
+    // Формуємо рядок у потрібному форматі
+    return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`
   }
+  
 }

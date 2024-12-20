@@ -109,7 +109,7 @@ const syncData = async () => {
                 if(allPointsDone) {
                   console.log('Всі точки виконані');
                   //Відправити листа зі звітом про закриття документа
-                  await this.sendReportEmail(doc)
+                  await Base.sendReportEmail(doc)
                 }
               }
             } catch (err) {
