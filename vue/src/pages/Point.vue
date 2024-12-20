@@ -171,21 +171,21 @@
     </v-layout>
     <!-- <pre>{{ appStore.statuses.filter(el => el._id == tripId) }}</pre> -->
     <v-bottom-navigation :active="bottomNavigation" v-model="bottomModel" elevation="24" height="80">
-        <v-btn :disabled="releaseBottomBtn" @click="openMassReleaseDialog()" stacked
+        <v-btn :disabled="releaseBottomBtn" @click="onlyOneDocSelected ? release(onlyOneDocSelected) : openMassReleaseDialog()" stacked
             prepend-icon="mdi-account-check-outline" class="text-subtitle-2 mx-2">
             <template v-slot:prepend>
                 <v-icon color="success"></v-icon>
             </template>
             Видано
         </v-btn>
-        <v-btn :disabled="rejectBottomBtn" @click="massRejectDialogOpen()" stacked
+        <v-btn :disabled="rejectBottomBtn" @click="onlyOneDocSelected ? reject(onlyOneDocSelected) : massRejectDialogOpen()" stacked
             prepend-icon="mdi-account-remove-outline" class="text-subtitle-2 mx-2">
             <template v-slot:prepend>
                 <v-icon color="primary"></v-icon>
             </template>
             Відмова
         </v-btn>
-        <v-btn :disabled="cancelBottomBtn" @click="massCancelDialogOpen()" stacked prepend-icon="mdi-cancel"
+        <v-btn :disabled="cancelBottomBtn" @click="onlyOneDocSelected ? cancel(onlyOneDocSelected) : massCancelDialogOpen()" stacked prepend-icon="mdi-cancel"
             class="text-subtitle-2 mx-2">
             <template v-slot:prepend>
                 <v-icon color="primary"></v-icon>
@@ -988,6 +988,11 @@ const docsData = computed(() => {
 const bottomNavigation = computed(() => {
     // є хоч один вибраний документ selectDoc
     return btnsRules.value && Object.keys(docsSelected.value).length ? true : false
+})
+
+const onlyOneDocSelected = computed(() => {
+    // повернути номер документу, якщо вибрано тільки один
+    return Object.keys(docsSelected.value).length == 1 ? Object.keys(docsSelected.value)[0] : false 
 })
 
 const pointStatus = computed(() => {
