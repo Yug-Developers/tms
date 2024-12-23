@@ -3,7 +3,7 @@
     <v-layout full-height>
         <template v-if="trip && pointData && pointData.id">
             <v-container>
-                <PointHeader :point="pointData" :tripId="tripId" :points="points" :editorId="isEditor" />
+                <PointHeader :point="pointData" :tripId="tripId" :points="points" :editorId="isEditor" @init-data = "initData"/>
                 <v-sheet v-if="appStore.localStg.userData.role == 'manager' && !dontSendSms" elevation="0"
                     max-width="600" rounded="lg" width="100%" class="pa-0 mx-auto mb-4 d-flex justify-center">
                     <v-btn prepend-icon="mdi-cellphone-message-off" @click="setSMSstatus()"
@@ -423,7 +423,7 @@
 import MainNavigation from '@/components/MainNavigation.vue'
 import PointHeader from '@/components/PointHeader.vue'
 import StatusChip from '@/components/DocumentStatusChip.vue'
-import { onMounted, onBeforeUnmount, ref, computed, reactive, watch, nextTick } from 'vue'
+import { onMounted, onBeforeUnmount, ref, computed, reactive, watch, nextTick, defineEmits  } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import cyrillicToTranslit from 'cyrillic-to-translit-js'
@@ -591,7 +591,7 @@ onBeforeUnmount(() => {
     }
 })
 
-onMounted(async () => {
+const initData = async () => {
     try {
         await appStore.pullTripsData()
         trip.value = await appStore.getTripDoc(tripId.value)
@@ -623,6 +623,10 @@ onMounted(async () => {
     catch (error) {
         console.error(error)
     }
+}
+
+onMounted(async () => {
+    await initData()
 })
 
 const rules = {

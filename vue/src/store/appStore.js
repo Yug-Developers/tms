@@ -267,6 +267,7 @@ export const useAppStore = defineStore('appStore', () => {
       Pouch.destroyDB('statuses')
       Pouch.destroyDB('routes')
       Pouch.destroyDB('users')
+      Pouch.destroyDB('manager_perm')
       localStg.userData = {}
       localStg.user_name = ''
       localStg.user_id = ''
@@ -284,7 +285,7 @@ export const useAppStore = defineStore('appStore', () => {
       if (online.value) {
         const options = {
           filter: 'filter/by_status_editor',
-          query_params: { editor: localStg.user_id }
+          query_params: { editorId: localStg.user_id }
         }
         const pullRes = await Pouch.pull('routes', options)
         const currTrips = await currentTrips({ fields: ['_id'] })

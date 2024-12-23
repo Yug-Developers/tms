@@ -103,7 +103,7 @@
 </template>
 
 <script setup>
-import { defineProps, ref, computed } from 'vue'
+import { defineProps, ref, computed, defineEmits  } from 'vue'
 import { useRouter } from 'vue-router'
 import StatusChip from './PointStatusChip.vue'
 import { useAppStore } from '@/store/appStore'
@@ -121,12 +121,15 @@ const cancelDialog = ref(false)
 const odometrFinishDialog = ref(false)
 const isFormValid = ref(false)
 
+const emit = defineEmits(['init-data'])
+
 
 const rules = {
     number: v => v && !isNaN(v) && !/\s+/.test(v) || 'Тільки цифри'
 }
 
 const inPlace = async () => {
+    emit('init-data', {})
     const activTrips = await appStore.checkOpenTrip(props.tripId)
     if (activTrips) {
         appStore.setSnackbar({ text: "Неможливо відкрити новий рейс. Є інші активні рейси.", type: 'error' })
