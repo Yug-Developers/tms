@@ -5,9 +5,7 @@ const Config = require('../Config')
 const mes = require('./messenger')
 const Token = require('./token-class')
 const auth = Config.adminAuthCouchDb
-const dbName = 'tms_statuses'
-
-const remoteDB = new PouchDB(Config.remoteCouchDb + dbName, { auth })
+const remoteMailingDB = new PouchDB(Config.remoteCouchDb + 'tms_mailing', { auth })
 const remoteUsersDB = new PouchDB(Config.remoteCouchDb + '_users', { auth })
 const dbNameRoutes = 'tms_routes'
 const remoteDBRoutes = new PouchDB(Config.remoteCouchDb + dbNameRoutes, { auth })
@@ -22,10 +20,12 @@ const getUsers = async (selector = {}) => {
 }
 
 const getUsersByCarrierId = async (carrierId) => {
+  // E-mail з Розсилки ТМС з Перевізник = Перевізник рейсу ТА Звіт про інкасацію = ТАК.
   try {
-    const result = await remoteUsersDB.find({
+    const result = await remoteMailingDB.find({
       selector: {
-        carrierId: { $in: [carrierId] }
+        carrierId: { $in: [carrierId]},
+        isActive: { $eq: true }
       }
     })
     return result.docs
@@ -57,7 +57,7 @@ module.exports = {
           <b>Рейс № ${data._id} на ${this.formatDate(doc.date)} завершено.</b><br/>
           Відповідальний: ${users[0] && users[0].pib}<br/><br/>
           Початок: ${this.formatDateTime(data.startTime)}<br/>
-          Завершення: ${this.formatLocalTime(currTime)}<br/>
+          Завершення завдання рейсу: ${this.formatLocalTime(currTime)}<br/>
           <br/>
           У вкладенні - звіт про проведену інкасацію.
           </font>

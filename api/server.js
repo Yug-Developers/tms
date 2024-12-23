@@ -101,15 +101,15 @@ const syncData = async () => {
                   } catch (error) {
                     console.log('Помилка відправки даних до Typhoon:', error.response.data);
                   }
+                  //перевірити чи всі точки виконані окрім точки з id -1
+                  const allPointsDone = currentPoints.every(point => point.status === 300 || point.id === -1)
+                  if (allPointsDone) {
+                    console.log('Всі точки виконані');
+                    //Відправити листа зі звітом про закриття документа
+                    await Base.sendReportEmail(doc)
+                  }
                 } else {
                   console.log('Розбіжностей у статусах точок не виявлено.');
-                }
-                //перевірити чи всі точки виконані окрім точки з id -1
-                const allPointsDone = currentPoints.every(point => point.status === 300 || point.id === -1)
-                if(allPointsDone) {
-                  console.log('Всі точки виконані');
-                  //Відправити листа зі звітом про закриття документа
-                  await Base.sendReportEmail(doc)
                 }
               }
             } catch (err) {
