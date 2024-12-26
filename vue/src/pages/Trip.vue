@@ -126,12 +126,12 @@ onMounted(async () => {
         }
         trips.value = await appStore.availableTrips(options)
         // Якщо рейсу не знайдено в доступних рейсах
-        if (!trips.value.find(trip => trip._id === tripId.value)) {
-            doc.value = null
-            //перенаправити на сторінку з помилкою 403
-            router.push('/403')
-            return
-        }
+        // if (!trips.value.find(trip => trip._id === tripId.value)) {
+        //     doc.value = null
+        //     //перенаправити на сторінку з помилкою 403
+        //     router.push('/403')
+        //     return
+        // }
         await appStore.pullStatusesData([tripId.value])
         doc.value = await appStore.getTripDoc(tripId.value)
         statuses.value = await appStore.getTripStatusesDoc(tripId.value)
