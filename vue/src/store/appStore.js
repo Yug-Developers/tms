@@ -200,7 +200,7 @@ export const useAppStore = defineStore('appStore', () => {
   }
 
   const extractPhoneNumber = (input) => {
-    const phoneRegex = /\+\s*3\s*8/g
+    const phoneRegex = /\+?\s*3\s*8/g
     const barePhone = input.replace(/\D/g, '')
     if (input.match(phoneRegex)) {
       const res = barePhone.slice(2, 12)
