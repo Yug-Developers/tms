@@ -103,10 +103,12 @@ const syncData = async () => {
                   }
                   //перевірити чи всі точки виконані окрім точки з id -1
                   const allPointsDone = currentPoints.every(point => point.status === 300 || point.id === -1)
+                  // await Base.sendManagersReportEmail(doc)
                   if (allPointsDone) {
                     console.log('Всі точки виконані');
                     //Відправити листа зі звітом про закриття документа
                     await Base.sendReportEmail(doc)
+                    await Base.sendManagersReportEmail(doc)
                   }
                 } else {
                   console.log('Розбіжностей у статусах точок не виявлено.');

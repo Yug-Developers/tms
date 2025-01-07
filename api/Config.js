@@ -26,11 +26,13 @@ module.exports = {
         alphaName: 'YUGcontract',
         tag: 'TMS',
       },
-      debugEmail: "kuzminetskiy-a@yugcontract.ua",
+      // debugEmail: "kuzminetskiy-a@yugcontract.ua",
+      debugEmail: "tanya-ka@yugcontract.ua",
       defaultManagerEmail: "tanya-ka@yugcontract.ua",
       jwt: {
         secret: 'jlkjasd23032mlm342kjklj241lkjlkjlj243',
         expire: 300 * 60
       },
+      getAuthB2BUrl: (process.env.NODE_ENV === 'dev_production' || process.env.NODE_ENV === 'production' ? 'https://b2b.yugcontract.ua' : 'http://dev.yugcontract.ua:3033') + '/api/auth',
 
 }
