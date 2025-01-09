@@ -42,8 +42,6 @@ module.exports = {
     try {
       const token = await Token.create(1)
       const doc = await remoteDBRoutes.get(data._id)
-      const editor = doc.addDriverId ? doc.addDriverId : doc.editorId
-      const users = await getUsers({ typhoonId: String(editor) })
       const managers = await getUsersByCarrierId(String(doc.carrierId))
       const managersEmails = managers.map(manager => manager.email) || []
       if (managersEmails.length === 0) {
@@ -57,7 +55,7 @@ module.exports = {
           <font face="Courier New" size="2">
           Вітаємо,<br/><br/>
           <b>Рейс № ${data._id} на ${this.formatDate(doc.date)} завершено.</b><br/>
-          Відповідальний: ${users[0] && users[0].pib}<br/><br/>
+          Відповідальний: ${doc.editorName}<br/><br/>
           Початок: ${this.formatDateTime(data.startTime)}<br/>
           Завершення завдання рейсу: ${this.formatLocalTime(currTime)}<br/>
           <br/>
@@ -377,8 +375,6 @@ module.exports = {
       try {
         const token = await Token.create(1)
         const doc = await remoteDBRoutes.get(data._id)
-        const editor = doc.addDriverId ? doc.addDriverId : doc.editorId
-        const users = await getUsers({ typhoonId: String(editor) })
         const currTime = new Date().toLocaleString()
         const dataList = await this.createManagersReportData(data)
         for (const email in dataList) {
@@ -430,7 +426,7 @@ module.exports = {
               <font face="Courier New" size="2">
               Вітаємо,<br/><br/>
               <b>Рейс № ${data._id} на ${this.formatDate(doc.date)} завершено.</b><br/>
-              Відповідальний: ${users[0] && users[0].pib}<br/><br/>
+              Відповідальний: ${doc.editorName}<br/><br/>
               Початок: ${this.formatDateTime(data.startTime)}<br/>
               Завершення завдання рейсу: ${this.formatLocalTime(currTime)}<br/>
               <br/>
@@ -485,7 +481,7 @@ module.exports = {
           }
           const typesObj = {
             out: 'Видачі',
-            in: 'Забір',
+            in: 'Повернення',
             task: 'Завдання'
           }
           const documentStatusObj = {

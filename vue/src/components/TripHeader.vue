@@ -6,7 +6,9 @@
                 <StatusChip :tripId="trip.id" />
             </v-card-title>
             <v-card-text class="text-grey text-caption pa-0">
-                Дата рейсу: {{ appStore.formatDate(trip.doc.date) }}
+                Дата рейсу: {{ appStore.formatDate(trip.doc.date) }}<br>
+                Водій: {{ trip.doc.driverName }}<br>
+                Відповідальний: {{ trip.doc.editorName }}<br>
             </v-card-text>
             <v-card-text class="pa-0 d-flex justify-space-between align-end">
                 <div>

@@ -171,7 +171,7 @@
     </v-layout>
     <!-- <pre>{{ appStore.statuses.filter(el => el._id == tripId) }}</pre> -->
     <v-bottom-navigation :active="bottomNavigation" v-model="bottomModel" elevation="24" height="80">
-        <v-btn :disabled="releaseBottomBtn" @click="onlyOneDocSelected ? release(onlyOneDocSelected) : openMassReleaseDialog()" stacked
+        <v-btn :disabled="releaseBottomBtn && !onlyOneDocSelected" @click="onlyOneDocSelected ? release(onlyOneDocSelected) : openMassReleaseDialog()" stacked
             prepend-icon="mdi-account-check-outline" class="text-subtitle-2 mx-2">
             <template v-slot:prepend>
                 <v-icon color="success"></v-icon>
@@ -439,7 +439,7 @@ const panel = ref({})
 const types = ['out', 'in', 'task']
 const typesObj = {
     out: 'Видачі',
-    in: 'Забір',
+    in: 'Повернення',
     task: 'Завдання'
 }
 const rejectReasons = {

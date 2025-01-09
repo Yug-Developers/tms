@@ -27,7 +27,7 @@
                             inline></v-badge>
                     </v-col>
                     <v-col class="d-flex flex-nowrap">
-                        Забір <v-badge :color="docTypeInPoint == 0 ? `grey` : `info`" :content="docTypeInPoint"
+                        Повернення <v-badge :color="docTypeInPoint == 0 ? `grey` : `info`" :content="docTypeInPoint"
                             inline></v-badge>
                     </v-col>
                     <v-col class="d-flex flex-nowrap">
