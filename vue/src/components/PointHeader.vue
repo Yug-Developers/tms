@@ -103,7 +103,7 @@
 </template>
 
 <script setup>
-import { defineProps, ref, computed, defineEmits  } from 'vue'
+import { ref, computed  } from 'vue'
 import { useRouter } from 'vue-router'
 import StatusChip from './PointStatusChip.vue'
 import { useAppStore } from '@/store/appStore'
@@ -266,13 +266,13 @@ const allBoxesPalletsFact = computed(() => {
 })
 
 const sumPack = computed(() => {
-    // sumPack (вивести суму сумарну по всіх доках з баси статусів, номери пакетів через кому)
+    // sumPack (вивести суму сумарну по всіх доках з баси статусів, номери унікальних пакетів через кому)
     const packs = []
     if (existsTripStatus.value && existsTripStatus.value.points) {
         const point = existsTripStatus.value.points.find((item) => item.id == pointId.value)
         if (point && point.docs) {
             point.docs.forEach((doc) => {
-                if (doc.sumPack) packs.push(doc.sumPack)
+                if (doc.sumPack && !packs.find(item => item == doc.sumPack)) packs.push(doc.sumPack)
             })
         }
     }

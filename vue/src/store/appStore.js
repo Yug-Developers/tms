@@ -493,7 +493,11 @@ export const useAppStore = defineStore('appStore', () => {
         for (let doc of point.docs) {
           cPoint.docs.push({
             id: doc.id,
-            status: 200
+            status: 200,
+            sumPack: null,
+            sumFact: 0,
+            palletsFact: 0,
+            boxesFact: 0
           })
         }
         points.push(cPoint)

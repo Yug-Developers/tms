@@ -6,7 +6,7 @@
 
 <script setup>
 import { useAppStore } from '@/store/appStore'
-import { defineProps, computed } from 'vue'
+import { computed } from 'vue'
 
 const appStore = useAppStore()
 

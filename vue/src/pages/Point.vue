@@ -3,7 +3,8 @@
     <v-layout full-height>
         <template v-if="trip && pointData && pointData.id">
             <v-container>
-                <PointHeader :point="pointData" :tripId="tripId" :points="points" :editorId="isEditor" @init-data = "initData"/>
+                <PointHeader :point="pointData" :tripId="tripId" :points="points" :editorId="isEditor"
+                    @init-data="initData" />
                 <v-sheet v-if="appStore.localStg.userData.role == 'manager' && !dontSendSms" elevation="0"
                     max-width="600" rounded="lg" width="100%" class="pa-0 mx-auto mb-4 d-flex justify-center">
                     <v-btn prepend-icon="mdi-cellphone-message-off" @click="setSMSstatus()"
@@ -171,22 +172,25 @@
     </v-layout>
     <!-- <pre>{{ appStore.statuses.filter(el => el._id == tripId) }}</pre> -->
     <v-bottom-navigation :active="bottomNavigation" v-model="bottomModel" elevation="24" height="80">
-        <v-btn :disabled="releaseBottomBtn && !onlyOneDocSelected" @click="onlyOneDocSelected ? release(onlyOneDocSelected) : openMassReleaseDialog()" stacked
+        <v-btn :disabled="releaseBottomBtn && !onlyOneDocSelected"
+            @click="onlyOneDocSelected ? release(onlyOneDocSelected) : openMassReleaseDialog()" stacked
             prepend-icon="mdi-account-check-outline" class="text-subtitle-2 mx-2">
             <template v-slot:prepend>
                 <v-icon color="success"></v-icon>
             </template>
             Видано
         </v-btn>
-        <v-btn :disabled="rejectBottomBtn" @click="onlyOneDocSelected ? reject(onlyOneDocSelected) : massRejectDialogOpen()" stacked
+        <v-btn :disabled="rejectBottomBtn"
+            @click="onlyOneDocSelected ? reject(onlyOneDocSelected) : massRejectDialogOpen()" stacked
             prepend-icon="mdi-account-remove-outline" class="text-subtitle-2 mx-2">
             <template v-slot:prepend>
                 <v-icon color="primary"></v-icon>
             </template>
             Відмова
         </v-btn>
-        <v-btn :disabled="cancelBottomBtn" @click="onlyOneDocSelected ? cancel(onlyOneDocSelected) : massCancelDialogOpen()" stacked prepend-icon="mdi-cancel"
-            class="text-subtitle-2 mx-2">
+        <v-btn :disabled="cancelBottomBtn"
+            @click="onlyOneDocSelected ? cancel(onlyOneDocSelected) : massCancelDialogOpen()" stacked
+            prepend-icon="mdi-cancel" class="text-subtitle-2 mx-2">
             <template v-slot:prepend>
                 <v-icon color="primary"></v-icon>
             </template>
@@ -235,6 +239,9 @@
             <v-card-actions>
                 <v-btn color="grey" @click="cancelSmsDialog()">Скасувати</v-btn>
                 <v-spacer></v-spacer>
+                <!-- <v-btn @click="openQRScanDialog()" variant="text" icon="mdi-qrcode-scan"
+                                class="ml-2"></v-btn>
+                <v-spacer></v-spacer> -->
                 <v-btn @click="acceptRelease()" :disabled="isFormValid ? false : true"
                     :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
@@ -386,14 +393,14 @@
                         class="mx-auto"></v-text-field>
                     <div v-if="timer !== 0" class="text-grey">
                         Повторно відправити SMS через
-                        <v-progress-circular :model-value="timer" :rotate="360" :size="40" :width="3"
-                            color="teal">
+                        <v-progress-circular :model-value="timer" :rotate="360" :size="40" :width="3" color="teal">
                             {{ timer / 100 * 60 }}
                         </v-progress-circular>
                     </div>
                 </div>
                 <div class="text-center">
-                    <v-btn v-if="timer === 0" @click="sendSMS()" variant="tonal" color="teal" append-icon="mdi-reload">Відправити SMS повторно</v-btn>
+                    <v-btn v-if="timer === 0" @click="sendSMS()" variant="tonal" color="teal"
+                        append-icon="mdi-reload">Відправити SMS повторно</v-btn>
                 </div>
             </v-card-text>
             <v-card-actions>
@@ -416,6 +423,17 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
+    <v-dialog v-model="isQRDialogOpen" max-width="600">
+        <v-card>
+            <v-card-title>Сканер QR-коду</v-card-title>
+            <v-card-text>
+                <QRScanner @qrResult="qrResult = $event" />
+            </v-card-text>
+            <v-card-actions>
+                <v-btn color="red" text @click="closeQRDialog">Закрити</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
 
 </template>
 
@@ -423,7 +441,8 @@
 import MainNavigation from '@/components/MainNavigation.vue'
 import PointHeader from '@/components/PointHeader.vue'
 import StatusChip from '@/components/DocumentStatusChip.vue'
-import { onMounted, onBeforeUnmount, ref, computed, reactive, watch, nextTick, defineEmits  } from 'vue'
+import QRScanner from '@/components/QRScanner.vue'
+import { onMounted, onBeforeUnmount, ref, computed, reactive, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import cyrillicToTranslit from 'cyrillic-to-translit-js'
@@ -492,7 +511,8 @@ const scannerContainer = ref(null)
 const setSMSstatusLoading = ref(false)
 const managerPerm = ref({})
 const smsPhoneError = ref('')
-
+const qrResult = ref('')
+const isQRDialogOpen = ref(false)
 
 const setSMSstatus = async () => {
     setSMSstatusLoading.value = true
@@ -566,10 +586,19 @@ const openScanDialog = () => {
     isDialogOpen.value = true
 }
 
+// Відкрити попап
+const openQRScanDialog = () => {
+    isQRDialogOpen.value = true
+}
+
 // Закрити попап і зупинити сканер
 const closeDialog = () => {
     isDialogOpen.value = false
     stopScanner()
+}
+
+const closeQRDialog = () => {
+    isQRDialogOpen.value = false
 }
 
 // Слідкуємо за станом попапу
@@ -874,17 +903,26 @@ const massRelease = async () => {
     try {
         if (checkSmsCode.value) {
             loading.value = true
-            for (let docId of Object.keys(docsSelected.value)) {
-                const curDoc = docs.value.find((item) => item.id == docId)
-                const sumDoc = docs.value.find((item) => item.sum > 0) || {}
+            let restOfSum = Number(allSumFact.value)
+            const cdocs = docs.value.filter((item) => docsSelected.value[item.id])
+            let docsCount = cdocs.filter((item) => item.sum > 0).length
+            for (let doc of cdocs) {
+                docsCount--
+                const docSum = doc.sum ? Number(doc.sum) : 0
+                let sumFact = docSum > restOfSum ? restOfSum : docSum
+                restOfSum -= sumFact
+                restOfSum = restOfSum < 0 ? 0 : restOfSum
+                if (docsCount == 0) {
+                    sumFact += restOfSum
+                }
                 await appStore.releaseDoc({
                     tripId: tripId.value,
                     pointId: pointId.value,
-                    docId: Number(docId),
-                    palletsFact: Number(curDoc.pallQty),
-                    boxesFact: Number(curDoc.boxQty),
-                    sumFact: sumDoc.id == docId ? Number(allSumFact.value) : 0,
-                    sumPack: sumDoc.id == docId ? allSumPack.value : 0,
+                    docId: doc.id,
+                    palletsFact: Number(doc.pallQty),
+                    boxesFact: Number(doc.boxQty),
+                    sumFact: Number(sumFact),
+                    sumPack: sumFact > 0 ? allSumPack.value : null,
                     statusConnection: navigator.onLine
                 })
             }
@@ -996,7 +1034,7 @@ const bottomNavigation = computed(() => {
 
 const onlyOneDocSelected = computed(() => {
     // повернути номер документу, якщо вибрано тільки один
-    return Object.keys(docsSelected.value).length == 1 ? Object.keys(docsSelected.value)[0] : false 
+    return Object.keys(docsSelected.value).length == 1 ? Object.keys(docsSelected.value)[0] : false
 })
 
 const pointStatus = computed(() => {

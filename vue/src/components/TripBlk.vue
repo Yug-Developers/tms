@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { defineProps, ref, onMounted, computed } from 'vue'
+import {  ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import StatusChip from './TripStatusChip.vue'
