@@ -71,7 +71,7 @@ module.exports = {
           title: 'Звіт про інкасацію',
           fileName,
           options: [
-            { name: 'Документ', col: 'docId', xml: "docId", default: true, width: 20 },
+            // { name: 'Документ', col: 'docId', xml: "docId", default: true, width: 20 },
             { name: 'Контрагент', col: 'rcpt', xml: "rcpt", default: true, width: 50 },
             { name: '№ пакета', col: 'sumPack', xml: "sumPack", default: true, width: 20 },
             { name: 'Сума, грн (заявлена)', col: 'sum', xml: "sum", default: true, width: 30 },
@@ -126,20 +126,42 @@ module.exports = {
       const points = {}
       for (const point of data.points) {
         for (const doc of point.docs) {
-          if (doc.sumFact && doc.sumPack) {
-            points[point.id] = {
+          const sum = tripPoints[point.id]?.docs?.find(d => d.id === doc.id)?.sum || 0
+          if (sum >= 0 && doc.sumPack !== null) {
+            if(!points[point.id]) {
+              points[point.id] = {}
+            }
+            if(!Array.isArray(points[point.id][doc.sumPack])) {
+              points[point.id][doc.sumPack] = []
+            }
+            points[point.id][doc.sumPack].push({
               docId: doc.id,
               rcpt: tripPoints[point.id].counterpartyName,
               sumPack: String(doc.sumPack),
               sumFact: doc.sumFact,
               statusConnection: doc.statusConnection ? 'Online' : 'Offline',
-              sum: tripPoints[point.id].docs.find(d => d.id === doc.id).sum
-            }
+              sum
+            })
+          }
+        }
+      }
+      // просумувати усі суми по кожному пакету sumFact та sum
+      for (const point in points) {
+        for (const pack in points[point]) {
+          const sumFact = points[point][pack].reduce((acc, curr) => acc + curr.sumFact, 0)
+          const sum = points[point][pack].reduce((acc, curr) => acc + curr.sum, 0)
+          points[point][pack] = {
+            docId: points[point][pack].map(doc => doc.docId).join(', '),
+            rcpt: points[point][pack][0].rcpt,
+            sumPack: points[point][pack][0].sumPack,
+            sumFact,
+            statusConnection: points[point][pack][0].statusConnection,
+            sum
           }
         }
       }
       // передати points у вигляді масиву
-      return Object.values(points)
+      return Object.values(points).reduce((acc, curr) => acc.concat(Object.values(curr)), [])
     } catch (error) {
       throw error
     }

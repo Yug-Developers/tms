@@ -665,7 +665,7 @@ const rules = {
 
 
 const selectDoc = (id) => {
-    if (!isEditor.value || pointStatus.value !== 200) return
+    if (!isEditor.value || pointStatus.value !== 200 || docStatuses.value[id]?.status !== 200) return
     if (docsSelected.value[id]) {
         delete docsSelected.value[id]
     } else {
@@ -802,6 +802,7 @@ const releaseDoc = async () => {
             loading.value = false
             acceptSmsDialog.value = false
             acceptDocDialog.value = false
+            docsSelected.value = {}
             appStore.setSnackbar({ text: "Документ отримано", type: 'success' })
         } else {
             appStore.setSnackbar({ text: "Невірний код з SMS", type: 'error' })
@@ -907,22 +908,24 @@ const massRelease = async () => {
             const cdocs = docs.value.filter((item) => docsSelected.value[item.id])
             let docsCount = cdocs.filter((item) => item.sum > 0).length
             for (let doc of cdocs) {
-                docsCount--
                 const docSum = doc.sum ? Number(doc.sum) : 0
                 let sumFact = docSum > restOfSum ? restOfSum : docSum
-                restOfSum -= sumFact
-                restOfSum = restOfSum < 0 ? 0 : restOfSum
-                if (docsCount == 0) {
-                    sumFact += restOfSum
+                if (docSum > 0) {
+                    docsCount--
+                    restOfSum -= sumFact
+                    restOfSum = restOfSum < 0 ? 0 : restOfSum
+                    if (docsCount == 0) {
+                        sumFact += restOfSum
+                    }
                 }
                 await appStore.releaseDoc({
                     tripId: tripId.value,
                     pointId: pointId.value,
                     docId: doc.id,
-                    palletsFact: Number(doc.pallQty),
-                    boxesFact: Number(doc.boxQty),
-                    sumFact: Number(sumFact),
-                    sumPack: sumFact > 0 ? allSumPack.value : null,
+                    palletsFact: Number(doc.pallQty) || 0,
+                    boxesFact: Number(doc.boxQty) || 0,
+                    sumFact: Number(sumFact) || 0,
+                    sumPack: docSum > 0 ? allSumPack.value : null,
                     statusConnection: navigator.onLine
                 })
             }
