@@ -239,9 +239,9 @@
             <v-card-actions>
                 <v-btn color="grey" @click="cancelSmsDialog()">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <!-- <v-btn @click="openQRScanDialog()" variant="text" icon="mdi-qrcode-scan"
+                <v-btn @click="openQRScanDialog()" variant="text" icon="mdi-qrcode-scan"
                                 class="ml-2"></v-btn>
-                <v-spacer></v-spacer> -->
+                <v-spacer></v-spacer>
                 <v-btn @click="acceptRelease()" :disabled="isFormValid ? false : true"
                     :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
@@ -610,6 +610,13 @@ watch(isDialogOpen, (isOpen) => {
         } else {
             stopScanner()
         }
+    }
+})
+//qrResult
+watch(qrResult, async (result) => {
+    if (result) {
+        await appStore.checkQrCode(result)
+        closeQRDialog()
     }
 })
 

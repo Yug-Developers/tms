@@ -234,6 +234,15 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
+  const checkQrcode = async (code) => {
+    try {
+      const res = await axios.post(Config.misUrl + '/tms/check-qr-code', { code })
+      return res.data
+    } catch (error) {
+      throw error
+    }
+  }
+
   // --------------------------------- actions --------------------------------
   const createCode = (phone) => {
     const code = process.env.NODE_ENV === 'production' ? parseInt(Math.random() * 10000).toString().padStart(4, '0') : '1111'
@@ -743,7 +752,7 @@ export const useAppStore = defineStore('appStore', () => {
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
     availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg, getTmsTripsById, checkTmsTripsProcess,
-    setSMSstatus, getManagerPermDoc
+    setSMSstatus, getManagerPermDoc, checkQrcode
   }
 })
 
