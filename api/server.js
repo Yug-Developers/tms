@@ -54,7 +54,7 @@ const syncData = async () => {
           if (currentDoc._revisions && currentDoc._revisions.ids.length > 1) {
             // Отримати попередню ревізію
             const previousRev = `${currentDoc._revisions.start - 1}-${currentDoc._revisions.ids[1]}`;
-
+            console.log('Попередня ревізія:', previousRev);
             try {
               // Отримати попередню версію документа
               const previousDoc = await db.get(doc._id, { rev: previousRev });
