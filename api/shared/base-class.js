@@ -419,7 +419,8 @@ module.exports = {
           </tr>
           `
           for (const row of dataList[email]) {
-            const colorized = row.boxQty !== row.boxesFact || row.pallQty !== row.palletsFact || row.sum !== row.sumFact || row.status !== 'Отримано' ?
+            const colorized = (row.type === 'out' && (row.boxQty !== row.boxesFact || row.pallQty !== row.palletsFact)) 
+                  || row.sum !== row.sumFact || row.statusCode !== 300 ?
               'style="background-color: #ffcccc;"' : ''
             table += `
             <tr ${colorized}>
@@ -524,10 +525,12 @@ module.exports = {
               rcpt: tripPoints[point.id].rcpt + ' ' + tripPoints[point.id].rcptPhone,
               address: tripPoints[point.id].address + (tripPoints[point.id].description ? ' (' + tripPoints[point.id].description + ')' : ''),
               docType: typesObj[routeDoc.docType] || 'Невідомo',
+              type: routeDoc.docType,
               boxQty: routeDoc.boxQty,
               pallQty: routeDoc.pallQty,
               sum: routeDoc.sum || 0,
               status: documentStatusObj[doc.status] || 'Невідомо',
+              statusCode: doc.status,
               description: doc.description || '',
               boxesFact: doc.boxesFact,
               palletsFact: doc.palletsFact,
