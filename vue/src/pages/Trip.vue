@@ -126,7 +126,7 @@ onMounted(async () => {
         }
         trips.value = await appStore.availableTrips(options)
         // Якщо рейсу не знайдено в доступних рейсах
-        if (!trips.value.find(trip => trip._id === tripId.value)) {
+        if (!trips.value.find(trip => trip._id == tripId.value)) {
             doc.value = null
             //перенаправити на сторінку з помилкою 403
             router.push('/403')
