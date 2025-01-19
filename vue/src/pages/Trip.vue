@@ -124,9 +124,10 @@ onMounted(async () => {
             selector,
             fields: ['_id']
         }
+        console.log("options", options)
         trips.value = await appStore.availableTrips(options)
         // Якщо рейсу не знайдено в доступних рейсах
-        console.log("trips", trips.value)
+        console.log("trips", trips.value, tripId.value)
         if (!trips.value.find(trip => trip._id == tripId.value)) {
             doc.value = null
             //перенаправити на сторінку з помилкою 403
