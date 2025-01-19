@@ -203,18 +203,27 @@ export function usePouchDB() {
 
     
     // ------------------ работа з віддаленними данними ------------------------
-    const fetchRemoteData = async (dbName, options = { selector: {} }) => {
+    const fetchRemoteData = async (dbName, options = { selector: {}, limit: 100 }) => {
         try {
             const db = initDb(dbName)
+    
+            // Додати limit і skip, якщо вони не передані в options
+            options = {
+                ...options,
+                limit: options.limit || 1000, 
+                skip: options.skip || 0 
+            }
+    
             const result = await dbRemoteObj[db].find(options)
+    
             console.log('CouchDb data fetched')
             console.log('fetchRemoteData', options, result)
+    
             return result && result.docs
         } catch (error) {
             throw error
         }
     }
-
     const allRemoteDocs = async (dbName) => {
         try {
             const db = initDb(dbName)

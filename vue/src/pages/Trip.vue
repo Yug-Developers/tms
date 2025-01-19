@@ -122,8 +122,7 @@ onMounted(async () => {
         // Доступні рейси
         const options = {
             selector,
-            fields: ["_id"],
-            batch_size: 1000  
+            fields: ["_id"]
         }
         trips.value = await appStore.availableTrips(options)
         // Якщо рейсу не знайдено в доступних рейсах
