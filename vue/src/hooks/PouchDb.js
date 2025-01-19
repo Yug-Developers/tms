@@ -215,10 +215,7 @@ export function usePouchDB() {
             }
     
             const result = await dbRemoteObj[db].find(options)
-    
             console.log('CouchDb data fetched')
-            console.log('fetchRemoteData', options, result)
-    
             return result && result.docs
         } catch (error) {
             throw error
