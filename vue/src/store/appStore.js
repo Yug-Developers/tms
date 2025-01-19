@@ -389,7 +389,7 @@ export const useAppStore = defineStore('appStore', () => {
   const availableTrips = async (options) => {
     try {
       const dbName = 'routes'
-      console.log('online.value', online.value)
+      console.log('availableTrips', options)
       if (online.value) {
         return await Pouch.fetchRemoteData(dbName, options)
       } else {
@@ -425,6 +425,7 @@ export const useAppStore = defineStore('appStore', () => {
         // use_index: ['driverId', 'addDriverId'] // Вказуємо використання попередньо створеного індексу
       }
       Object.assign(options, opt)
+      console.log('currentTrips', options)
       if (online.value) {
         return await Pouch.fetchRemoteData(dbName, options)
       } else {
