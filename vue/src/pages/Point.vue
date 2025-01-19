@@ -239,10 +239,10 @@
             <v-card-actions>
                 <v-btn color="grey" @click="cancelSmsDialog()">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn @click="openQRScanDialog()" variant="text" icon="mdi-qrcode-scan"
+                <v-btn @click="openQRScanDialog('releaseDoc')" variant="text" icon="mdi-qrcode-scan" :disabled="checkReleaseForm ? false : true"
                                 class="ml-2"></v-btn>
                 <v-spacer></v-spacer>
-                <v-btn @click="acceptRelease()" :disabled="isFormValid ? false : true"
+                <v-btn @click="acceptRelease()" :disabled="checkReleaseForm ? false : true"
                     :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
@@ -371,6 +371,9 @@
                 <v-card-actions>
                     <v-btn color="grey" @click="massReleaseDialog = false">Скасувати</v-btn>
                     <v-spacer></v-spacer>
+                    <v-btn @click="openQRScanDialog('massReleaseDoc')" variant="text" icon="mdi-qrcode-scan" :disabled="isFormValid ? false : true"
+                                class="ml-2"></v-btn>
+                    <v-spacer></v-spacer>
                     <v-btn :disabled="isFormValid ? false : true" @click="acceptMassRelease()"
                         :loading="loading">Підтвердити</v-btn>
                 </v-card-actions>
@@ -384,7 +387,7 @@
                 Підтвердження
             </v-card-title>
             <v-card-text v-if="statusConnection" class="px-2">
-                <div class="mb-4 px-2">Одержувачу на тел. було надіслано SMS з Кодом підтвердження.</div>
+                <div class="mb-4 px-2">Одержувачу на тел. {{ hidePhone(pointData.rcptPhone) }} <br> було надіслано SMS з Кодом підтвердження.</div>
                 <v-alert v-if="smsPhoneError" type="error" elevation="2" class="mx-2 mb-4">
                     {{ smsPhoneError }}
                 </v-alert>
@@ -427,7 +430,7 @@
         <v-card>
             <v-card-title>Сканер QR-коду</v-card-title>
             <v-card-text>
-                <QRScanner @qrResult="qrResult = $event" />
+                <QRScanner @qrResult="handleQrResult" />
             </v-card-text>
             <v-card-actions>
                 <v-btn color="red" text @click="closeQRDialog">Закрити</v-btn>
@@ -513,6 +516,8 @@ const managerPerm = ref({})
 const smsPhoneError = ref('')
 const qrResult = ref('')
 const isQRDialogOpen = ref(false)
+const phoneFromQr = ref('')
+const releaseType = ref('')
 
 const setSMSstatus = async () => {
     setSMSstatusLoading.value = true
@@ -527,8 +532,33 @@ const setSMSstatus = async () => {
 }
 
 const dontSendSms = computed(() => {
-    return managerPerm.value && managerPerm.value.dontSendSMS && managerPerm.value.dontSendSMS.includes(pointId.value) ? true : false
+    return (pointData.value && pointData.value.permitWithoutConfirm)  || (managerPerm.value && managerPerm.value.dontSendSMS && managerPerm.value.dontSendSMS.includes(pointId.value)) ? true : false
 })
+
+const formatPhoneNumber = (phone) => {
+  // Видаляємо все, крім цифр
+  const phoneNum = appStore.extractPhoneNumber(phone)
+  const digits = phoneNum.replace(/\D/g, '')
+
+  // Перевіряємо, чи телефон містить правильну кількість цифр
+  if (digits.length !== 12 || !digits.startsWith('380')) {
+    console.log('Невірний формат номера телефону', phone)
+  }
+
+  // Витягуємо частини номера
+  const code = digits.slice(2, 5)
+  const part1 = digits.slice(5, 8)
+  const part2 = digits.slice(8, 10)
+  const part3 = digits.slice(10, 12)
+
+  // Форматуємо номер
+  return `(${code}) ${part1}-${part2}${part3}`
+}
+
+const hidePhone = (phone) => {
+    const nphone = formatPhoneNumber(phone)
+    return nphone.substr(0, 4) + ') XXX-X' + nphone.substr(11, 3)
+}
 
 // Функція для ініціалізації Quagga
 const startScanner = () => {
@@ -587,7 +617,11 @@ const openScanDialog = () => {
 }
 
 // Відкрити попап
-const openQRScanDialog = () => {
+const openQRScanDialog = (input) => {
+    acceptFunc.value = input === 'releaseDoc' ?  releaseDoc : massRelease
+    releaseType.value = input 
+    qrResult.value = ''
+    phoneFromQr.value = ''
     isQRDialogOpen.value = true
 }
 
@@ -601,6 +635,41 @@ const closeQRDialog = () => {
     isQRDialogOpen.value = false
 }
 
+const handleQrResult = async (result) => {
+    qrResult.value = result
+}
+
+watch(qrResult, async (newResult) => {
+    if (!newResult) return // Уникаємо виконання дії для порожнього значення
+    try {
+        const result = await appStore.checkQrCode(newResult)
+        closeQRDialog()
+        if (result && result.content && result.content.id) {
+            if(result.content.expired){
+                appStore.setSnackbar({ text: 'QR-код не дійсний', type: 'error' }) 
+                return
+            } else if (result.content.consignee_id != pointData.value.rcptId) {
+                appStore.setSnackbar({ text: 'QR-код не відповідає поточній точці доставки', type: 'error' }) 
+                return
+            } else {
+                phoneFromQr.value = result.content.phone
+                await sendResultSMS(result.content.phone)
+                try {
+                    await acceptFunc.value()
+                } catch (error) {
+                    console.error('Помилка виконання функції:', error)
+                }
+                return
+            }
+        } else {
+            appStore.setSnackbar({ text: 'Не вдалося перевірити дійсність QR-коду.', type: 'error' }) 
+        }
+    } catch (error) {
+        console.error('Помилка перевірки QR-коду:', error)
+    }
+})
+
+
 // Слідкуємо за станом попапу
 watch(isDialogOpen, (isOpen) => {
     if (window.location.protocol === "https:") {
@@ -610,13 +679,6 @@ watch(isDialogOpen, (isOpen) => {
         } else {
             stopScanner()
         }
-    }
-})
-//qrResult
-watch(qrResult, async (result) => {
-    if (result) {
-        await appStore.checkQrCode(result)
-        closeQRDialog()
     }
 })
 
@@ -737,6 +799,42 @@ const sendSMS = async () => {
     }
 }
 
+const sendResultSMS = async (phone) => {
+    //Відправити SMS по результату сканування QR-code
+    let translit = ''
+    if (releaseType.value === 'releaseDoc') {
+            const message = curDoc.value.docType == 'out' || curDoc.value.docType == 'out_RP' ?
+            `видав ${curBoxes.value} кор / ${curPallets.value} пал` :
+            (curDoc.value.docType == 'in' ? `прийняв ${curBoxes.value} кор / ${curPallets.value} пал` : ``)
+        const messageSum = sumFact.value ? `прийняв ${sumFact.value} грн (№ пакету ${sumPack.value})` : ``
+        const coma = messageSum && message ? `, ` : ``
+        translit = cyrillicToTranslit({ preset: "uk" }).transform(`Водій ${message}${coma}${messageSum}.`)
+    } else {
+        const message = `видав ${allBoxes.value} кор / ${allPallets.value} пал`
+        const messageSum = allSumFact.value ? `прийняв ${allSumFact.value} грн (№ пакету ${allSumPack.value})` : ``
+        const coma = messageSum && message ? `, ` : ``
+        translit = cyrillicToTranslit({ preset: "uk" }).transform(`Водій ${message}${coma}${messageSum}.`)
+    }
+    
+    console.log(translit)
+    timer.value = 100
+    interval.value = setInterval(() => {
+        if (timer.value === 0) {
+            clearInterval(interval.value)
+        } else {
+            timer.value -= 5
+        }
+    }, 600 * 5)
+
+    try {
+        smsPhoneError.value = ''
+        await appStore.sendSMScode({ phone, message: translit })
+    } catch (error) {
+        console.error(error)
+        smsPhoneError.value = error
+    }
+}
+
 const sendMassSMS = async () => {
     //Відправити SMS
     smsCode.value = ''
@@ -797,6 +895,7 @@ const releaseDoc = async () => {
     try {
         if (checkSmsCode.value) {
             loading.value = true
+            const rcptQR = phoneFromQr.value 
             await appStore.releaseDoc({
                 tripId: tripId.value,
                 pointId: pointId.value,
@@ -804,7 +903,8 @@ const releaseDoc = async () => {
                 sumPack: Number(sumPack.value),
                 sumFact: Number(sumFact.value),
                 palletsFact: Number(curPallets.value),
-                boxesFact: Number(curBoxes.value)
+                boxesFact: Number(curBoxes.value),
+                rcptQR
             })
             loading.value = false
             acceptSmsDialog.value = false
@@ -925,6 +1025,7 @@ const massRelease = async () => {
                         sumFact += restOfSum
                     }
                 }
+                const rcptQR = phoneFromQr.value
                 await appStore.releaseDoc({
                     tripId: tripId.value,
                     pointId: pointId.value,
@@ -933,7 +1034,8 @@ const massRelease = async () => {
                     boxesFact: Number(doc.boxQty) || 0,
                     sumFact: Number(sumFact) || 0,
                     sumPack: docSum > 0 ? allSumPack.value : null,
-                    statusConnection: navigator.onLine
+                    statusConnection: navigator.onLine,
+                    rcptQR
                 })
             }
             loading.value = false
@@ -1160,7 +1262,7 @@ const allSum = computed(() => {
 })
 
 const checkSmsCode = computed(() => {
-    return navigator.onLine && !dontSendSms.value ? md5(smsCode.value) == checkSmsHash.value : true
+    return navigator.onLine && !dontSendSms.value && !phoneFromQr.value  ? md5(smsCode.value) == checkSmsHash.value : true
 })
 
 const isEditor = computed(() => {
@@ -1177,6 +1279,9 @@ const allDocsCompleteByType = computed(() => {
 
 })
 
+const checkReleaseForm = computed(() => {
+    return isFormValid.value && (curPallets.value > 0 || curBoxes.value > 0)
+})
 </script>
 
 <style scoped>

@@ -56,7 +56,8 @@ import { useAppStore } from '@/store/appStore'
 import { ref, } from 'vue'
 import { useRouter } from 'vue-router'
 import { vMaska } from "maska"
-import { useReCaptcha } from 'vue-recaptcha-v3'
+import Config from '@/Config'
+
 const options = { mask: '+38(###) ### - ####' }
 const router = useRouter()
 const version = process.env.__VERSION__
@@ -66,7 +67,7 @@ const formValid = ref(false)
 const check = ref(true)
 const code = ref('')
 const hash = ref('')
-const { executeRecaptcha, recaptchaLoaded } = useReCaptcha()
+
 const reCAPTCHA = ref('')
 const rules = {
     phone: v => v.length === 19 || 'Невірний формат телефону'
@@ -117,15 +118,33 @@ const resetPassword = async () => {
 
 const recaptcha = async () => {
     try {
-        // (optional) Wait until recaptcha has been loaded.
-        await recaptchaLoaded()
-
-        // Execute reCAPTCHA with action "login".
-        reCAPTCHA.value = await executeRecaptcha('forgot')
-        // Do stuff with the received token.
+        reCAPTCHA.value = await executeRecaptcha()
     } catch (error) {
         throw error
     }
+}
+
+const executeRecaptcha = () => {
+  return new Promise((resolve, reject) => {
+    if (typeof grecaptcha !== 'undefined') {
+      grecaptcha.ready(() => {
+        grecaptcha
+          .execute(Config.recaptchaSiteKey, { action: 'forgot' })
+          .then((generatedToken) => {
+            console.log('Отримано токен reCAPTCHA:', generatedToken)
+            resolve(generatedToken) // Передаємо токен у виклик `resolve`
+          })
+          .catch((error) => {
+            console.error('Помилка reCAPTCHA:', error)
+            reject(error) // Передаємо помилку
+          })
+      })
+    } else {
+      const error = 'Google reCAPTCHA не завантажений'
+      console.error(error)
+      reject(error)
+    }
+  })
 }
 
 </script>

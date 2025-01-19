@@ -23,7 +23,7 @@ export const useAppStore = defineStore('appStore', () => {
   const isSecureConnection = window.location.protocol === "https:"
   const loading = ref(false)
   const snackbar = reactive({
-    timeout: 1500,
+    timeout: 4000,
     text: '',
     model: false,
     color: 'accent-darken1',
@@ -234,9 +234,9 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
-  const checkQrcode = async (code) => {
+  const checkQrCode = async (code) => {
     try {
-      const res = await axios.post(Config.misUrl + '/tms/check-qr-code', { code })
+      const res = await axios.post(Config.misUrl + '/tms/check-qr-code', { code }, { withCredentials: true })
       return res.data
     } catch (error) {
       throw error
@@ -631,6 +631,9 @@ export const useAppStore = defineStore('appStore', () => {
               doc.palletsFact = config.palletsFact
               doc.boxesFact = config.boxesFact
               doc.statusConnection = online.value
+              if (config.rcptQR) {
+                doc.rcptQR = config.rcptQR
+              }
             }
           }
         }
@@ -752,7 +755,7 @@ export const useAppStore = defineStore('appStore', () => {
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
     availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg, getTmsTripsById, checkTmsTripsProcess,
-    setSMSstatus, getManagerPermDoc, checkQrcode
+    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber
   }
 })
 

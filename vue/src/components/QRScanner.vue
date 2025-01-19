@@ -1,9 +1,16 @@
 <template>
     <div>
-        <v-select v-model="selectedCamera" :items="cameraOptions" label="Виберіть камеру"
-            :loading="cameraOptions.length === 0" @update:modelValue="handleCameraChange"></v-select>
+        <v-select
+            v-model="selectedCamera"
+            :items="cameraOptions"
+            label="Виберіть камеру"
+            :loading="loading"
+            @update:modelValue="handleCameraChange"
+        ></v-select>
+        <v-alert v-if="cameraReadyError" type="error" dismissible>
+            Помилка! {{ cameraReadyError }}
+        </v-alert>
         <div id="scanner-reader" style="margin-top: 20px;"></div>
-        <div v-if="qrResult">Результат: {{ qrResult }}</div>
     </div>
 </template>
 
@@ -11,10 +18,15 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Html5Qrcode } from 'html5-qrcode'
 
+const emit = defineEmits(['qrResult']) // Оголошення події для емісії
+
 const qrResult = ref('')
 const cameraOptions = ref([])
 const selectedCamera = ref(null)
+const cameraReadyError = ref(null)
+const loading = ref(false)
 let html5QrCode = null
+
 
 const startQrScanner = async () => {
     if (!html5QrCode && document.getElementById('scanner-reader')) {
@@ -32,9 +44,10 @@ const startQrScanner = async () => {
         },
         (decodedText) => {
             qrResult.value = decodedText
+            emit('qrResult', decodedText) // Емісія події з результатом
         },
         (error) => {
-            //   console.warn('QR Error:', error)
+            // console.warn('QR Error:', error)
         }
     )
 }
@@ -49,6 +62,7 @@ const stopQrScanner = async () => {
 
 const loadCameras = async () => {
     try {
+        loading.value = true
         const cameras = await Html5Qrcode.getCameras()
         cameraOptions.value = cameras.map((camera) => ({
             title: camera.label || `Камера ${camera.id}`,
@@ -57,13 +71,15 @@ const loadCameras = async () => {
         if (cameraOptions.value.length > 0) {
             selectedCamera.value = cameraOptions.value[1]?.value || cameraOptions.value[0]?.value
         }
+        loading.value = false
     } catch (error) {
+        loading.value = false
+        cameraReadyError.value = error
         console.error('Помилка завантаження камер:', error)
     }
 }
 
 const handleCameraChange = async () => {
-    alert('handleCameraChange')
     if (html5QrCode) {
         await stopQrScanner()
     }
@@ -79,4 +95,3 @@ onUnmounted(() => {
     stopQrScanner()
 })
 </script>
-

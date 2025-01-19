@@ -1,6 +1,6 @@
 {
   "name": "tms-vue",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
@@ -23,7 +23,6 @@
     "quagga": "^0.12.1",
     "roboto-fontface": "*",
     "vue": "^3.3.9",
-    "vue-recaptcha-v3": "^2.0.1",
     "vue-router": "^4.0.0",
     "vuetify": "^3.4.3",
     "webfontloader": "^1.0.0"

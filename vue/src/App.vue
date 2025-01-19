@@ -1,4 +1,5 @@
 <template>
+    <RecaptchaLoader />
     <v-app>
         <v-main>
            <router-view />
@@ -10,6 +11,7 @@
 <script setup>
 import SnackBar from './components/SnackBar.vue'
 import { useAppStore } from './store/appStore';
+import RecaptchaLoader from './components/RecaptchaLoader.vue'
 const appStore = useAppStore()
 
 // setInterval(() => {
