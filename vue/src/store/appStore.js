@@ -389,6 +389,7 @@ export const useAppStore = defineStore('appStore', () => {
   const availableTrips = async (options) => {
     try {
       const dbName = 'routes'
+      console.log('online.value', online.value)
       if (online.value) {
         return await Pouch.fetchRemoteData(dbName, options)
       } else {
