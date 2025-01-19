@@ -446,7 +446,8 @@ export const useAppStore = defineStore('appStore', () => {
     if (localStg.userData.role == 'manager') {
       const carriers = localStg.userData.carrierId ? localStg.userData.carrierId.map(el => Number(el)) : []
       selector = {
-        carrierId: { $in: carriers }
+        carrierId: { $in: carriers },
+        batch_size: 1000  
       }
     } else {
       selector =
@@ -456,7 +457,8 @@ export const useAppStore = defineStore('appStore', () => {
           { addDriverId: { $eq: user_id } },
           { driverId: { $eq: Number(user_id) } },
           { addDriverId: { $eq: Number(user_id) } }
-        ]
+        ],
+        batch_size: 1000
       }
     }
     return selector
