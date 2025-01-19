@@ -389,9 +389,11 @@ export const useAppStore = defineStore('appStore', () => {
   const availableTrips = async (options) => {
     try {
       const dbName = 'routes'
-      console.log('availableTrips', options)
+      console.log('availableTrips options', options)
       if (online.value) {
-        return await Pouch.fetchRemoteData(dbName, options)
+        const res = await Pouch.fetchRemoteData(dbName, options)
+        console.log('availableTrips', res)
+        return res
       } else {
         return await Pouch.fetchData(dbName, options)
       }
