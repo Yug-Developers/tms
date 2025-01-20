@@ -649,7 +649,7 @@ watch(qrResult, async (newResult) => {
                 appStore.setSnackbar({ text: 'QR-код не дійсний', type: 'error' }) 
                 return
             } else if (result.content.consignee_typhoon_id != pointData.value.rcptId) {
-                appStore.setSnackbar({ text: 'QR-код не відповідає поточній точці доставки', type: 'error' }) 
+                appStore.setSnackbar({ text: `QR-код не відповідає поточній точці доставки ${result.content.consignee_typhoon_id}-${pointData.value.rcptId}`, type: 'error' }) 
                 return
             } else {
                 phoneFromQr.value = result.content.phone
