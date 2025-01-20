@@ -1280,7 +1280,7 @@ const allDocsCompleteByType = computed(() => {
 })
 
 const checkReleaseForm = computed(() => {
-    return isFormValid.value && (curPallets.value > 0 || curBoxes.value > 0)
+    return isFormValid.value && (curDoc.value.docType === 'task' ? true : (curPallets.value > 0 || curBoxes.value > 0))
 })
 </script>
 
