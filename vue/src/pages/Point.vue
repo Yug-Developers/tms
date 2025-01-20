@@ -648,7 +648,7 @@ watch(qrResult, async (newResult) => {
             if(result.content.expired){
                 appStore.setSnackbar({ text: 'QR-код не дійсний', type: 'error' }) 
                 return
-            } else if (result.content.consignee_id != pointData.value.rcptId) {
+            } else if (result.content.consignee_typhoon_id != pointData.value.rcptId) {
                 appStore.setSnackbar({ text: 'QR-код не відповідає поточній точці доставки', type: 'error' }) 
                 return
             } else {

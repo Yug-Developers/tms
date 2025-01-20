@@ -74,7 +74,6 @@ const reload = async () => {
         const intervalId = setInterval(async () => {
             attempts++
             const result = await appStore.checkTmsTripsProcess()
-            console.log(result)
 
             if (result.content && result.content.status === 'finished' && result.content.pid === pid) { 
                 appStore.setSnackbar({ text: "Оновлення данних маршруту завершено", type: 'success' });

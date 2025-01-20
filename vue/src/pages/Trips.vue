@@ -105,7 +105,6 @@ const allAvailableTrips = async () => {
         fields: ['_id', 'date']
     }
     try {
-        console.log('options', JSON.stringify(options, null, 2))
         allTrips.value = await appStore.availableTrips(options)
     } catch (e) {
         console.log(e)

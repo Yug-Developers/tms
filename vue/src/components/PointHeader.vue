@@ -256,7 +256,6 @@ const allBoxesPalletsFact = computed(() => {
         const point = existsTripStatus.value.points.find((item) => item.id == pointId.value)
         if (point && point.docs) {
             point.docs.forEach((doc) => {
-                console.log(doc)
                 if (doc.palletsFact) palletes += Number(doc.palletsFact)
                 if (doc.boxesFact) boxes += Number(doc.boxesFact)
             })
