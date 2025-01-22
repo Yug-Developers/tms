@@ -15,10 +15,15 @@
                     <div>
                         <div v-if="point.pointType != 'wh'"><b>Контрагент:</b> {{ point.counterpartyName }}</div>
                         <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">({{ point.description }})</span></div>
-                        <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, <span
-                                class="d-flex flex-nowrap"><v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1"
-                                    color="green" />
-                                <a :href="'tel:' + point.rcptPhone" @click.stop>{{ point.rcptPhone }}</a></span>
+                        <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, 
+                            <div class="d-flex">
+                                <span class="d-flex flex-nowrap pr-2"
+                                    v-for="phone in appStore.parsePhones(point.rcptPhone)">
+                                    <v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1" color="green" />
+                                    <a :href="'tel:' + phone" @click.stop>{{
+                                        phone }}</a>
+                                </span>
+                            </div>  
                         </div>
                     </div>
                         <v-btn :disabled="coordinates ? false : true" @click.stop="openGoogleMap(coordinates)" title="На карті"
@@ -39,14 +44,25 @@
     
     <v-sheet v-if="editorId" elevation="0" max-width="600" class="pa-0 mx-auto mb-4">
         <v-divider class="mb-2"></v-divider>
+        <div>
+            <div v-if="disableInPlaceBtn && existsTripStatus == null" class="text-center text-primary my-2 mt-4">
+                <v-icon  icon="mdi-alert-circle-outline" color="primary" class="mr-2 mb-1"></v-icon>Рейс не розпочато
+            </div>
+            <div v-if="disableInPlaceBtn && existsTripStatus && pointStatus == 100" class="text-center text-primary my-2 mt-4">
+                <v-icon  icon="mdi-alert-circle-outline" color="primary" class="mr-2 mb-1"></v-icon>На Рейсі інша Точка знаходиться в роботі. Завершіть роботу з нею.
+            </div>
+        </div>
         <div class="d-flex justify-space-around">
-        <v-btn :disabled="disableInPlaceBtn" v-if="pointStatus == 100" variant="elevated" color="blue" 
-            @click="inPlace()">На місці </v-btn>
-        <v-btn v-if="pointStatus == 200" variant="elevated" color="error"  @click="cancelDialog = true">Скасувати</v-btn>
-        <v-btn :disabled="uncomletedDocs" v-if="pointStatus == 200" @click="completePoint()" variant="elevated"
-            color="success">Виконано</v-btn>
-        <div v-if="pointStatus == 300" class="text-center">
-            <v-icon  icon="mdi-check-circle" color="green" class="mr-2 mb-1" />Точка виконана</div>
+            <v-btn :disabled="disableInPlaceBtn" v-if="pointStatus == 100" variant="elevated" color="blue" 
+                @click="inPlace()">На місці </v-btn>
+            <v-btn v-if="pointStatus == 200" variant="elevated" color="error"  @click="cancelDialog = true">Скасувати</v-btn>
+            <v-btn :disabled="uncomletedDocs" v-if="pointStatus == 200" @click="completePoint()" variant="elevated"
+                color="success">Виконано</v-btn>
+            <div v-if="pointStatus == 300" class="text-center">
+                <v-icon  icon="mdi-check-circle" color="green" class="mr-2 mb-1"></v-icon>Точка виконана
+            </div>
+            <!-- <v-alert v-if="disableInPlaceBtn && existsTripStatus && pointStatus == 100" dense type="warning" class="text-center mt-2 pa-1">На Рейсі інша Точка знаходиться в роботі. Завершіть роботу з нею.</v-alert> -->
+            <!-- <v-alert v-if="disableInPlaceBtn && existsTripStatus == null" dense type="warning" class="text-center mt-2 pa-1">Рейс не розпочато.</v-alert> -->
         </div>
         <v-divider class="mt-2"></v-divider>
     </v-sheet>

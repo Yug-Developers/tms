@@ -211,6 +211,18 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
   
+  const parsePhones = (input) => {
+    return Array.from(
+      new Set(
+        input
+          .split(',')
+          .filter(phone => phone) // Видалити пусті телефони
+          .map(phone => phone.trim()) // Видалити зайві пробіли
+          .map(phone => phone.startsWith('+') ? phone : `+${phone}`) // Додати "+" до телефонів без нього
+      )
+    )
+  }
+  
   const sendSMScode = async ({ phone, message }) => {
     try {
       const phoneNum = extractPhoneNumber(phone)
@@ -755,7 +767,7 @@ export const useAppStore = defineStore('appStore', () => {
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
     availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg, getTmsTripsById, checkTmsTripsProcess,
-    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber
+    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones
   }
 })
 

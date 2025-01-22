@@ -11,15 +11,21 @@
                 <div class="d-flex justify-space-between align-end">
                     <div>
                         <div v-if="point.pointType != 'wh'"><b>Контрагент:</b> {{ point.counterpartyName }}</div>
-                        <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">({{ point.description }})</span></div>
-                        <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, <span
-                                class="d-flex flex-nowrap"><v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1"
-                                    color="green" />
-                                <a :href="'tel:' + point.rcptPhone" @click.stop>{{ point.rcptPhone }}</a></span>
+                        <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">({{ point.description
+                                }})</span></div>
+                        <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }},
+                            <div class="d-flex">
+                                <span class="d-flex flex-nowrap pr-2"
+                                    v-for="phone in appStore.parsePhones(point.rcptPhone)">
+                                    <v-icon size="x-small" icon="mdi-phone" class="mr-1 mt-1" color="green" />
+                                    <a :href="'tel:' + phone" @click.stop>{{
+                                        phone }}</a>
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <v-btn :disabled="coordinates ? false : true" @click.stop="openGoogleMap(coordinates)" title="На карті"
-                        variant="text" icon="mdi-google-maps"></v-btn>
+                    <v-btn :disabled="coordinates ? false : true" @click.stop="openGoogleMap(coordinates)"
+                        title="На карті" variant="text" icon="mdi-google-maps"></v-btn>
                 </div>
                 <v-row v-if="point.pointType != 'wh'" class="my-2 text-left">
                     <v-col class="d-flex flex-nowrap">
@@ -48,6 +54,8 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import StatusChip from './PointStatusChip.vue'
+import { useAppStore } from '../store/appStore'
+const appStore = useAppStore()
 const router = useRouter()
 const props = defineProps({
     tripId: String,
@@ -113,7 +121,7 @@ const coordinates = computed(() => {
     if (!props.point.coordinates) {
         return
     }
-    return 'https://www.google.com/maps?q=' + props.point.coordinates.latitude + ',' + props.point.coordinates.longitude 
+    return 'https://www.google.com/maps?q=' + props.point.coordinates.latitude + ',' + props.point.coordinates.longitude
 })
 
 
