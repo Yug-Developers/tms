@@ -212,6 +212,9 @@ export const useAppStore = defineStore('appStore', () => {
   }
   
   const parsePhones = (input) => {
+    if (!input) {
+      return []
+    }
     return Array.from(
       new Set(
         input
