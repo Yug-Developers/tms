@@ -952,6 +952,7 @@ const rejectDoc = async () => {
         rejectReason.value = null
         rejectText.value = ''
         rejectDialog.value = false
+        docsSelected.value = {}
     } catch (error) {
         console.error(error)
     }
@@ -975,6 +976,7 @@ const cancelDoc = async () => {
         })
         loading.value = false
         cancelDialog.value = false
+        docsSelected.value = {}
     } catch (error) {
         console.error(error)
     }
@@ -1053,11 +1055,12 @@ const massRelease = async () => {
 const massReject = async () => {
     try {
         loading.value = true
-        for (let docId of Object.keys(docsSelected.value)) {
+        const cdocs = docs.value.filter((item) => docsSelected.value[item.id])
+        for (let doc of cdocs) {
             await appStore.rejectDoc({
                 tripId: tripId.value,
                 pointId: pointId.value,
-                docId: Number(docId),
+                docId: Number(doc.id),
                 description: rejectReasons[rejectReason.value] + '. ' + rejectText.value
             })
         }
@@ -1072,11 +1075,12 @@ const massReject = async () => {
 const massCancel = async () => {
     try {
         loading.value = true
-        for (let docId of Object.keys(docsSelected.value)) {
+        const cdocs = docs.value.filter((item) => docsSelected.value[item.id])
+        for (let doc of cdocs) {
             await appStore.cancelDoc({
                 tripId: tripId.value,
                 pointId: pointId.value,
-                docId: Number(docId),
+                docId: Number(doc.id),
                 description: cancelReasons[cancelReason.value] + '. ' + cancelText.value
             })
         }
