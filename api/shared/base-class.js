@@ -26,10 +26,19 @@ const getUsersByCarrierId = async (carrierId) => {
   try {
     const result = await remoteMailingDB.find({
       selector: {
-        carrierId: { $in: [carrierId] },
-        isActive: { $eq: true }
+        $or: [
+          {
+            carrierId: { $size: 0 },
+            isActive: { $eq: true }
+          },
+          {
+            carrierId: { $in: [carrierId] },
+            isActive: { $eq: true }
+          }
+        ]
       }
-    })
+    } 
+  )
     return result.docs
   } catch (error) {
     console.error('Помилка при виконанні запиту:', error)
@@ -128,10 +137,10 @@ module.exports = {
         for (const doc of point.docs) {
           const sum = tripPoints[point.id]?.docs?.find(d => d.id === doc.id)?.sum || 0
           if (sum >= 0 && doc.sumPack !== null) {
-            if(!points[point.id]) {
+            if (!points[point.id]) {
               points[point.id] = {}
             }
-            if(!Array.isArray(points[point.id][doc.sumPack])) {
+            if (!Array.isArray(points[point.id][doc.sumPack])) {
               points[point.id][doc.sumPack] = []
             }
             points[point.id][doc.sumPack].push({
@@ -393,6 +402,7 @@ module.exports = {
     return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`
   },
   sendManagersReportEmail(data) {
+    //Звіт про виконання рейса
     return new Promise(async (resolve, reject) => {
       try {
         const token = await Token.create(1)
@@ -419,8 +429,8 @@ module.exports = {
           </tr>
           `
           for (const row of dataList[email]) {
-            const colorized = (row.type === 'out' && (row.boxQty !== row.boxesFact || row.pallQty !== row.palletsFact)) 
-                  || row.sum !== row.sumFact || row.statusCode !== 300 ?
+            const colorized = (row.type === 'out' && (row.boxQty !== row.boxesFact || row.pallQty !== row.palletsFact))
+              || row.sum !== row.sumFact || row.statusCode !== 300 ?
               'style="background-color: #ffcccc;"' : ''
             table += `
             <tr ${colorized}>
@@ -514,14 +524,19 @@ module.exports = {
             400: 'Відмова',
             500: 'Скасовано',
           }
-
+          const carrierId = tripDoc.carrierId
           const contractorId = tripPoints[point.id].counterpartyId || -1
           const managersEmails = await Auth.getContractorsManagers({ contractorId, token })
-          for (const email of managersEmails) {
+          const scManagersEmails = await this.getScManagers({ contractorId, token, carrierId, type: 'isImplReport' })
+          const emails = managersEmails.concat(scManagersEmails)
+          for (const email of emails) {
+            if (!email) {
+              continue
+            }
             if (!points[email]) {
               points[email] = []
             }
-              points[email].push({
+            points[email].push({
               rcpt: tripPoints[point.id].rcpt + ' ' + tripPoints[point.id].rcptPhone,
               address: tripPoints[point.id].address + (tripPoints[point.id].description ? ' (' + tripPoints[point.id].description + ')' : ''),
               docType: typesObj[routeDoc.docType] || 'Невідомo',
@@ -547,5 +562,180 @@ module.exports = {
     } catch (error) {
       throw error
     }
-  }
+  },
+  getScManagers: async (config = {}) => {
+    const contractorId = config.contractorId || -1
+    const token = config.token || ''
+    const type = config.type
+    const carrierId = config.carrierId 
+    try {
+      const res = await axios({
+        method: 'GET',
+        url: Config.misUrl + '/tms/get-managers-by-sc',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        params: { contractorId, type, carrierId }
+      })
+      return res.data?.content || []
+    } catch (error) {
+      console.error(error);
+    }
+  },
+  sendManagersReturnReportEmail(data) {
+    //Звіт про повернення
+    return new Promise(async (resolve, reject) => {
+      try {
+        const token = await Token.create(1)
+        const doc = await remoteDBRoutes.get(data._id)
+        const currTime = new Date().toLocaleString()
+        const dataList = await this.createManagersReturnReportData(data)
+        for (const email in dataList) {
+          let table = `
+          <table border="1" cellpadding="5" cellspacing="0" style="font-family: 'Courier New'; font-size: 12px;"> 
+          <tr style="background-color: #f0f0f0;">
+            <th>Документ №</th>
+            <th>Контрагент</th>
+            <th>Адреса</th>
+            <th>Вантажоодержувач</th>
+            <th>Тип завдання</th>
+            <th>Кор/Пал</th>
+            <th>Статус доставки</th>
+            <th>Коментар до статусу</th>
+            <th>Кор/Пал факт</th>
+            <th>Підключення</th>
+          </tr>
+          `
+          for (const row of dataList[email]) {
+            const colorized = row.statusCode !== 300 ?
+              'style="background-color: #ffcccc;"' : ''
+            table += `
+            <tr ${colorized}>
+              <td>${row.id}</td>
+              <td>${row.contractor}</td>
+              <td>${row.address}</td>
+              <td>${row.rcpt}</td>
+              <td>${row.docType}</td>
+              <td>${row.boxQty}/${row.pallQty}</td>
+              <td>${row.status}</td>
+              <td>${row.description}</td>
+              <td>${row.boxesFact}/${row.palletsFact}</td>
+              <td>${row.statusConnection}</td>
+            </tr>
+            `
+          }
+          table += '</table>'
+
+          subject = `[TMS] Рейс № ${data._id} - Звіт про повернення`
+          message = `
+              <!DOCTYPE html>
+              <body>
+              <font face="Courier New" size="2">
+              Вітаємо,<br/><br/>
+              <b>Рейс № ${data._id} на ${this.formatDate(doc.date)} завершено.</b><br/>
+              Відповідальний: ${doc.editorName}<br/><br/>
+              Початок: ${this.formatDateTime(data.startTime)}<br/>
+              Завершення завдання рейсу: ${this.formatLocalTime(currTime)}<br/>
+              <br/>
+              ${table}
+              </font>
+              </body>
+              `
+
+          console.log('Відправка листа звіту про повернення')
+          const managerEmail = email || Config.defaultManagerEmail
+          console.log('managers', managerEmail)
+
+          console.log({
+            from: 'support@yugcontract.ua',
+            to: managerEmail,
+            cc: Config.defaultManagerEmail,
+            subject,
+            token
+          })
+
+          await mes.sendMail({
+            from: 'support@yugcontract.ua',
+            to: managerEmail,
+            cc: Config.defaultManagerEmail,
+            subject,
+            html: message,
+            token
+          })
+        }
+        resolve()
+      } catch (error) {
+        reject(error)
+      }
+    })
+  },
+  async createManagersReturnReportData(data) {
+    try {
+      const tripDoc = await remoteDBRoutes.get(data._id)
+      const token = await Token.create(1)
+      const tripPoints = {}
+      tripDoc.points.forEach(point => {
+        tripPoints[point.id] = point
+      }
+      )
+      // console.log(JSON.stringify(data, null, 2))
+      const points = {}
+      for (const point of data.points) {
+        for (const doc of point.docs) {
+          const routeDoc = tripPoints[point.id].docs.find(d => d.id === doc.id && d.docType === 'in')
+          if (!routeDoc) {
+            continue
+          }
+          const typesObj = {
+            out: 'Видачі',
+            in: 'Повернення',
+            task: 'Завдання'
+          }
+          const documentStatusObj = {
+            100: 'Новий',
+            200: 'У дорозі',
+            300: 'Отримано',
+            400: 'Відмова',
+            500: 'Скасовано',
+          }
+          const carrierId = tripDoc.carrierId
+          const contractorId = tripPoints[point.id].counterpartyId || -1
+          const scManagersEmails = await this.getScManagers({ contractorId, token, carrierId, type: 'isReturnReport' })
+          for (const email of scManagersEmails) {
+            if (!email) {
+              continue
+            }
+            if (!points[email]) {
+              points[email] = []
+            }
+            points[email].push({
+              rcpt: tripPoints[point.id].rcpt + ' ' + tripPoints[point.id].rcptPhone,
+              address: tripPoints[point.id].address + (tripPoints[point.id].description ? ' (' + tripPoints[point.id].description + ')' : ''),
+              docType: typesObj[routeDoc.docType] || 'Невідомo',
+              type: routeDoc.docType,
+              boxQty: routeDoc.boxQty,
+              pallQty: routeDoc.pallQty,
+              sum: routeDoc.sum || 0,
+              status: documentStatusObj[doc.status] || 'Невідомо',
+              statusCode: doc.status,
+              description: doc.description || '',
+              boxesFact: doc.boxesFact,
+              palletsFact: doc.palletsFact,
+              sumPack: doc.sumPack || 0,
+              sumFact: doc.sumFact,
+              statusConnection: doc.statusConnection ? 'Online' : 'Offline',
+              contractor: tripPoints[point.id].counterpartyName,
+              id: doc.id
+            })
+          }
+        }
+      }
+      return points
+    } catch (error) {
+      throw error
+    }
+  },
+ 
+
 }

@@ -111,6 +111,7 @@ const syncData = async () => {
                     //Відправити листа зі звітом про закриття документа
                     await Base.sendReportEmail(doc)
                     await Base.sendManagersReportEmail(doc)
+                    await Base.sendManagersReturnReportEmail(doc)
                   }
                 } else {
                   console.log('Розбіжностей у статусах точок не виявлено.');
