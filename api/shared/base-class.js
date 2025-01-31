@@ -11,16 +11,6 @@ const remoteUsersDB = new PouchDB(Config.remoteCouchDb + '_users', { auth })
 const dbNameRoutes = 'tms_routes'
 const remoteDBRoutes = new PouchDB(Config.remoteCouchDb + dbNameRoutes, { auth })
 
-
-const getUsers = async (selector = {}) => {
-  try {
-    const result = await remoteUsersDB.find({ selector })
-    return result.docs
-  } catch (error) {
-    return error
-  }
-}
-
 const getUsersByCarrierId = async (carrierId) => {
   // E-mail з Розсилки ТМС з Перевізник = Перевізник рейсу ТА Звіт про інкасацію = ТАК.
   try {

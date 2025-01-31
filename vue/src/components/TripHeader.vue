@@ -53,7 +53,7 @@ const tripLength = (id) => {
     let length = 0
     if (props.trip && props.trip.doc && props.trip.doc.points) {
         length = props.trip.doc.points.reduce((acc, item) => {
-            return acc + item.distance
+            return item.id === -1 ? acc : acc + item.distance
         }, 0)
     }
     length = Math.round(length * 100) / 100
@@ -75,18 +75,23 @@ const checkMapBtn = () => {
     }
     return result
 }
+
 const mapUrl = computed(() => {
-    let url = 'https://www.google.com/maps/'
-    if (props.trip && props.trip.doc && props.trip.doc.points) {
-        let points = props.trip.doc.points
-        let start = points[0]
-        let end = points[points.length - 1]
-        let visitPoints = points.slice(1, points.length - 1)
-        let visitPointsStr = visitPoints.map(item => item.coordinates.latitude + ',' + item.coordinates.longitude).join('|')
-        url = 'https://www.google.com/maps/dir/?api=1&origin=' + start.coordinates.latitude + ',' + start.coordinates.longitude + '&destination=' + end.coordinates.latitude + ',' + end.coordinates.longitude + '&waypoints=' + visitPointsStr + '&optimizeWaypoints=true'
-    }
-    return url
-})
+      // Отримуємо масив координат з props.trip.doc.points
+      const points = props.trip?.doc?.points || [];
+
+      // Перетворюємо масив об'єктів у масив координат у форматі "latitude,longitude"
+      const coordinates = points.map(point => 
+        `${point.coordinates.latitude},${point.coordinates.longitude}`
+      );
+
+      // Формуємо URL для Google Maps
+      const baseUrl = "https://www.google.com/maps/dir/";
+      const url = baseUrl + coordinates.join('/');
+
+      return url;
+});
+
 const openGoogleMap = () => {
     window.open(mapUrl.value, '_blank')
 }

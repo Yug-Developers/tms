@@ -70,7 +70,7 @@ const reload = async () => {
         appStore.setSnackbar({ text: "Оновлення данних маршруту розпочато", type: 'warning' });
 
         let attempts = 0
-        const maxAttempts = 30  // Максимальна кількість спроб
+        const maxAttempts = 60  // Максимальна кількість спроб
         const intervalId = setInterval(async () => {
             attempts++
             const result = await appStore.checkTmsTripsProcess()
@@ -84,7 +84,7 @@ const reload = async () => {
                 reloadLoading.value = false
                 appStore.setSnackbar({ text: "Не вдалося оновити дані!", type: 'error' });
             }
-        }, 1000);
+        }, 500);
 
     } catch (error) {
         reloadLoading.value = false
