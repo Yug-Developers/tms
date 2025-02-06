@@ -85,7 +85,6 @@ module.exports = {
         console.log({
           from: 'support@yugcontract.ua',
           to: managersEmails,
-          cc: Config.defaultManagerEmail,
           subject,
           html: message,
           attachments: [
@@ -99,7 +98,6 @@ module.exports = {
         await mes.sendMail({
           from: 'support@yugcontract.ua',
           to: managersEmails,
-          cc: Config.defaultManagerEmail,
           subject,
           html: message,
           attachments: [
@@ -465,7 +463,6 @@ module.exports = {
           console.log({
             from: 'support@yugcontract.ua',
             to: managerEmail,
-            cc: Config.defaultManagerEmail,
             subject,
             token
           })
@@ -473,7 +470,6 @@ module.exports = {
           await mes.sendMail({
             from: 'support@yugcontract.ua',
             to: managerEmail,
-            cc: Config.defaultManagerEmail,
             subject,
             html: message,
             token
@@ -640,7 +636,6 @@ module.exports = {
           console.log({
             from: 'support@yugcontract.ua',
             to: managerEmail,
-            cc: Config.defaultManagerEmail,
             subject,
             token
           })
@@ -648,7 +643,6 @@ module.exports = {
           await mes.sendMail({
             from: 'support@yugcontract.ua',
             to: managerEmail,
-            cc: Config.defaultManagerEmail,
             subject,
             html: message,
             token

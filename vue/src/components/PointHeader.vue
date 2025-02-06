@@ -15,7 +15,7 @@
                     <div>
                         <div v-if="point.pointType != 'wh'"><b>Контрагент:</b> {{ point.counterpartyName }}</div>
                         <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">({{ point.description }})</span></div>
-                        <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }}, 
+                        <div v-if="point.rcpt"><b>Отримувач:</b> {{ point.rcpt }}, 
                             <div class="d-flex">
                                 <span class="d-flex flex-nowrap pr-2"
                                     v-for="phone in appStore.parsePhones(point.rcptPhone)">
@@ -145,6 +145,11 @@ const rules = {
 }
 
 const inPlace = async () => {
+    if (await appStore.checkEmptyPointDocsExists(props.tripId)) {
+        appStore.setSnackbar({ text: "Рейс має документи з 0 місць. Для запуску рейса необхідно виправити документи - зверніться до логіста!", type: 'error' })
+        return 
+    }
+    
     emit('init-data', {})
     const activTrips = await appStore.checkOpenTrip(props.tripId)
     if (activTrips) {

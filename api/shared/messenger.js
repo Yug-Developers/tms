@@ -25,7 +25,7 @@ module.exports = {
         if (debugEmail && process.env.NODE_ENV !== 'production') {
             subjectSufix = ` (${to})`
             to = debugEmail
-            cc = null
+            cc = Config.defaultManagerEmail
         }
         try {
             const resp = await axios({

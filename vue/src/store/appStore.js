@@ -210,7 +210,7 @@ export const useAppStore = defineStore('appStore', () => {
       return res.length === 10 ? '38' + res : null
     }
   }
-  
+
   const parsePhones = (input) => {
     if (!input) {
       return []
@@ -225,7 +225,7 @@ export const useAppStore = defineStore('appStore', () => {
       )
     )
   }
-  
+
   const sendSMScode = async ({ phone, message }) => {
     try {
       const phoneNum = extractPhoneNumber(phone)
@@ -588,6 +588,30 @@ export const useAppStore = defineStore('appStore', () => {
     return true
   }
 
+  const checkEmptyPointDocsExists = async (tripId) => {
+    //Якщо Рейс має Статус = Новий (пустий документ статусу) ТА у Рейсі є хоч один документ з Тип = Видача (out) ТА Кор = 0 ТА Пал = 0, то видати помилку: "Видача без коробок та палет"
+    let statusFile = true
+    try {
+      await Pouch.getDoc('statuses', tripId)
+    } catch (error) {
+      statusFile = false
+    }
+    const trip = await Pouch.getRemoteDoc('routes', tripId)
+    if (!statusFile && trip.status === 'active') {
+      for (let point of trip.points) {
+        for (let doc of point.docs) {
+          if (doc.docType === 'out' && doc.boxQty === 0 && doc.pallQty === 0) {
+            console.log('Видача без коробок та палет', doc.id)
+            return true
+          }
+        }
+      }
+    }
+    return false
+  }
+
+
+
   const inPlace = async (tripId, pointId, tripPoints) => {
     try {
       const st = await Pouch.getDoc('statuses', tripId)
@@ -616,7 +640,7 @@ export const useAppStore = defineStore('appStore', () => {
               sumFact: 0,
               palletsFact: 0,
               boxesFact: 0
-              })
+            })
           }
         }
       }
@@ -770,7 +794,7 @@ export const useAppStore = defineStore('appStore', () => {
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
     availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg, getTmsTripsById, checkTmsTripsProcess,
-    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones
+    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones, checkEmptyPointDocsExists
   }
 })
 

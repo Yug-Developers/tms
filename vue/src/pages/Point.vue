@@ -17,8 +17,9 @@
                     <v-alert variant="tonal" type="success" border="start" icon="mdi-cellphone-message-off"
                         class="mx-auto">Дозволено без підтвердження через Код SMS</v-alert>
                 </v-sheet>
-                <v-sheet v-if="pointData.pointType != 'wh'" elevation="0" max-width="600" width="100%" class="mx-auto">
-                    <template v-for="(type) in types" :key="type">
+                <!-- <v-sheet v-if="pointData.pointType != 'wh'" elevation="0" max-width="600" width="100%" class="mx-auto"> -->
+                <v-sheet elevation="0" max-width="600" width="100%" class="mx-auto">
+                        <template v-for="(type) in types" :key="type">
                         <v-expansion-panels v-model="panel[type]" multiple class="mb-2">
                             <v-expansion-panel v-if="docsData[type].length != 0">
                                 <v-expansion-panel-title disable-icon-rotate>
@@ -69,14 +70,14 @@
                                                 :class="`details my-2 text-center ` + (docsSelected[doc.id] ? `bg-teal-lighten-5` : ``)">
                                                 <thead>
                                                     <tr>
-                                                        <th v-if="doc.docType != 'task'" class="text-center">
+                                                        <th v-if="doc.docType != 'task'" class="text-center" width="33%">
                                                             Вага, кг
                                                         </th>
-                                                        <th v-if="doc.docType != 'task'" class="text-center">
+                                                        <th v-if="doc.docType != 'task'" class="text-center" width="33%">
                                                             Об'єм, м3
                                                         </th>
                                                         <th v-if="doc.docType == 'out' || doc.docType == 'out_RP'"
-                                                            class="text-center">
+                                                            class="text-center" width="33%">
                                                             Місць
                                                         </th>
                                                     </tr>
@@ -85,11 +86,16 @@
                                                     <tr>
                                                         <td v-if="doc.docType != 'task'">{{ doc.weight }}</td>
                                                         <td v-if="doc.docType != 'task'">{{ doc.volume }}</td>
-                                                        <td v-if="doc.docType == 'out' || doc.docType == 'out_RP'">
+                                                        <td v-if="doc.docType == 'out' || doc.docType == 'out_RP'" :class="!doc.pallQty && !doc.boxQty && doc.docType == 'out' ? `text-primary` : ``">
                                                             <span v-if="doc.boxQty">{{ doc.boxQty }}</span><span
                                                                 v-if="!doc.boxQty">-</span> / <span
                                                                 v-if="doc.pallQty">{{ doc.pallQty }}</span><span
                                                                 v-if="!doc.pallQty">-</span>
+                                                            <v-tooltip text="По документу 0 місць! Можливо документ не додано в машину!">
+                                                                <template v-slot:activator="{ props }">
+                                                                    <v-icon v-bind="props" v-if="!doc.pallQty && !doc.boxQty && doc.docType == 'out'" color="primary" class="ml-2">mdi-alert-circle</v-icon>
+                                                                </template>
+                                                            </v-tooltip>
                                                         </td>
                                                     </tr>
                                                 </tbody>

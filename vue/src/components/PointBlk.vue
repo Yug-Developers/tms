@@ -13,7 +13,7 @@
                         <div v-if="point.pointType != 'wh'"><b>Контрагент:</b> {{ point.counterpartyName }}</div>
                         <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">({{ point.description
                                 }})</span></div>
-                        <div v-if="point.pointType != 'wh'"><b>Отримувач:</b> {{ point.rcpt }},
+                        <div v-if="point.rcpt"><b>Отримувач:</b> {{ point.rcpt }},
                             <div class="d-flex">
                                 <span class="d-flex flex-nowrap pr-2"
                                     v-for="phone in appStore.parsePhones(point.rcptPhone)">
