@@ -10,7 +10,7 @@ export default {
         alphaName: 'YUGcontract',
         tag: 'ТМС',
     },
-    recaptchaSiteKey: "6Lc7Q78pAAAAAHE5WkV0Ug7N1OBeEi-YcageJfYa",
+    recaptchaSiteKey: "6LeFpVYdAAAAAEkuPYWCLWJiRvcMZhdnDI08zGZH",
     // документ рейсу
     tripDoc: {
         "_id": "435245, // typhoon_id рейсу",

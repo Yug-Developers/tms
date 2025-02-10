@@ -271,6 +271,7 @@ export const useAppStore = defineStore('appStore', () => {
       Pouch.destroyDB('statuses')
       Pouch.destroyDB('routes')
       Pouch.destroyDB('users')
+      Pouch.destroyDB('manager_perm')
       localStg.userData = {}
       localStg.user_name = ''
       localStg.user_id = ''

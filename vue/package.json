@@ -1,6 +1,12 @@
 {
   "name": "tms-vue",
   "version": "0.2.2",
+  "browserslist": [
+  "defaults",
+  "ie >= 11",
+  "last 2 versions",
+  "not dead"
+  ],
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
