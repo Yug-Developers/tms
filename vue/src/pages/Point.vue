@@ -912,7 +912,7 @@ const releaseDoc = async () => {
                 tripId: tripId.value,
                 pointId: pointId.value,
                 docId: Number(curDoc.value.id),
-                sumPack: Number(sumPack.value),
+                sumPack: sumPack.value,
                 sumFact: Number(sumFact.value),
                 palletsFact: Number(curPallets.value),
                 boxesFact: Number(curBoxes.value),

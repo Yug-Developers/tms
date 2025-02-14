@@ -54,7 +54,7 @@
         </div>
         <div class="d-flex justify-space-around">
             <v-btn :disabled="disableInPlaceBtn" v-if="pointStatus == 100" variant="elevated" color="blue" 
-                @click="inPlace()">На місці </v-btn>
+                @click="inPlace()" :loading="inplaceLoading">На місці </v-btn>
             <v-btn v-if="pointStatus == 200" variant="elevated" color="error"  @click="cancelDialog = true">Скасувати</v-btn>
             <v-btn :disabled="uncomletedDocs" v-if="pointStatus == 200" @click="completePoint()" variant="elevated"
                 color="success">Виконано</v-btn>
@@ -103,7 +103,7 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
-    <v-dialog scrim="error" v-model="cancelDialog" max-width="600">
+    <v-dialog scrim="grey" v-model="cancelDialog" max-width="600">
         <v-card>
             <v-card-text>
                 Ви впевнені, що хочете скасувати прибуття на точку?
@@ -136,6 +136,7 @@ const odometerDialog = ref(false)
 const cancelDialog = ref(false)
 const odometrFinishDialog = ref(false)
 const isFormValid = ref(false)
+const inplaceLoading = ref(false)
 
 const emit = defineEmits(['init-data'])
 
@@ -145,8 +146,10 @@ const rules = {
 }
 
 const inPlace = async () => {
+    inplaceLoading.value = true
     if (await appStore.checkEmptyPointDocsExists(props.tripId)) {
         appStore.setSnackbar({ text: "Рейс має документи з 0 місць. Для запуску рейса необхідно виправити документи - зверніться до логіста!", type: 'error' })
+        inplaceLoading.value = false
         return 
     }
     
@@ -154,6 +157,7 @@ const inPlace = async () => {
     const activTrips = await appStore.checkOpenTrip(props.tripId)
     if (activTrips) {
         appStore.setSnackbar({ text: "Неможливо відкрити новий рейс. Є інші активні рейси.", type: 'error' })
+        inplaceLoading.value = false
         return
     }
     if (props.point.sortNumber == 1 && !existsTripStatus.value) {
@@ -168,6 +172,7 @@ const inPlace = async () => {
             console.error(error)
         }
     }
+    inplaceLoading.value = false
 }
 
 const completePoint = async () => {

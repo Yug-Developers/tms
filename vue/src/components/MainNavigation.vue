@@ -13,7 +13,7 @@
             <v-btn icon @click="goBack()"><v-icon>mdi-arrow-u-left-bottom</v-icon></v-btn>
         </span>
         <v-spacer></v-spacer>
-        <span v-if="online">{{ connection }}</span>
+        <!-- <span :color="appStore.offline ? 'error' : 'success'" v-if="online">{{ connection }}</span> -->
         <!-- <v-icon class="mr-5 ml-1" v-if="appStore.offline" color="warning">mdi-wifi-off</v-icon>
         <v-icon class="mr-5 ml-1" v-else color="success">mdi-wifi</v-icon> -->
         <v-avatar size="15" class="mr-5 ml-1" :color="appStore.offline ? 'error' : 'success'" :title="appStore.offline ? 'Ви зараз off-line' : 'Ви зараз on-line'"></v-avatar>
