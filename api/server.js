@@ -31,7 +31,8 @@ const syncData = async () => {
   try {
     PouchDB.sync(db, remoteDB, {
       live: true,
-      retry: true
+      retry: true,
+      include_docs: true
     }).on('paused', function () {
       // replication was paused, usually because of a lost connection
       console.log('CouchDb paused')

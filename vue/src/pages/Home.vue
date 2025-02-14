@@ -4,7 +4,7 @@
         <v-container max-width="600">
             <v-row>
                 <v-col cols="12">
-                    <v-card elevation="0">
+                    <v-card elevation="0" class="bg-transparent">
                         <v-card-subtitle class="px-0">Вітаємо,</v-card-subtitle>
                         <v-card-title class="font-weight-bold text-body2 px-0">{{ appStore.localStg.userData && appStore.localStg.userData.pib }}!</v-card-title>
                     </v-card>

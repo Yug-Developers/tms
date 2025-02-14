@@ -3,22 +3,23 @@
     <v-layout full-height>
         <template v-if="trip && pointData && pointData.id">
             <v-container>
+                
                 <PointHeader :point="pointData" :tripId="tripId" :points="points" :editorId="isEditor"
                     @init-data="initData" />
                 <v-sheet v-if="appStore.localStg.userData.role == 'manager' && !dontSendSms" elevation="0"
-                    max-width="600" rounded="lg" width="100%" class="pa-0 mx-auto mb-4 d-flex justify-center">
+                    max-width="600" rounded="lg" width="100%" class="pa-0 mx-auto mb-4 d-flex justify-center bg-transparent">
                     <v-btn prepend-icon="mdi-cellphone-message-off" @click="setSMSstatus()"
                         :loading="setSMSstatusLoading" :disabled="pointStatus != 200" class="mx-auto">
                         Без Коду SMS
                     </v-btn>
                 </v-sheet>
                 <v-sheet v-if="dontSendSms" elevation="0" max-width="600" rounded="lg" width="100%"
-                    class="pa-0 mx-auto mb-4 d-flex justify-center">
+                    class="pa-0 mx-auto mb-4 d-flex justify-center bg-transparent">
                     <v-alert variant="tonal" type="success" border="start" icon="mdi-cellphone-message-off"
                         class="mx-auto">Дозволено без підтвердження через Код SMS</v-alert>
                 </v-sheet>
                 <!-- <v-sheet v-if="pointData.pointType != 'wh'" elevation="0" max-width="600" width="100%" class="mx-auto"> -->
-                <v-sheet elevation="0" max-width="600" width="100%" class="mx-auto">
+                <v-sheet elevation="0" max-width="600" width="100%" class="mx-auto bg-transparent">
                         <template v-for="(type) in types" :key="type">
                         <v-expansion-panels v-model="panel[type]" multiple class="mb-2">
                             <v-expansion-panel v-if="docsData[type].length != 0">
@@ -249,7 +250,7 @@
                                 class="ml-2"></v-btn>
                 <v-spacer></v-spacer>
                 <v-btn @click="acceptRelease()" :disabled="checkReleaseForm ? false : true"
-                    :loading="loading">Підтвердити</v-btn>
+                    :loading="checkInternetConnectionLoading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -380,8 +381,7 @@
                     <v-btn @click="openQRScanDialog('massReleaseDoc')" variant="text" icon="mdi-qrcode-scan" :disabled="isFormValid ? false : true"
                                 class="ml-2"></v-btn>
                     <v-spacer></v-spacer>
-                    <v-btn :disabled="isFormValid ? false : true" @click="acceptMassRelease()"
-                        :loading="loading">Підтвердити</v-btn>
+                    <v-btn :disabled="isFormValid ? false : true" @click="acceptMassRelease()" :loading="checkInternetConnectionLoading">Підтвердити</v-btn>
                 </v-card-actions>
             </v-form>
         </v-card>
@@ -457,7 +457,9 @@ import { useAppStore } from '@/store/appStore'
 import cyrillicToTranslit from 'cyrillic-to-translit-js'
 import md5 from 'md5'
 import Quagga from 'quagga'
+import { useOnlineStatus } from '@/hooks/onlineStatus'
 
+const { updateOnlineStatus } = useOnlineStatus()
 const appStore = useAppStore()
 const route = useRoute()
 const pointData = ref({})
@@ -524,6 +526,7 @@ const qrResult = ref('')
 const isQRDialogOpen = ref(false)
 const phoneFromQr = ref('')
 const releaseType = ref('')
+const checkInternetConnectionLoading = ref(false)
 
 const setSMSstatus = async () => {
     setSMSstatusLoading.value = true
@@ -757,7 +760,7 @@ const release = (docId) => {
     if (docTasks(docId)) {
         const curDocument = docs.value.find((item) => item.id == docId)
         curDoc.value = curDocument
-        statusConnection.value = navigator.onLine
+        statusConnection.value = !appStore.offline
         curPallets.value = Number(curDocument.pallQty)
         curBoxes.value = Number(curDocument.boxQty)
         sumPack.value = curDocument.sumPack
@@ -883,7 +886,10 @@ const accept = async () => {
 }
 const acceptRelease = async () => {
     try {
-        if (navigator.onLine && !dontSendSms.value) {
+        checkInternetConnectionLoading.value = true
+        await updateOnlineStatus()
+        checkInternetConnectionLoading.value = false
+        if (navigator.onLine && !dontSendSms.value && !appStore.offline) {
             await sendSMS()
             acceptFunc.value = releaseDoc
             acceptDocDialog.value = false
@@ -1000,12 +1006,15 @@ const docTasks = (docId) => {
 
 const acceptMassRelease = async () => {
     try {
-        if (navigator.onLine && !dontSendSms.value) {
+        checkInternetConnectionLoading.value = true
+        await updateOnlineStatus()
+        checkInternetConnectionLoading.value = false
+        if (navigator.onLine && !dontSendSms.value && !appStore.offline) {
             await sendMassSMS()
             acceptFunc.value = massRelease
             massReleaseDialog.value = false
             acceptSmsDialog.value = true
-            statusConnection.value = navigator.onLine
+            statusConnection.value = !appStore.offline
         } else {
             await massRelease()
             acceptDocDialog.value = false
@@ -1272,7 +1281,7 @@ const allSum = computed(() => {
 })
 
 const checkSmsCode = computed(() => {
-    return navigator.onLine && !dontSendSms.value && !phoneFromQr.value  ? md5(smsCode.value) == checkSmsHash.value : true
+    return navigator.onLine && !appStore.offline && !dontSendSms.value && !phoneFromQr.value  ? md5(smsCode.value) == checkSmsHash.value : true
 })
 
 const isEditor = computed(() => {

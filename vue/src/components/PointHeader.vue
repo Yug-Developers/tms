@@ -1,5 +1,5 @@
 <template>
-    <v-sheet v-if="point.id" elevation="0" max-width="600" rounded="sm" width="100%" class="pa-0 mx-auto mb-4">
+    <v-sheet v-if="point.id" elevation="0" max-width="600" rounded="sm" width="100%" class="pa-0 mx-auto mb-4 bg-transparent">
         <div class="text-grey text-caption">
             Рейс № {{ tripId }}
         </div>
@@ -42,7 +42,7 @@
         </v-card>
     </v-sheet>
     
-    <v-sheet v-if="editorId" elevation="0" max-width="600" class="pa-0 mx-auto mb-4">
+    <v-sheet v-if="editorId" elevation="0" max-width="600" class="pa-0 mx-auto mb-4 bg-transparent">
         <v-divider class="mb-2"></v-divider>
         <div>
             <div v-if="disableInPlaceBtn && existsTripStatus == null" class="text-center text-primary my-2 mt-4">

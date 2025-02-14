@@ -1,6 +1,6 @@
 <template>
-    <v-sheet v-if="trip.id" elevation="0" max-width="600" rounded="lg" width="100%" class="pa-0 mx-auto">
-        <v-card flat>
+    <v-sheet v-if="trip.id" elevation="0" max-width="600" rounded="lg" width="100%" class="pa-0 mx-auto bg-transparent">
+        <v-card flat class="bg-transparent">
             <v-card-title class="d-flex justify-space-between pa-0 pb-1">
                 <div>Рейс № {{ trip.id }}</div>
                 <StatusChip :tripId="trip.id" />

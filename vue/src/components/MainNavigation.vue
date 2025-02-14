@@ -8,15 +8,15 @@
         </template>
         <v-toolbar-title><div class="d-none d-sm-block" @click="router.push('/')" >
             TMS.Доставки</div>
-            <!-- <v-img title="Головна сторінка" @click="router.push('/')" style="cursor:pointer" height="30" position="left center" contain src="/img/icons/logo_sun_n_sm.png" /> -->
         </v-toolbar-title>
         <span v-if="route.name != 'Home'">
-            <!-- {{ route.meta.title }} -->
             <v-btn icon @click="goBack()"><v-icon>mdi-arrow-u-left-bottom</v-icon></v-btn>
         </span>
         <v-spacer></v-spacer>
-
-        <v-avatar size="15" class="mr-5" :color="appStore.online ? 'success' : 'error'" :title="appStore.online ? 'Ви зараз on-line' : 'Ви зараз off-line'"></v-avatar>
+        <span v-if="online">{{ connection }}</span>
+        <!-- <v-icon class="mr-5 ml-1" v-if="appStore.offline" color="warning">mdi-wifi-off</v-icon>
+        <v-icon class="mr-5 ml-1" v-else color="success">mdi-wifi</v-icon> -->
+        <v-avatar size="15" class="mr-5 ml-1" :color="appStore.offline ? 'error' : 'success'" :title="appStore.offline ? 'Ви зараз off-line' : 'Ви зараз on-line'"></v-avatar>
         <template v-slot:extension>
             <v-progress-linear v-if="appStore.loading" indeterminate color="error"></v-progress-linear>
         </template>
@@ -28,12 +28,21 @@ import { useAppStore } from '@/store/appStore'
 import { useOnlineStatus } from '@/hooks/onlineStatus'
 import NavigationDrawerLeft from './NavigationDrawerLeft.vue'
 import { useRoute, useRouter } from 'vue-router'
+import { computed  } from 'vue'
 
 const route = useRoute()
 const router = useRouter()
 const goBack = () => {
     router.go(-1)
 }
+
+const connection = computed(() => {
+    return appStore.connection
+})
+
+const online = computed(() => {
+    return navigator.onLine
+})
 
 const appStore = useAppStore()
 useOnlineStatus()

@@ -2,7 +2,7 @@
     <MainNavigation />
     <v-layout full-height class="align-center">
         <v-container class="align-self-stretch" max-width="600">
-            <v-sheet elevation="0" class="mx-auto mb-4">
+            <v-sheet elevation="0" class="mx-auto mb-4 bg-transparent">
                 <h2 class="mb-4">Рейси</h2>
             </v-sheet>
             <v-row elevation="0" class="d-flex mx-auto mb-4" no-gutters>

@@ -9,7 +9,7 @@
                     </v-col>
                 </v-row>
                 <v-sheet elevation="0" max-width="600" rounded="lg" width="100%"
-                    class="pa-0 mx-auto d-flex justify-space-between align-center">
+                    class="pa-0 mx-auto d-flex justify-space-between align-center bg-transparent">
                     <v-switch v-if="notClosedPointsShow" v-model="notClosedPoins" class="ml-2">
                         <template v-slot:label>
                             <span class="text-caption">Тільки незавершені</span>

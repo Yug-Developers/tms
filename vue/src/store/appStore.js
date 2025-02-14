@@ -20,6 +20,8 @@ const Pouch = usePouchDB()
 export const useAppStore = defineStore('appStore', () => {
   // --------------------------------- state ----------------------------------
   const online = ref(navigator.onLine)
+  const offline = ref(false)
+  const connection = ref(navigator.connection?.effectiveType)
   const isSecureConnection = window.location.protocol === "https:"
   const loading = ref(false)
   const snackbar = reactive({
@@ -90,35 +92,6 @@ export const useAppStore = defineStore('appStore', () => {
     const [year, month, day] = date.split('-')
     return `${day}-${month}-${year}`
   }
-
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-  }
-
-  const setCookie = (name, value, options = {}) => {
-    let cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`;
-    if (options.expires) {
-      const expires = options.expires instanceof Date ? options.expires.toUTCString() : options.expires;
-      cookieString += `; expires=${expires}`;
-    }
-    if (options.path) {
-      cookieString += `; path=${options.path}`;
-    }
-    if (options.domain) {
-      cookieString += `; domain=${options.domain}`;
-    }
-    if (options.secure) {
-      cookieString += `; secure`;
-    }
-    if (options.sameSite) {
-      cookieString += `; samesite=${options.sameSite}`;
-    }
-    document.cookie = cookieString;
-  }
-
 
   // --------------------------------- getters --------------------------------
   const setSnackbar = (config = {}) => {
@@ -284,11 +257,9 @@ export const useAppStore = defineStore('appStore', () => {
 
   const logout = async () => {
     try {
-      if (online.value) {
+      if (!offline.value) {
         await Pouch.logout()
-      } else {
-        setCookie('AuthSession', '', { expires: new Date(0), domain: '.yugcontract.ua' })
-      }
+      } 
       Pouch.destroyDB('statuses')
       Pouch.destroyDB('routes')
       Pouch.destroyDB('users')
@@ -307,7 +278,7 @@ export const useAppStore = defineStore('appStore', () => {
   const pullTripsData = async () => {
     try {
       loading.value = true
-      if (online.value) {
+      if (!offline.value) {
         const options = {
           filter: 'filter/by_status_editor',
           query_params: { editorId: localStg.user_id }
@@ -327,7 +298,7 @@ export const useAppStore = defineStore('appStore', () => {
 
   const pushStatusesData = async () => {
     try {
-      if (online.value) {
+      if (!offline.value) {
         const pushRes = await Pouch.push('statuses')
       }
     } catch (error) {
@@ -337,7 +308,7 @@ export const useAppStore = defineStore('appStore', () => {
 
   const pushManagerPermData = async () => {
     try {
-      if (online.value) {
+      if (!offline.value) {
         const pushRes = await Pouch.push('manager_perm')
       }
     } catch (error) {
@@ -347,7 +318,7 @@ export const useAppStore = defineStore('appStore', () => {
 
   const pullStatusesData = async (docIds) => {
     try {
-      if (online.value) {
+      if (!offline.value) {
         const opt = { doc_ids: docIds }
         const pullSt = await Pouch.pull('statuses', opt)
       }
@@ -405,7 +376,7 @@ export const useAppStore = defineStore('appStore', () => {
   const availableTrips = async (options) => {
     try {
       const dbName = 'routes'
-      if (online.value) {
+      if (!offline.value) {
         return await Pouch.fetchRemoteData(dbName, options)
       } else {
         return await Pouch.fetchData(dbName, options)
@@ -418,7 +389,7 @@ export const useAppStore = defineStore('appStore', () => {
   const availableStatuses = async (options) => {
     try {
       const dbName = 'statuses'
-      if (online.value) {
+      if (!offline.value) {
         return await Pouch.fetchRemoteData(dbName, options)
       } else {
         return await Pouch.fetchData(dbName, options)
@@ -440,7 +411,7 @@ export const useAppStore = defineStore('appStore', () => {
         // use_index: ['driverId', 'addDriverId'] // Вказуємо використання попередньо створеного індексу
       }
       Object.assign(options, opt)
-      if (online.value) {
+      if (!offline.value) {
         return await Pouch.fetchRemoteData(dbName, options)
       } else {
         return await Pouch.fetchData(dbName, options)
@@ -451,7 +422,7 @@ export const useAppStore = defineStore('appStore', () => {
   }
 
   const getUserSelector = async () => {
-    if (localStg.userData && !localStg.userData._id && online.value) {
+    if (localStg.userData && !localStg.userData._id && !offline.value) {
       localStg.userData = await Pouch.getUserData(localStg.user_name)
     }
 
@@ -670,7 +641,7 @@ export const useAppStore = defineStore('appStore', () => {
               doc.sumFact = config.sumFact
               doc.palletsFact = config.palletsFact
               doc.boxesFact = config.boxesFact
-              doc.statusConnection = online.value
+              doc.statusConnection = !offline.value
               if (config.rcptQR) {
                 doc.rcptQR = config.rcptQR
               }
@@ -700,7 +671,7 @@ export const useAppStore = defineStore('appStore', () => {
             if (doc.id === config.docId) {
               doc.status = 400
               doc.description = config.description
-              doc.statusConnection = online.value
+              doc.statusConnection = !offline.value
             }
           }
         }
@@ -727,7 +698,7 @@ export const useAppStore = defineStore('appStore', () => {
             if (doc.id === config.docId) {
               doc.status = 500
               doc.description = config.description
-              doc.statusConnection = online.value
+              doc.statusConnection = !offline.value
             }
           }
         }
@@ -788,14 +759,13 @@ export const useAppStore = defineStore('appStore', () => {
     return localISOString
   }
 
-
   return {
     snackbar, setSnackbar, online, data, statuses, navigationDrawerRightShow, menuItems, loading,
     checkOpenTrip, pullTripsData, initNewTripStatus, cancelPoint, inPlace, checkPointDocs, releaseDoc, rejectDoc, cancelDoc,
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
     availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg, getTmsTripsById, checkTmsTripsProcess,
-    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones, checkEmptyPointDocsExists
+    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones, checkEmptyPointDocsExists, connection, offline
   }
 })
 

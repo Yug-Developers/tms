@@ -1,7 +1,7 @@
 <template>
     <RecaptchaLoader />
     <v-app>
-        <v-main>
+        <v-main :class="appStore.offline ?`bg-red-lighten-5`:``">
            <router-view />
         </v-main>
     </v-app>
