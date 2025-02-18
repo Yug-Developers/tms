@@ -3,24 +3,24 @@
     <v-layout full-height>
         <template v-if="trip && pointData && pointData.id">
             <v-container>
-                
+
                 <PointHeader :point="pointData" :tripId="tripId" :points="points" :editorId="isEditor"
                     @init-data="initData" />
                 <v-sheet v-if="appStore.localStg.userData.role == 'manager' && !dontSendSms" elevation="0"
-                    max-width="600" rounded="lg" width="100%" class="pa-0 mx-auto mb-4 d-flex justify-center bg-transparent">
+                    max-width="600" rounded="lg" width="100%"
+                    class="pa-0 mx-auto mb-4 d-flex justify-center bg-transparent">
                     <v-btn prepend-icon="mdi-cellphone-message-off" @click="setSMSstatus()"
                         :loading="setSMSstatusLoading" :disabled="pointStatus != 200" class="mx-auto">
                         Без Коду SMS
                     </v-btn>
                 </v-sheet>
-                <v-sheet v-if="dontSendSms" elevation="0" max-width="600" rounded="lg" width="100%"
-                    class="pa-0 mx-auto mb-4 d-flex justify-center bg-transparent">
-                    <v-alert variant="tonal" type="success" border="start" icon="mdi-cellphone-message-off"
-                        class="mx-auto">Дозволено без підтвердження через Код SMS</v-alert>
-                </v-sheet>
-                <!-- <v-sheet v-if="pointData.pointType != 'wh'" elevation="0" max-width="600" width="100%" class="mx-auto"> -->
+                <v-alert v-if="dontSendSms" variant="tonal" type="success" border="start"
+                    icon="mdi-cellphone-message-off" class="mx-auto mb-4">Дозволено без підтвердження через Код
+                    SMS</v-alert>
+                <v-alert v-if="permitWithoutConfirm" variant="tonal" type="error" border="start" icon="mdi-alert"
+                    class="mx-auto mb-4">Обов'язково підпишіть ТТН та Видаткову накладну!</v-alert>
                 <v-sheet elevation="0" max-width="600" width="100%" class="mx-auto bg-transparent">
-                        <template v-for="(type) in types" :key="type">
+                    <template v-for="(type) in types" :key="type">
                         <v-expansion-panels v-model="panel[type]" multiple class="mb-2">
                             <v-expansion-panel v-if="docsData[type].length != 0">
                                 <v-expansion-panel-title disable-icon-rotate>
@@ -71,10 +71,12 @@
                                                 :class="`details my-2 text-center ` + (docsSelected[doc.id] ? `bg-teal-lighten-5` : ``)">
                                                 <thead>
                                                     <tr>
-                                                        <th v-if="doc.docType != 'task'" class="text-center" width="33%">
+                                                        <th v-if="doc.docType != 'task'" class="text-center"
+                                                            width="33%">
                                                             Вага, кг
                                                         </th>
-                                                        <th v-if="doc.docType != 'task'" class="text-center" width="33%">
+                                                        <th v-if="doc.docType != 'task'" class="text-center"
+                                                            width="33%">
                                                             Об'єм, м3
                                                         </th>
                                                         <th v-if="doc.docType == 'out' || doc.docType == 'out_RP'"
@@ -87,14 +89,19 @@
                                                     <tr>
                                                         <td v-if="doc.docType != 'task'">{{ doc.weight }}</td>
                                                         <td v-if="doc.docType != 'task'">{{ doc.volume }}</td>
-                                                        <td v-if="doc.docType == 'out' || doc.docType == 'out_RP'" :class="!doc.pallQty && !doc.boxQty && doc.docType == 'out' ? `text-primary` : ``">
+                                                        <td v-if="doc.docType == 'out' || doc.docType == 'out_RP'"
+                                                            :class="!doc.pallQty && !doc.boxQty && doc.docType == 'out' ? `text-primary` : ``">
                                                             <span v-if="doc.boxQty">{{ doc.boxQty }}</span><span
                                                                 v-if="!doc.boxQty">-</span> / <span
                                                                 v-if="doc.pallQty">{{ doc.pallQty }}</span><span
                                                                 v-if="!doc.pallQty">-</span>
-                                                            <v-tooltip text="По документу 0 місць! Можливо документ не додано в машину!">
+                                                            <v-tooltip
+                                                                text="По документу 0 місць! Можливо документ не додано в машину!">
                                                                 <template v-slot:activator="{ props }">
-                                                                    <v-icon v-bind="props" v-if="!doc.pallQty && !doc.boxQty && doc.docType == 'out'" color="primary" class="ml-2">mdi-alert-circle</v-icon>
+                                                                    <v-icon v-bind="props"
+                                                                        v-if="!doc.pallQty && !doc.boxQty && doc.docType == 'out'"
+                                                                        color="primary"
+                                                                        class="ml-2">mdi-alert-circle</v-icon>
                                                                 </template>
                                                             </v-tooltip>
                                                         </td>
@@ -102,7 +109,8 @@
                                                 </tbody>
                                             </v-table>
                                             <div v-if="doc.docType != 'in' && doc.sum"><v-icon size="small" color="grey"
-                                                    class="mr-2">mdi-email-outline</v-icon>COD: {{ doc.sum }} </div>
+                                                    class="mr-2">mdi-email-outline</v-icon>COD:
+                                                {{ doc.sum }} </div>
                                             <v-table density="compact">
                                                 <tbody>
                                                     <tr v-if="doc.tasks && doc.tasks.length">
@@ -246,8 +254,8 @@
             <v-card-actions>
                 <v-btn color="grey" @click="cancelSmsDialog()">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn @click="openQRScanDialog('releaseDoc')" variant="text" icon="mdi-qrcode-scan" :disabled="checkReleaseForm ? false : true"
-                                class="ml-2"></v-btn>
+                <v-btn @click="openQRScanDialog('releaseDoc')" variant="text" icon="mdi-qrcode-scan"
+                    :disabled="checkReleaseForm ? false : true" class="ml-2"></v-btn>
                 <v-spacer></v-spacer>
                 <v-btn @click="acceptRelease()" :disabled="checkReleaseForm ? false : true"
                     :loading="checkInternetConnectionLoading">Підтвердити</v-btn>
@@ -378,10 +386,11 @@
                 <v-card-actions>
                     <v-btn color="grey" @click="massReleaseDialog = false">Скасувати</v-btn>
                     <v-spacer></v-spacer>
-                    <v-btn @click="openQRScanDialog('massReleaseDoc')" variant="text" icon="mdi-qrcode-scan" :disabled="isFormValid ? false : true"
-                                class="ml-2"></v-btn>
+                    <v-btn @click="openQRScanDialog('massReleaseDoc')" variant="text" icon="mdi-qrcode-scan"
+                        :disabled="isFormValid ? false : true" class="ml-2"></v-btn>
                     <v-spacer></v-spacer>
-                    <v-btn :disabled="isFormValid ? false : true" @click="acceptMassRelease()" :loading="checkInternetConnectionLoading">Підтвердити</v-btn>
+                    <v-btn :disabled="isFormValid ? false : true" @click="acceptMassRelease()"
+                        :loading="checkInternetConnectionLoading">Підтвердити</v-btn>
                 </v-card-actions>
             </v-form>
         </v-card>
@@ -393,7 +402,8 @@
                 Підтвердження
             </v-card-title>
             <v-card-text v-if="statusConnection" class="px-2">
-                <div class="mb-4 px-2">Одержувачу на тел. {{ hidePhone(pointData.rcptPhone) }} <br> було надіслано SMS з Кодом підтвердження.</div>
+                <div class="mb-4 px-2">Одержувачу на тел. {{ hidePhone(pointData.rcptPhone) }} <br> було надіслано SMS з
+                    Кодом підтвердження.</div>
                 <v-alert v-if="smsPhoneError" type="error" elevation="2" class="mx-2 mb-4">
                     {{ smsPhoneError }}
                 </v-alert>
@@ -541,27 +551,30 @@ const setSMSstatus = async () => {
 }
 
 const dontSendSms = computed(() => {
-    return (pointData.value && pointData.value.permitWithoutConfirm)  || (managerPerm.value && managerPerm.value.dontSendSMS && managerPerm.value.dontSendSMS.includes(pointId.value)) ? true : false
+    return (pointData.value && pointData.value.permitWithoutConfirm) || (managerPerm.value && managerPerm.value.dontSendSMS && managerPerm.value.dontSendSMS.includes(pointId.value)) ? true : false
+})
+const permitWithoutConfirm = computed(() => {
+    return (pointData.value && pointData.value.permitWithoutConfirm) ? true : false
 })
 
 const formatPhoneNumber = (phone) => {
-  // Видаляємо все, крім цифр
-  const phoneNum = appStore.extractPhoneNumber(phone)
-  const digits = phoneNum.replace(/\D/g, '')
+    // Видаляємо все, крім цифр
+    const phoneNum = appStore.extractPhoneNumber(phone)
+    const digits = phoneNum.replace(/\D/g, '')
 
-  // Перевіряємо, чи телефон містить правильну кількість цифр
-  if (digits.length !== 12 || !digits.startsWith('380')) {
-    console.log('Невірний формат номера телефону', phone)
-  }
+    // Перевіряємо, чи телефон містить правильну кількість цифр
+    if (digits.length !== 12 || !digits.startsWith('380')) {
+        console.log('Невірний формат номера телефону', phone)
+    }
 
-  // Витягуємо частини номера
-  const code = digits.slice(2, 5)
-  const part1 = digits.slice(5, 8)
-  const part2 = digits.slice(8, 10)
-  const part3 = digits.slice(10, 12)
+    // Витягуємо частини номера
+    const code = digits.slice(2, 5)
+    const part1 = digits.slice(5, 8)
+    const part2 = digits.slice(8, 10)
+    const part3 = digits.slice(10, 12)
 
-  // Форматуємо номер
-  return `(${code}) ${part1}-${part2}${part3}`
+    // Форматуємо номер
+    return `(${code}) ${part1}-${part2}${part3}`
 }
 
 const hidePhone = (phone) => {
@@ -627,8 +640,8 @@ const openScanDialog = () => {
 
 // Відкрити попап
 const openQRScanDialog = (input) => {
-    acceptFunc.value = input === 'releaseDoc' ?  releaseDoc : massRelease
-    releaseType.value = input 
+    acceptFunc.value = input === 'releaseDoc' ? releaseDoc : massRelease
+    releaseType.value = input
     qrResult.value = ''
     phoneFromQr.value = ''
     isQRDialogOpen.value = true
@@ -654,11 +667,11 @@ watch(qrResult, async (newResult) => {
         const result = await appStore.checkQrCode(newResult)
         closeQRDialog()
         if (result && result.content && result.content.id) {
-            if(result.content.expired){
-                appStore.setSnackbar({ text: 'QR-код не дійсний', type: 'error' }) 
+            if (result.content.expired) {
+                appStore.setSnackbar({ text: 'QR-код не дійсний', type: 'error' })
                 return
             } else if (result.content.consignee_typhoon_id != pointData.value.rcptId) {
-                appStore.setSnackbar({ text: `QR-код не відповідає поточній точці доставки ${result.content.consignee_typhoon_id}-${pointData.value.rcptId}`, type: 'error' }) 
+                appStore.setSnackbar({ text: `QR-код не відповідає поточній точці доставки ${result.content.consignee_typhoon_id}-${pointData.value.rcptId}`, type: 'error' })
                 return
             } else {
                 phoneFromQr.value = result.content.phone
@@ -671,7 +684,7 @@ watch(qrResult, async (newResult) => {
                 return
             }
         } else {
-            appStore.setSnackbar({ text: 'Не вдалося перевірити дійсність QR-коду.', type: 'error' }) 
+            appStore.setSnackbar({ text: 'Не вдалося перевірити дійсність QR-коду.', type: 'error' })
         }
     } catch (error) {
         console.error('Помилка перевірки QR-коду:', error)
@@ -812,7 +825,7 @@ const sendResultSMS = async (phone) => {
     //Відправити SMS по результату сканування QR-code
     let translit = ''
     if (releaseType.value === 'releaseDoc') {
-            const message = curDoc.value.docType == 'out' || curDoc.value.docType == 'out_RP' ?
+        const message = curDoc.value.docType == 'out' || curDoc.value.docType == 'out_RP' ?
             `видав ${curBoxes.value} кор / ${curPallets.value} пал` :
             (curDoc.value.docType == 'in' ? `прийняв ${curBoxes.value} кор / ${curPallets.value} пал` : ``)
         const messageSum = sumFact.value ? `прийняв ${sumFact.value} грн (№ пакету ${sumPack.value})` : ``
@@ -824,7 +837,7 @@ const sendResultSMS = async (phone) => {
         const coma = messageSum && message ? `, ` : ``
         translit = cyrillicToTranslit({ preset: "uk" }).transform(`Водій ${message}${coma}${messageSum}.`)
     }
-    
+
     console.log(translit)
     timer.value = 100
     interval.value = setInterval(() => {
@@ -907,7 +920,7 @@ const releaseDoc = async () => {
     try {
         if (checkSmsCode.value) {
             loading.value = true
-            const rcptQR = phoneFromQr.value 
+            const rcptQR = phoneFromQr.value
             await appStore.releaseDoc({
                 tripId: tripId.value,
                 pointId: pointId.value,
@@ -1281,7 +1294,7 @@ const allSum = computed(() => {
 })
 
 const checkSmsCode = computed(() => {
-    return navigator.onLine && !appStore.offline && !dontSendSms.value && !phoneFromQr.value  ? md5(smsCode.value) == checkSmsHash.value : true
+    return navigator.onLine && !appStore.offline && !dontSendSms.value && !phoneFromQr.value ? md5(smsCode.value) == checkSmsHash.value : true
 })
 
 const isEditor = computed(() => {

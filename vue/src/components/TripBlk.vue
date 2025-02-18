@@ -1,16 +1,34 @@
 <template>
-    <v-sheet v-if="trip.id" style="cursor:pointer" @click="goToTrip(trip.id)" elevation="12" max-width="600" rounded="lg" width="100%"
-        class="pa-4 mx-auto my-4">
+    <v-sheet v-if="trip.id" style="cursor:pointer" @click="goToTrip(trip.id)" elevation="12" max-width="600"
+        rounded="lg" width="100%" class="py-4 px-2 mx-auto my-4">
         <v-card flat class="text-left">
             <v-card-title class="d-flex justify-space-between">
-                <div>№ {{ trip.id }} <!-- v-icon v-if="trip.doc.isCircular" size="small" icon="mdi-rotate-360" color="green" class="ml-4 mb-1" title="Кільцевий маршрут"/ --></div>
-                <StatusChip :tripId="trip.id"/>
+                <div>№ {{ trip.id }}
+                    <!-- v-icon v-if="trip.doc.isCircular" size="small" icon="mdi-rotate-360" color="green" class="ml-4 mb-1" title="Кільцевий маршрут"/ -->
+                </div>
+                <StatusChip :tripId="trip.id" />
             </v-card-title>
             <v-card-text class="text-grey text-caption">
                 Дата рейсу: {{ appStore.formatDate(trip.doc.date) }}<br>
                 Водій: {{ trip.doc.driverName }}<br>
-                Відповідальний: {{ trip.doc.editorName }}<br>
+                Відповідальний: {{ trip.doc.editorName }}
             </v-card-text>
+            <!-- <v-card-text class="text-grey text-caption pt-0">
+                <v-row>
+                    <v-col cols="6">
+                        <v-icon x-small
+                            class="mr-1 ml-n1">mdi-flag-triangle</v-icon>Старт:<br>
+                        <span v-if="statuses.startTime">{{ statuses.startTime }}</span>
+                        <span v-else>-</span>
+                    </v-col>
+                    <v-col cols="6">
+                        <v-icon x-small
+                            class="mr-1 ml-n1">mdi-flag-triangle</v-icon>Фініш:<br>
+                        <span v-if="statuses.finishTime">{{ statuses.finishTime }}</span>
+                        <span v-else>-</span>
+                    </v-col>
+                </v-row>
+            </v-card-text> -->
             <v-card-text class="py-0 d-flex justify-space-between align-end">
                 <div>
                     <div><b>На маршруті:</b> {{ pointsNumber }} точок</div>
@@ -27,7 +45,7 @@
 </template>
 
 <script setup>
-import {  ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import StatusChip from './TripStatusChip.vue'
@@ -45,24 +63,24 @@ const tripLength = (id) => {
     let length = 0
     if (props.trip && props.trip.doc && props.trip.doc.points) {
         length = props.trip.doc.points.reduce((acc, item) => {
-                    return acc + item.distance
+            return acc + item.distance
         }, 0)
     }
     // округлити до 2 знаків після коми
-    length = Math.round(length * 100) / 100 
+    length = Math.round(length * 100) / 100
     return length
 }
 
 const getTripLengthFact = async () => {
     statuses.value = await appStore.getTripStatusesDoc(props.trip.id)
-    if(statuses.value && statuses.value.odometerStart && statuses.value.odometerFinish) {
+    if (statuses.value && statuses.value.odometerStart && statuses.value.odometerFinish) {
         tripSatatus.value = statuses.value.status
         return statuses.value.odometerFinish - statuses.value.odometerStart
-    } 
+    }
 }
 
 const pointsNumber = computed(() => {
-    if (props.trip && props.trip.doc && props.trip.doc.points){
+    if (props.trip && props.trip.doc && props.trip.doc.points) {
         return props.trip.doc.isCircular || props.trip.doc.circular ? (props.trip.doc.points.length + 1) : props.trip.doc.points.length
     } else {
         return 0

@@ -206,15 +206,13 @@ export function usePouchDB() {
     const fetchRemoteData = async (dbName, options = { selector: {}, limit: 100 }) => {
         try {
             const db = initDb(dbName)
-    
-            // Додати limit і skip, якщо вони не передані в options
             options = {
                 ...options,
-                limit: options.limit || 1000, 
-                skip: options.skip || 0 
+                limit: options.limit || 1000
             }
     
             const result = await dbRemoteObj[db].find(options)
+            console.log(JSON.stringify(options, null, 2), result)
             console.log('CouchDb data fetched')
             return result && result.docs
         } catch (error) {
@@ -240,7 +238,7 @@ export function usePouchDB() {
             console.log('getRemoteDoc', db)
             return await dbRemoteObj[db].get(docId)
         } catch (error) {
-            console.error("plk1", error)
+            console.error("Документ не знайдено", docId)
         }
     }
     // ------------------------------- реплікація ------------------------------

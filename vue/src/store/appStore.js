@@ -240,15 +240,14 @@ export const useAppStore = defineStore('appStore', () => {
 
   //------------------------ login logout ----------------------------------
   const login = async (user, pass) => {
+    Pouch.destroyDB('statuses')
+    Pouch.destroyDB('routes')
+    Pouch.destroyDB('users')
+    Pouch.destroyDB('manager_perm')
+    localStg.userData = {}
+    localStg.user_name = ''
+    localStg.user_id = ''
     try {
-      Pouch.destroyDB('statuses')
-      Pouch.destroyDB('routes')
-      Pouch.destroyDB('users')
-      Pouch.destroyDB('manager_perm')
-      localStg.userData = {}
-      localStg.user_name = ''
-      localStg.user_id = ''
-
       return await Pouch.login(user, pass)
     } catch (error) {
       throw error
@@ -439,8 +438,6 @@ export const useAppStore = defineStore('appStore', () => {
       selector =
       {
         $or: [
-          { driverId: { $eq: user_id } },
-          { addDriverId: { $eq: user_id } },
           { driverId: { $eq: Number(user_id) } },
           { addDriverId: { $eq: Number(user_id) } }
         ]

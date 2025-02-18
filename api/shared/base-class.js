@@ -124,7 +124,7 @@ module.exports = {
       for (const point of data.points) {
         for (const doc of point.docs) {
           const sum = tripPoints[point.id]?.docs?.find(d => d.id === doc.id)?.sum || 0
-          if (sum >= 0 && doc.sumPack !== null) {
+          if (sum >= 0 && doc.sumPack != null) {
             if (!points[point.id]) {
               points[point.id] = {}
             }

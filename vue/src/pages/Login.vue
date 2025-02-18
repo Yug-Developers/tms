@@ -69,7 +69,7 @@ const Login = async () => {
         } else if (err.status === 403) {
             appStore.setSnackbar({ text: "Вибачте, але ви не маєте доступу до цієї сторінки.", type: 'error' })
         } else {
-            appStore.setSnackbar({ text: "Помилка сервера. Спробуйте пізніше.", type: 'error' })
+            appStore.setSnackbar({ text: `Помилка сервера - ${err.status}. Спробуйте пізніше.`, type: 'error' })
         }
         console.error(err)
         loading.value = false

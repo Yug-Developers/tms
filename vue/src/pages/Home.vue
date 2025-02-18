@@ -85,7 +85,8 @@ onMounted(async () => {
                 odometerFinish: { $gt: 0 },
                 status: { $eq: 300 }
             },
-            fields: ['_id', 'odometerStart', 'odometerFinish']
+            fields: ['_id', 'odometerStart', 'odometerFinish'],
+            "use_index": ["_design/odometer_idx"]
         }
         finishedStatusesLoading.value = true
         finishedStatuses.value = await appStore.availableStatuses(optionsF)
