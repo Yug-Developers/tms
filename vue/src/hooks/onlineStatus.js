@@ -48,8 +48,12 @@ export function useOnlineStatus() {
                 if (wasOffline) {
                     console.log('Currently online')
                     appStore.setSnackbar({ text: "Зв'язок з мережею встановлено", type: 'success' })
-                    await appStore.pullTripsData()
-                    await appStore.pushStatusesData()
+                    if (appStore.skipSync) {
+                        appStore.skipSync = false
+                    } else {
+                        await appStore.pullTripsData()
+                        await appStore.pushStatusesData()
+                    }
                     wasOffline = false
                 }
                 // Якщо поновлено зв'язок — запускаємо інтервал pingServerInterval

@@ -7,6 +7,8 @@ import axios from 'axios'
 import Config from '@/Config'
 import md5 from 'md5'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
+import { useOnlineStatus } from '@/hooks/onlineStatus'
+
 // ініціалізація локального сховища
 const localStg = useLocalStorage({
   'userData': {},
@@ -18,12 +20,14 @@ const { location, locationError, getLocation } = useGeolocation();
 const Pouch = usePouchDB()
 
 export const useAppStore = defineStore('appStore', () => {
+  const { updateOnlineStatus } = useOnlineStatus()
   // --------------------------------- state ----------------------------------
   const online = ref(navigator.onLine)
   const offline = ref(false)
   const connection = ref(navigator.connection?.effectiveType)
   const isSecureConnection = window.location.protocol === "https:"
   const loading = ref(false)
+  const skipSync = ref(false)
   const snackbar = reactive({
     timeout: 4000,
     text: '',
@@ -248,6 +252,8 @@ export const useAppStore = defineStore('appStore', () => {
     localStg.user_name = ''
     localStg.user_id = ''
     try {
+      skipSync.value = true
+      await updateOnlineStatus()
       return await Pouch.login(user, pass)
     } catch (error) {
       throw error
@@ -762,7 +768,7 @@ export const useAppStore = defineStore('appStore', () => {
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
     availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg, getTmsTripsById, checkTmsTripsProcess,
-    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones, checkEmptyPointDocsExists, connection, offline
+    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones, checkEmptyPointDocsExists, connection, offline, skipSync
   }
 })
 
