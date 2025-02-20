@@ -244,13 +244,17 @@ export const useAppStore = defineStore('appStore', () => {
 
   //------------------------ login logout ----------------------------------
   const login = async (user, pass) => {
-    Pouch.destroyDB('statuses')
-    Pouch.destroyDB('routes')
-    Pouch.destroyDB('users')
-    Pouch.destroyDB('manager_perm')
-    localStg.userData = {}
-    localStg.user_name = ''
-    localStg.user_id = ''
+    try {
+      Pouch.destroyDB('statuses')
+      Pouch.destroyDB('routes')
+      Pouch.destroyDB('users')
+      Pouch.destroyDB('manager_perm')
+      localStg.userData = {}
+      localStg.user_name = ''
+      localStg.user_id = ''
+    } catch (error) {
+      console.error(error)
+    }
     try {
       skipSync.value = true
       await updateOnlineStatus()
@@ -264,7 +268,7 @@ export const useAppStore = defineStore('appStore', () => {
     try {
       if (!offline.value) {
         await Pouch.logout()
-      } 
+      }
       Pouch.destroyDB('statuses')
       Pouch.destroyDB('routes')
       Pouch.destroyDB('users')
@@ -286,7 +290,7 @@ export const useAppStore = defineStore('appStore', () => {
       if (!offline.value) {
         const options = {
           filter: 'filter/by_status_editor',
-          query_params: { editorId: localStg.user_id }
+          query_params: { editorId: Number(localStg.user_id) }
         }
         const pullRes = await Pouch.pull('routes', options)
         const currTrips = await currentTrips({ fields: ['_id'] })
@@ -426,14 +430,13 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
-  const getUserSelector = async () => {
+  const getUserSelector = async (config = {}) => {
     if (localStg.userData && !localStg.userData._id && !offline.value) {
       localStg.userData = await Pouch.getUserData(localStg.user_name)
     }
 
-
-
     const user_id = localStg.userData.typhoonId
+
     let selector = {}
     if (localStg.userData.role == 'manager') {
       const carriers = localStg.userData.carrierId ? localStg.userData.carrierId.map(el => Number(el)) : []
@@ -441,17 +444,33 @@ export const useAppStore = defineStore('appStore', () => {
         carrierId: { $in: carriers }
       }
     } else {
-      selector =
-      {
-        $or: [
-          { driverId: { $eq: Number(user_id) } },
-          { addDriverId: { $eq: Number(user_id) } }
-        ]
+      try {
+        if (offline.value) {
+          //усі записи в відсутності зв'язку
+          selector = {
+            "_id" : { "$gt": null }
+          }
+        } else {
+          const res = await Pouch.viewRemouteByDrivers(Number(user_id))
+          const ids = res.rows?.map(row => row.id)
+          selector = {
+            "_id": { "$in": ids }
+          }
+        }
+      } catch (error) {
+        throw error
       }
     }
     return selector
   }
 
+  const explain = async (dbName) => {
+    try {
+      return await Pouch.explain(dbName)
+    } catch (error) {
+      throw error
+    }
+  }
   // --------------------------- дозволи менеджера ------------------------------
   const setSMSstatus = async (tripId, pointId) => {
     try {
@@ -768,7 +787,7 @@ export const useAppStore = defineStore('appStore', () => {
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
     availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg, getTmsTripsById, checkTmsTripsProcess,
-    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones, checkEmptyPointDocsExists, connection, offline, skipSync
+    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones, checkEmptyPointDocsExists, connection, offline, skipSync, explain
   }
 })
 

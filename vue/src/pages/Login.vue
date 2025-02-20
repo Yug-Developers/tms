@@ -10,10 +10,6 @@
                         <v-icon color="grey">mdi-key</v-icon>
                     </v-toolbar>
                     <v-card flat rounded="0" :loading="appStore.loading ? 'error' : false">
-                        <v-card-text v-if="appStore.offline" class="text-center py-4 bg-red-lighten-5">
-                            <v-icon color="error" class="pa-5">mdi-wifi-off</v-icon>
-                            <span class="text-error">Ви не підключені до мережі Інтернет</span>
-                        </v-card-text>
                         <v-card-text>
                             <v-text-field @keyup.enter="login()" prepend-icon="mdi-account" variant="underlined"
                                 v-model="USER" name="login" label="Логін" type="text" append-icon="mdi"
@@ -23,7 +19,8 @@
                                 density="default" :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
                                 @click:append="showPassword = !showPassword">
                             </v-text-field>
-
+                            <v-alert v-if="appStore.offline" variant="tonal" type="error" icon="mdi-access-point-network-off"
+                            class="mx-auto">Ви не підключені до мережі Інтернет</v-alert>
                         </v-card-text>
                         <v-card-actions class="pa-4">
                             <v-btn color="grey" density="default" @click="resetData()">Очистити</v-btn>

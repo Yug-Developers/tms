@@ -163,9 +163,9 @@ export function usePouchDB() {
             if (!docId) {
                 throw new Error('docId is required')
             }
-    
+
             const db = initDb(dbName)
-    
+
             // Перевіряємо, чи існує документ
             let doc
             try {
@@ -181,19 +181,19 @@ export function usePouchDB() {
                     throw error // Інша помилка, не пов'язана з відсутністю документа
                 }
             }
-    
+
             // Оновлюємо масив `dontSendSMS`
             const updatedDontSendSMS = doc.dontSendSMS || []
             if (!updatedDontSendSMS.includes(pointId)) {
                 updatedDontSendSMS.push(pointId)
             }
-    
+
             // Зберігаємо документ (новий або оновлений)
             const updatedDoc = {
                 ...doc,
                 dontSendSMS: updatedDontSendSMS,
             }
-    
+
             return await dbObj[db].put(updatedDoc)
         } catch (error) {
             console.error('Error updating document:', error)
@@ -201,7 +201,17 @@ export function usePouchDB() {
         }
     }
 
-    
+    const viewByDrivers = async (key) => {
+        try {
+            const db = initDb('routes')
+            console.log('viewByDriver', db)
+            return await dbObj[db].query('my_search_index/by_driver_ids', { key })
+        } catch (error) {
+            console.error("view error", error)
+        }
+    }
+
+
     // ------------------ работа з віддаленними данними ------------------------
     const fetchRemoteData = async (dbName, options = { selector: {}, limit: 100 }) => {
         try {
@@ -210,8 +220,10 @@ export function usePouchDB() {
                 ...options,
                 limit: options.limit || 1000
             }
-    
+
             const result = await dbRemoteObj[db].find(options)
+            // const explain = await dbRemoteObj[db].explain(options)
+            // console.log('explain', JSON.stringify(explain, null, 2))
             console.log(JSON.stringify(options, null, 2), result)
             console.log('CouchDb data fetched')
             return result && result.docs
@@ -219,13 +231,13 @@ export function usePouchDB() {
             throw error
         }
     }
-    const allRemoteDocs = async (dbName) => {
+    const allRemoteDocs = async (dbName, ids) => {
         try {
             const db = initDb(dbName)
             console.log('fetchRemoteData', db)
             return await dbRemoteObj[db].allDocs({
                 include_docs: true,
-                startkey: 'rt_',
+                keys: ids
             })
         } catch (error) {
             console.error("plk1", error)
@@ -239,6 +251,40 @@ export function usePouchDB() {
             return await dbRemoteObj[db].get(docId)
         } catch (error) {
             console.error("Документ не знайдено", docId)
+        }
+    }
+    const viewRemouteByDrivers = async (key) => {
+        try {
+            const db = initDb('routes')
+            console.log('viewByDriver', db)
+            return await dbRemoteObj[db].query('my_search_index/by_driver_ids', { key })
+        } catch (error) {
+            console.error("view error", error)
+        }
+    }
+    const viewByActiveRoutesDrivers = async (key) => {
+        try {
+            const db = initDb('routes')
+            console.log('viewByDriver', db)
+            return await dbRemoteObj[db].query('my_search_index/by_active_routes_driver_ids', { key})
+        } catch (error) {
+            console.error("view error", error)
+        }
+    }
+    const getIndexes = async (dbName) => {
+        try {
+            const db = initDb(dbName)
+            return await dbRemoteObj[db].getIndexes()
+        } catch (error) {
+            console.error("getIndexes", error)
+        }
+    }
+    const explain = async (dbName) => {
+        try {
+            const db = initDb(dbName)
+            return await dbRemoteObj[db].explain()
+        } catch (error) {
+            console.error("explain", error)
         }
     }
     // ------------------------------- реплікація ------------------------------
@@ -264,6 +310,7 @@ export function usePouchDB() {
 
     return {
         fetchData, pull, getDoc, putData, updateDoc, deleteDoc, destroyDB, login, logout, initUsersDb, allRemoteDocs, getUserSession,
-        getRemoteDoc, fetchRemoteData, push, getUserData, updateDontSendSMS
+        getRemoteDoc, fetchRemoteData, push, getUserData, updateDontSendSMS, viewByDrivers, viewByActiveRoutesDrivers, getIndexes, explain,
+        viewRemouteByDrivers
     }
 }

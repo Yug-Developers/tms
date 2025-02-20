@@ -29,6 +29,7 @@
             <v-card-text>
                 <v-divider class="mb-4"></v-divider>
                 <div class="text-caption text-center">version: {{ version }}</div>
+                <div class="text-caption text-center">type: {{ type }}</div>
             </v-card-text>
         </v-card>
     </v-navigation-drawer>
@@ -67,5 +68,6 @@ const logout = () => {
 
 }
 const version = process.env.__VERSION__ + ' ' + process.env.NODE_ENV
+const type = appStore.localStg.userData.role
 </script>
   

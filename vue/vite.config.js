@@ -1,40 +1,24 @@
-// Plugins
 import vue from '@vitejs/plugin-vue'
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import { VitePWA } from 'vite-plugin-pwa'
-
-// Utilities
 import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     vue({
       template: { transformAssetUrls },
-      // reactivityTransform: true
     }),
-    // https://github.com/vuetifyjs/vuetify-loader/tree/next/packages/vite-plugin
     vuetify({
       autoImport: true,
     }),
     VitePWA({
       registerType: 'autoUpdate',
-      // registerType: 'prompt',   
       injectRegister: "auto",
-      //swSrc: './public/sw.js',
-      // workbox: {
-      //   sourcemap: true
-      // },
       includeAssets: ['favicon.ico'],
-      inlineManifest: {
-        "permissions": [
-          "geolocation"
-        ]
-      },
       manifest: {
-        name: 'Yugcontract TMS',
-        short_name: 'TMS',
+        name: 'Yugcontract TMS' + (process.env.NODE_ENV === 'production' ? '' : ' DEV'),
+        short_name: 'TMS' + (process.env.NODE_ENV === 'production' ? '' : ' DEV'),
         description: 'Yugcontract TMS - Transport Management System',
         theme_color: '#ffffff',
         icons: [
@@ -48,6 +32,20 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
           },
+        ],
+      },
+      workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: /\/assets\/.*\.(woff2?|ttf|otf|eot)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'local-fonts',
+              expiration: {
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 рік кешування
+              },
+            },
+          },          
         ],
       },
     }),

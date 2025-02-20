@@ -9,10 +9,12 @@
         <v-toolbar-title><div class="d-none d-sm-block" @click="router.push('/')" >
             TMS.Доставки</div>
         </v-toolbar-title>
+        
         <span v-if="route.name != 'Home'">
             <v-btn icon @click="goBack()"><v-icon>mdi-arrow-u-left-bottom</v-icon></v-btn>
         </span>
         <v-spacer></v-spacer>
+
         <!-- <span :color="appStore.offline ? 'error' : 'success'" v-if="online">{{ connection }}</span> -->
         <!-- <v-icon class="mr-5 ml-1" v-if="appStore.offline" color="warning">mdi-wifi-off</v-icon>
         <v-icon class="mr-5 ml-1" v-else color="success">mdi-wifi</v-icon> -->
@@ -28,7 +30,7 @@ import { useAppStore } from '@/store/appStore'
 import { useOnlineStatus } from '@/hooks/onlineStatus'
 import NavigationDrawerLeft from './NavigationDrawerLeft.vue'
 import { useRoute, useRouter } from 'vue-router'
-import { computed  } from 'vue'
+import { computed, onMounted  } from 'vue'
 
 const route = useRoute()
 const router = useRouter()
