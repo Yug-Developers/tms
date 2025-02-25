@@ -226,15 +226,16 @@ module.exports = {
       400: 2,
       500: 3
     }
-    const points = data.points
-    // Змінюємо статуси документів в docs точок на відповідні для Т22
-    points.forEach(point => {
-      point.docs.forEach(doc => {
-        doc.status = statusMap[doc.status]
-      })
-    })
-
-    const out = {
+  
+    const points = data.points.map(point => ({
+      ...point,
+      docs: point.docs.map(doc => ({
+        ...doc,
+        status: statusMap[doc.status] // Створюємо новий об'єкт із оновленим статусом
+      }))
+    }))
+  
+    return {
       id: data._id,
       status: data.status,
       startTime: data.startTime,
@@ -243,7 +244,6 @@ module.exports = {
       odometerFinish: data.odometerFinish,
       points
     }
-    return out
   },
   createExcelFile({ title, fileName, options, dataList = [], extendedCols }) {
     return new Promise(async (resolve, reject) => {
