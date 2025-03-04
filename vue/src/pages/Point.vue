@@ -478,7 +478,7 @@ import { useRoute } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import cyrillicToTranslit from 'cyrillic-to-translit-js'
 import md5 from 'md5'
-import Quagga from 'quagga'
+// import Quagga from 'quagga'
 import { useOnlineStatus } from '@/hooks/onlineStatus'
 import { useRouter } from 'vue-router'
 
@@ -541,8 +541,8 @@ const allSumPack = ref('')
 const allSumFact = ref('')
 const selectAll = reactive({})
 const loading = ref(false)
-const isDialogOpen = ref(false)
-const scannerContainer = ref(null)
+// const isDialogOpen = ref(false)
+// const scannerContainer = ref(null)
 const setSMSstatusLoading = ref(false)
 const managerPerm = ref({})
 const smsPhoneError = ref('')
@@ -599,60 +599,60 @@ const hidePhone = (phone) => {
 }
 
 // Функція для ініціалізації Quagga
-const startScanner = () => {
+// const startScanner = () => {
 
-    if (!scannerContainer.value) {
-        console.error('Сканер контейнер ще не готовий')
-        return
-    }
-    try {
-        Quagga.init(
-            {
-                inputStream: {
-                    type: 'LiveStream',
-                    target: scannerContainer.value, // Елемент для відображення камери
-                    constraints: {
-                        facingMode: 'environment', // Використовує задню камеру
-                    },
-                },
-                decoder: {
-                    readers: ['code_128_reader', 'ean_reader', 'upc_reader'], // Налаштування форматів
-                },
-            },
-            (err) => {
-                if (err) {
-                    console.error('Помилка ініціалізації Quagga:', err)
-                    return
-                }
-                Quagga.start()
-            }
-        )
+//     if (!scannerContainer.value) {
+//         console.error('Сканер контейнер ще не готовий')
+//         return
+//     }
+//     try {
+//         Quagga.init(
+//             {
+//                 inputStream: {
+//                     type: 'LiveStream',
+//                     target: scannerContainer.value, // Елемент для відображення камери
+//                     constraints: {
+//                         facingMode: 'environment', // Використовує задню камеру
+//                     },
+//                 },
+//                 decoder: {
+//                     readers: ['code_128_reader', 'ean_reader', 'upc_reader'], // Налаштування форматів
+//                 },
+//             },
+//             (err) => {
+//                 if (err) {
+//                     console.error('Помилка ініціалізації Quagga:', err)
+//                     return
+//                 }
+//                 Quagga.start()
+//             }
+//         )
 
-        // Підписка на подію розпізнавання штрих-коду
-        Quagga.onDetected((result) => {
-            sumPack.value = result.codeResult.code
-            allSumPack.value = result.codeResult.code
-            closeDialog()
-        })
-    } catch (error) {
-        console.error(error)
-    }
-}
+//         // Підписка на подію розпізнавання штрих-коду
+//         Quagga.onDetected((result) => {
+//             sumPack.value = result.codeResult.code
+//             allSumPack.value = result.codeResult.code
+//             closeDialog()
+//         })
+//     } catch (error) {
+//         console.error(error)
+//     }
+// }
 
 // Зупинка сканера та очищення
-const stopScanner = () => {
-    try {
-        Quagga.stop()
-        Quagga.offDetected()
-    } catch (error) {
-        console.error(error)
-    }
-}
+// const stopScanner = () => {
+//     try {
+//         Quagga.stop()
+//         Quagga.offDetected()
+//     } catch (error) {
+//         console.error(error)
+//     }
+// }
 
 // Відкрити попап
-const openScanDialog = () => {
-    isDialogOpen.value = true
-}
+// const openScanDialog = () => {
+//     isDialogOpen.value = true
+// }
 
 // Відкрити попап
 const openQRScanDialog = (input) => {
@@ -664,10 +664,10 @@ const openQRScanDialog = (input) => {
 }
 
 // Закрити попап і зупинити сканер
-const closeDialog = () => {
-    isDialogOpen.value = false
-    stopScanner()
-}
+// const closeDialog = () => {
+//     isDialogOpen.value = false
+//     stopScanner()
+// }
 
 const closeQRDialog = () => {
     isQRDialogOpen.value = false
@@ -731,23 +731,23 @@ watch(barcodeResult, async (newResult) => {
 })
 
 // Слідкуємо за станом попапу
-watch(isDialogOpen, (isOpen) => {
-    if (window.location.protocol === "https:") {
-        if (isOpen) {
-            // Переконуємося, що DOM оновлений перед запуском сканера
-            nextTick(() => startScanner())
-        } else {
-            stopScanner()
-        }
-    }
-})
+// watch(isDialogOpen, (isOpen) => {
+//     if (window.location.protocol === "https:") {
+//         if (isOpen) {
+//             // Переконуємося, що DOM оновлений перед запуском сканера
+//             nextTick(() => startScanner())
+//         } else {
+//             stopScanner()
+//         }
+//     }
+// })
 
 // Очистити все при виході з компонента
-onBeforeUnmount(() => {
-    if (window.location.protocol === "https:") {
-        stopScanner()
-    }
-})
+// onBeforeUnmount(() => {
+//     if (window.location.protocol === "https:") {
+//         stopScanner()
+//     }
+// })
 
 const getTripById = async () => {
     try {
