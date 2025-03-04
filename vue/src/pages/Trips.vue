@@ -16,8 +16,9 @@
                             <v-text-field v-model="formatedDate2" label="На дату" readonly
                                 v-bind="props"></v-text-field>
                         </template>
-                        <v-date-picker @update:modelValue="getAvailableTrips()" v-model="date" :allowed-dates="allowedDates" title="Рейси на дату"
-                            header="Оберіть дату" max="2030-03-20" min="2024-01-01"></v-date-picker>
+                        <v-date-picker @update:modelValue="getAvailableTripsByDate" v-model="date"
+                            :allowed-dates="allowedDates" title="Рейси на дату" header="Оберіть дату" max="2030-03-20"
+                            min="2024-01-01"></v-date-picker>
                     </v-menu>
                 </v-col>
             </v-row>
@@ -25,9 +26,9 @@
                 <TripBlk :trip="trip" />
             </div>
             <div v-if="currentTrips.length == 0" class="text-center">
-                <span v-if="tripIdError">По № <b>{{tripId }}</b> </span>
-                <span v-else>На дату <b>{{ formatedDate2 }}</b> </span>
-                рейси не знайдено
+                <span v-if="tripIdError && tripId">По № <b>{{ tripId }}</b> рейси не знайдено</span>
+                <span v-if="tripDateError && date">На дату <b>{{ formatedDate2 }}</b> рейси не знайдено</span>
+                <span v-if="!date && !tripId" class="text-grey">Укажіть № чи дату рейса</span>
             </div>
         </v-container>
     </v-layout>
@@ -39,100 +40,79 @@ import { useAppStore } from '@/store/appStore'
 import { ref, onMounted, computed, watch } from 'vue'
 import { useDate } from 'vuetify'
 import TripBlk from '@/components/TripBlk.vue'
+
 const appStore = useAppStore()
 const adapter = useDate()
-const date = ref()
+const date = ref(null)
 const tripId = ref('')
-const trips = ref([])
-const allTrips = ref([])
 const menu = ref(false)
 const tripIdError = ref(false)
+const tripDateError = ref(false)
+const currentTrips = ref([])
+
 
 const getAvailableTripsById = async () => {
     date.value = null
-    const options = {
-        selector: {
-            ... await appStore.getUserSelector(),
-            _id: tripId.value.trim()
-        }
-    }
     try {
         appStore.loading = true
-        trips.value = await appStore.availableTrips(options)
-        const docIds = trips.value.map(el => el._id) || []
-        await appStore.pullStatusesData(docIds)
-
-        if (trips.value.length == 0) {
-            tripIdError.value = true
-        } else {
-            tripIdError.value = false
+        const availableTripsIds = appStore.availableTrips || []
+        tripIdError.value = !availableTripsIds.includes(tripId.value)
+        if (!tripIdError.value) {
+            await appStore.pullTripsById([tripId.value])
         }
-    } catch (e) {
-        console.log(e)
-    }
-    setTimeout(() => {
+        currentTrips.value = appStore.routes.filter(el => el._id === tripId.value)
         appStore.loading = false
-    }, 500)
+    } catch (e) {
+        console.error(e)
+    }
 }
 
-const getAvailableTrips = async () => {
-    tripId.value = ''
+const getAvailableTripsByDate = async (newDate) => {
     menu.value = false
-    const options = {
-        selector: {
-            ... await appStore.getUserSelector(),
-            date: formatedDate()
+    tripId.value = ''
+    try {
+        const cdate = formatedDate(newDate || date.value)
+        if (!appStore.offline) {
+            const ids = await filterTripIdsByDate(cdate)
+            await appStore.pullTripsById(ids)
         }
-    }
-    try {
-        appStore.loading = true
-        trips.value = await appStore.availableTrips(options)
-        const docIds = trips.value.map(el => el._id) || []
-        await appStore.pullStatusesData(docIds)
+        currentTrips.value = appStore.routes.filter(el => el.date === cdate)
+        if (currentTrips.value.length === 0) {
+            tripDateError.value = true
+        }
     } catch (e) {
-        console.log(e)
-    }
-    setTimeout(() => {
-        appStore.loading = false
-    }, 500)
-}
-
-const allAvailableTrips = async () => {
-    const options = {
-        selector: {
-            ... await appStore.getUserSelector()
-        },
-        fields: ['_id', 'date']
-    }
-    try {
-        allTrips.value = await appStore.availableTrips(options)
-    } catch (e) {
-        console.log(e)
+        console.error(e)
     }
 }
 
-const currentTrips = computed(() => {
-    return trips.value && trips.value.map(el => { return { doc: el, id: el._id, key: el._id } }) || []
-})
+const filterTripIdsByDate = async (date) => {
+    const data = appStore.tripsByDate.filter(el => el.value === date)
+    return data?.map(el => el.id) || []
+}
 
-const formatedDate = () => {
+const formatedDate = (date) => {
     //13.03.2024 to 2024-03-13
-    return adapter.format(date.value, 'keyboardDate').split('.').reverse().join('-')
+    return adapter.format(date, 'keyboardDate').split('.').reverse().join('-')
 }
 const formatedDate2 = computed(() => {
     return date.value ? adapter.format(date.value, 'keyboardDate') : ''
 })
 
 const allowedDates = computed(() => {
-    return allTrips.value.map(el => el.date)
+    return appStore.tripsByDate.map(el => el.value)
 })
 
-
 onMounted(async () => {
-    date.value = new Date()
-    await appStore.pullTripsData()
-    await allAvailableTrips()
-    await getAvailableTrips()
+    try {
+        date.value = new Date()
+        await appStore.pullTripsData()
+        if (!appStore.ofline) {
+            await appStore.getAllAvailableTrips()
+        }
+        await getAvailableTripsByDate()
+    } catch (e) {
+        console.error(e)
+    }
 })
 
 </script>

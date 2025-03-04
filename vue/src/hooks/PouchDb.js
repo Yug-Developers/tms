@@ -40,17 +40,21 @@ export function usePouchDB() {
     const destroyDB = (dbName) => {
         return new Promise((resolve, reject) => {
             const db = initDb(dbName)
-            dbObj[db].destroy(function (err, response) {
-                if (err) {
-                    console.log(`Помилка видалення бази ${db}`, err);
-                    reject(err)
-                } else {
-                    console.log(`Базу ${db} видалено`, response);
-                    resolve(response)
-                }
+            dbObj[db].info().then(function (info) {
+                dbObj[db].destroy(function (err, response) {
+                    if (err) {
+                        console.log(`Помилка видалення бази ${db}`, err);
+                        reject(err)
+                    } else {
+                        console.log(`Базу ${db} видалено`, response);
+                        resolve(response)
+                    }
+                })
+            }).catch(function (err) {
+                console.log(`База ${db} не існує`);
+                resolve()
             })
-        }
-        )
+        })
     }
     const login = (username, password) => {
         return new Promise((resolve, reject) => {
@@ -201,19 +205,8 @@ export function usePouchDB() {
         }
     }
 
-    const viewByDrivers = async (key) => {
-        try {
-            const db = initDb('routes')
-            console.log('viewByDriver', db)
-            return await dbObj[db].query('my_search_index/by_driver_ids', { key })
-        } catch (error) {
-            console.error("view error", error)
-        }
-    }
-
-
     // ------------------ работа з віддаленними данними ------------------------
-    const fetchRemoteData = async (dbName, options = { selector: {}, limit: 100 }) => {
+    const fetchRemoteData = async (dbName, options = { selector: {} }) => {
         try {
             const db = initDb(dbName)
             options = {
@@ -231,29 +224,44 @@ export function usePouchDB() {
             throw error
         }
     }
-    const allRemoteDocs = async (dbName, ids) => {
-        try {
-            const db = initDb(dbName)
-            console.log('fetchRemoteData', db)
-            return await dbRemoteObj[db].allDocs({
-                include_docs: true,
-                keys: ids
-            })
-        } catch (error) {
-            console.error("plk1", error)
-        }
-    }
+    // const getRemoteDocs = async (dbName, keys) => {
+    //     try {
+    //         const db = initDb(dbName)
+    //         const result = await dbRemoteObj[db].allDocs({
+    //             include_docs: true,
+    //             keys
+    //         })
+    //         const docs = result.rows
+    //             .filter(row => row.doc) // Фільтруємо, якщо деякі документи не знайдено
+    //             .map(row => row.doc)
+    //         return docs
+    //     } catch (error) {
+    //         throw error
+    //     }
+    // }
+    // const allRemoteDocs = async (dbName, ids) => {
+    //     try {
+    //         const db = initDb(dbName)
+    //         console.log('fetchRemoteData', db)
+    //         return await dbRemoteObj[db].allDocs({
+    //             include_docs: true,
+    //             keys: ids
+    //         })
+    //     } catch (error) {
+    //         console.error("plk1", error)
+    //     }
+    // }
 
-    const getRemoteDoc = async (dbName, docId) => {
-        try {
-            const db = initDb(dbName)
-            console.log('getRemoteDoc', db)
-            return await dbRemoteObj[db].get(docId)
-        } catch (error) {
-            console.error("Документ не знайдено", docId)
-        }
-    }
-    const viewRemouteByDrivers = async (key) => {
+    // const getRemoteDoc = async (dbName, docId) => {
+    //     try {
+    //         const db = initDb(dbName)
+    //         console.log('getRemoteDoc', db)
+    //         return await dbRemoteObj[db].get(docId)
+    //     } catch (error) {
+    //         console.error("Документ не знайдено", docId)
+    //     }
+    // }
+    const viewRemoteByDrivers = async (key) => {
         try {
             const db = initDb('routes')
             console.log('viewByDriver', db)
@@ -262,15 +270,52 @@ export function usePouchDB() {
             console.error("view error", error)
         }
     }
-    const viewByActiveRoutesDrivers = async (key) => {
+    const viewRemoteByCarriers = async (keys) => {
         try {
             const db = initDb('routes')
             console.log('viewByDriver', db)
-            return await dbRemoteObj[db].query('my_search_index/by_active_routes_driver_ids', { key})
+            return await dbRemoteObj[db].query('my_search_index/by_carrier_ids', { keys })
         } catch (error) {
             console.error("view error", error)
         }
     }
+    // const countByDrivers = async (key) => {
+    //     try {
+    //         const db = initDb('routes')
+    //         console.log('viewByDriver', db)
+    //         return await dbRemoteObj[db].query('driver_count/count_by_driver', { key, group: true })
+    //     } catch (error) {
+    //         console.error("view error", error)
+    //     }
+    // }
+    // const countByManagers = async (keys) => {
+    //     try {
+    //         const db = initDb('routes')
+    //         console.log('viewByDriver', db)
+    //         return await dbRemoteObj[db].query('driver_count/count_by_manager', { keys, group: true })
+    //     } catch (error) {
+    //         console.error("view error", error)
+    //     }
+    // }
+    const viewByActiveRoutesDrivers = async (key) => {
+        try {
+            const db = initDb('routes')
+            console.log('viewByDriver', db)
+            return await dbRemoteObj[db].query('my_search_index/by_active_routes_driver_ids', { key })
+        } catch (error) {
+            console.error("view error", error)
+        }
+    }
+    const viewByDates = async (keys) => {
+        try {
+            const db = initDb('routes')
+            console.log('viewByDriver', db)
+            return await dbRemoteObj[db].query('my_search_index/by_date', { keys })
+        } catch (error) {
+            console.error("view error", error)
+        }
+    }
+    // ------------------------------- індекси тестування ------------------------
     const getIndexes = async (dbName) => {
         try {
             const db = initDb(dbName)
@@ -309,8 +354,8 @@ export function usePouchDB() {
     }
 
     return {
-        fetchData, pull, getDoc, putData, updateDoc, deleteDoc, destroyDB, login, logout, initUsersDb, allRemoteDocs, getUserSession,
-        getRemoteDoc, fetchRemoteData, push, getUserData, updateDontSendSMS, viewByDrivers, viewByActiveRoutesDrivers, getIndexes, explain,
-        viewRemouteByDrivers
+        fetchData, pull, getDoc, putData, updateDoc, deleteDoc, destroyDB, login, logout, initUsersDb, getUserSession,
+        fetchRemoteData, push, getUserData, updateDontSendSMS, viewByActiveRoutesDrivers, getIndexes, explain,
+        viewRemoteByDrivers, viewByDates, viewRemoteByCarriers
     }
 }

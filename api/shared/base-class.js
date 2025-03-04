@@ -500,6 +500,7 @@ module.exports = {
           }
           const typesObj = {
             out: 'Видачі',
+            out_rp: 'Видачі',
             in: 'Повернення',
             task: 'Завдання'
           }
@@ -719,7 +720,5 @@ module.exports = {
     } catch (error) {
       throw error
     }
-  },
- 
-
+  }
 }

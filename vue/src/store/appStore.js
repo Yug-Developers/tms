@@ -12,6 +12,7 @@ import { useOnlineStatus } from '@/hooks/onlineStatus'
 // ініціалізація локального сховища
 const localStg = useLocalStorage({
   'userData': {},
+  'stats': {},
   'user_name': '',
   'user_id': '',
 })
@@ -37,7 +38,12 @@ export const useAppStore = defineStore('appStore', () => {
   })
   const data = reactive({})
   const statuses = ref([])
+  const routes = ref([])
   const navigationDrawerRightShow = ref(false)
+  const finishedOdometerData = ref(null)
+  const availableTripsIds = ref([])
+  // const tripsCounter = ref(null)
+  const tripsByDate = ref([])
 
   const menuItems = ref([
     { title: 'Головна', icon: 'mdi-home', to: '/' },
@@ -95,6 +101,24 @@ export const useAppStore = defineStore('appStore', () => {
     if (!date) return null
     const [year, month, day] = date.split('-')
     return `${day}-${month}-${year}`
+  }
+
+  const formatDateTime = (isoString) => {
+    if (!isoString) {
+      return ''
+    }
+    const localISOString = isoString.replace('Z', '')
+    const date = new Date(localISOString)
+
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0') // Місяці починаються з 0
+    const year = date.getFullYear()
+
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    const seconds = String(date.getSeconds()).padStart(2, '0')
+
+    return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`
   }
 
   // --------------------------------- getters --------------------------------
@@ -235,6 +259,33 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
+  const getStats = async () => {
+    try {
+      const res = await axios.get(Config.misUrl + '/tms/get-stats', { withCredentials: true })
+      if (res.data?.content) localStg.stats = res.data?.content
+      return res.data?.content
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const getAllAvailableTrips = async () => {
+    // Для розділу - рейси
+    try {
+        const res = await axios.get(Config.misUrl + '/tms/get-all-available-trips', { withCredentials: true })
+        const out = res.data?.content || []
+        tripsByDate.value = out
+        return out.map(trip => trip.id)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const availableTrips = computed(() => {
+    return tripsByDate.value.map(trip => trip.id)
+  })
+
+
   // --------------------------------- actions --------------------------------
   const createCode = (phone) => {
     const code = process.env.NODE_ENV === 'production' ? parseInt(Math.random() * 10000).toString().padStart(4, '0') : '1111'
@@ -249,12 +300,13 @@ export const useAppStore = defineStore('appStore', () => {
       Pouch.destroyDB('routes')
       Pouch.destroyDB('users')
       Pouch.destroyDB('manager_perm')
-      localStg.userData = {}
-      localStg.user_name = ''
-      localStg.user_id = ''
     } catch (error) {
       console.error(error)
     }
+    localStg.userData = {}
+    localStg.user_name = ''
+    localStg.user_id = ''
+    localStg.stats = {}
     try {
       skipSync.value = true
       await updateOnlineStatus()
@@ -269,13 +321,18 @@ export const useAppStore = defineStore('appStore', () => {
       if (!offline.value) {
         await Pouch.logout()
       }
-      Pouch.destroyDB('statuses')
-      Pouch.destroyDB('routes')
-      Pouch.destroyDB('users')
-      Pouch.destroyDB('manager_perm')
+      try {
+        Pouch.destroyDB('statuses')
+        Pouch.destroyDB('routes')
+        Pouch.destroyDB('users')
+        Pouch.destroyDB('manager_perm')
+      } catch (error) {
+        console.error(error)
+      }
       localStg.userData = {}
       localStg.user_name = ''
       localStg.user_id = ''
+      localStg.stats = {}
       return
     } catch (error) {
       throw error
@@ -288,18 +345,43 @@ export const useAppStore = defineStore('appStore', () => {
     try {
       loading.value = true
       if (!offline.value) {
+        const carriers = localStg.userData.carrierId ? localStg.userData.carrierId.map(el => Number(el)) : []
         const options = {
-          filter: 'filter/by_status_editor',
-          query_params: { editorId: Number(localStg.user_id) }
+          filter: localStg.userData.role === 'manager' ? 'filter/by_status_carrier' : 'filter/by_status_editor',
+          query_params: { editorId: Number(localStg.user_id), carrierIds: carriers }
         }
-        const pullRes = await Pouch.pull('routes', options)
-        const currTrips = await currentTrips({ fields: ['_id'] })
-        const opt = { doc_ids: [...currTrips.map(trip => trip._id)] }
-        const pullSt = await Pouch.pull('statuses', opt)
+        // Репликація маршрутів
+        await Pouch.pull('routes', options)
+        routes.value = await Pouch.fetchData('routes')
+
+        const doc_ids = activeTripsIds.value
+        if (doc_ids.length === 0) doc_ids.push('-1')
+        const opt = { doc_ids }
+        // Репликація статусів
+        await Pouch.pull('statuses', opt)
+        // Репликація дозволів менеджера
+        await Pouch.pull('manager_perm', opt)
+        statuses.value = await Pouch.fetchData('statuses')
+      } else {
+        routes.value = await Pouch.fetchData('routes')
+        statuses.value = await Pouch.fetchData('statuses')
+      }
+      loading.value = false
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const pullTripsById = async (ids) => {
+    try {
+      if (!offline.value) {
+        const opt = { doc_ids: ids }
+        await Pouch.pull('routes', opt)
+        await Pouch.pull('statuses', opt)
         await Pouch.pull('manager_perm', opt)
       }
+      routes.value = await Pouch.fetchData('routes')
       statuses.value = await Pouch.fetchData('statuses')
-      loading.value = false
     } catch (error) {
       throw error
     }
@@ -325,17 +407,17 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
-  const pullStatusesData = async (docIds) => {
-    try {
-      if (!offline.value) {
-        const opt = { doc_ids: docIds }
-        const pullSt = await Pouch.pull('statuses', opt)
-      }
-      statuses.value = await Pouch.fetchData('statuses')
-    } catch (error) {
-      throw error
-    }
-  }
+  // const pullStatusesData = async (docIds) => {
+  //   try {
+  //     if (!offline.value) {
+  //       const opt = { doc_ids: docIds }
+  //       const pullSt = await Pouch.pull('statuses', opt)
+  //     }
+  //     statuses.value = await Pouch.fetchData('statuses')
+  //   } catch (error) {
+  //     throw error
+  //   }
+  // }
 
   // ---------------------- робота з локальними даними ---------------------
 
@@ -343,7 +425,7 @@ export const useAppStore = defineStore('appStore', () => {
     try {
       return await Pouch.getDoc('routes', tripId)
     } catch (error) {
-      return await Pouch.getRemoteDoc('routes', tripId)
+      return {}
     }
   }
 
@@ -351,7 +433,7 @@ export const useAppStore = defineStore('appStore', () => {
     try {
       return await Pouch.getDoc('manager_perm', tripId)
     } catch (error) {
-      return await Pouch.getRemoteDoc('manager_perm', tripId)
+      return {}
     }
   }
 
@@ -373,96 +455,151 @@ export const useAppStore = defineStore('appStore', () => {
       throw error
     }
   }
+
+  const activeTrips = computed(() => {
+    return routes.value.filter(status => status.status === 'active')
+  })
+
+  const activeTripsIds = computed(() => {
+    return activeTrips.value.map(trip => trip._id)
+  })
+
+  const activeStatuses = computed(() => {
+    return statuses.value.filter(status => status.status === 200)
+  })
+
+  const activeStatusesIds = computed(() => {
+    return activeStatuses.value.map(status => status._id)
+  })
+
+  const routesIds = computed(() => {
+    return routes.value.map(trip => trip._id)
+  })
+
+  const statusesIds = computed(() => {
+    return statuses.value.map(status => status._id)
+  })
+
   // --------------------------- робота з віддаленими данними ------------------------
-  const allRemoteDocs = async (dbName) => {
-    try {
-      return await Pouch.allRemoteDocs(dbName)
-    } catch (error) {
-      throw error
-    }
-  }
+  // const allRemoteDocs = async (dbName) => {
+  //   try {
+  //     return await Pouch.allRemoteDocs(dbName)
+  //   } catch (error) {
+  //     throw error
+  //   }
+  // }
 
-  const availableTrips = async (options) => {
-    try {
-      const dbName = 'routes'
-      if (!offline.value) {
-        return await Pouch.fetchRemoteData(dbName, options)
-      } else {
-        return await Pouch.fetchData(dbName, options)
-      }
-    } catch (error) {
-      throw error
-    }
-  }
+  // const availableTrips = async (options) => {
+  //   try {
+  //     const dbName = 'routes'
+  //     if (!offline.value) {
+  //       return await Pouch.fetchRemoteData(dbName, options)
+  //     } else {
+  //       return await Pouch.fetchData(dbName, options)
+  //     }
+  //   } catch (error) {
+  //     throw error
+  //   }
+  // }
 
-  const availableStatuses = async (options) => {
-    try {
-      const dbName = 'statuses'
-      if (!offline.value) {
-        return await Pouch.fetchRemoteData(dbName, options)
-      } else {
-        return await Pouch.fetchData(dbName, options)
-      }
-    } catch (error) {
-      throw error
-    }
-  }
+  // const availableStatuses = async (options) => {
+  //   try {
+  //     const dbName = 'statuses'
+  //     if (!offline.value) {
+  //       return await Pouch.fetchRemoteData(dbName, options)
+  //     } else {
+  //       return await Pouch.fetchData(dbName, options)
+  //     }
+  //   } catch (error) {
+  //     throw error
+  //   }
+  // }
 
-  const currentTrips = async (opt = {}) => {
-    try {
-      const dbName = 'routes'
-      let selector = await getUserSelector()
-      const options = {
-        selector: {
-          ...selector,
-          status: 'active'
-        }
-        // use_index: ['driverId', 'addDriverId'] // Вказуємо використання попередньо створеного індексу
-      }
-      Object.assign(options, opt)
-      if (!offline.value) {
-        return await Pouch.fetchRemoteData(dbName, options)
-      } else {
-        return await Pouch.fetchData(dbName, options)
-      }
-    } catch (error) {
-      throw error
-    }
-  }
+  // const currentTrips = async () => {
+  //   try {
+  //     const dbName = 'routes'
+  //     let selector = await getUserSelector({ active: true })
+  //     const options = {
+  //       selector,
+  //       "fields": ["_id"]
+  //     }
+  //     if (!offline.value && localStg.userData.role === 'manager') {
+  //       const res = await Pouch.fetchRemoteData(dbName, options)
+  //       const ids = res.map(row => row._id)
+  //       const result = await Pouch.getRemoteDocs(dbName, ids)
+  //       return result
+  //     } else {
+  //       return await Pouch.fetchData(dbName, options)
+  //     }
+  //   } catch (error) {
+  //     throw error
+  //   }
+  // }
 
-  const getUserSelector = async (config = {}) => {
-    if (localStg.userData && !localStg.userData._id && !offline.value) {
-      localStg.userData = await Pouch.getUserData(localStg.user_name)
-    }
+  // const getRemoteTripStatusesDoc = async (tripId) => {
+  //   try {
+  //     const statuses = await Pouch.getRemoteDoc('statuses', tripId)
+  //     return statuses
+  //   } catch (error) {
+  //     return {}
+  //   }
+  // }
 
-    const user_id = localStg.userData.typhoonId
+  // const getAvailableTripsIds = async (status) => {
+  //   //Отримуємо усі id доступних рейсів. Для водіїв - це рейси, які відносяться до них. Для менеджерів - це рейси, які відносяться до їх перевізників
+  //   try {
+  //     let data = {}
+  //     if (localStg.userData.role === 'manager') {
+  //       const carriers = localStg.userData.carrierId ? localStg.userData.carrierId.map(el => Number(el)) : []
+  //       data = await Pouch.viewRemoteByCarriers(carriers)
+  //     } else {
+  //       data = await Pouch.viewRemoteByDrivers(Number(localStg.userData.typhoonId))
+  //     }
+  //     if (status) {
+  //       data.rows = data.rows.filter(row => row.value === status)
+  //     }
+  //     const out = data.rows?.map(row => row.id)
+  //     availableTripsIds.value = out
+  //     return out
+  //   } catch (error) {
+  //     throw error
+  //   }
+  // }
 
-    let selector = {}
-    if (localStg.userData.role == 'manager') {
-      const carriers = localStg.userData.carrierId ? localStg.userData.carrierId.map(el => Number(el)) : []
-      selector = {
-        carrierId: { $in: carriers }
-      }
-    } else {
-      try {
-        if (offline.value) {
-          //усі записи в відсутності зв'язку
-          selector = {
-            "_id" : { "$gt": null }
-          }
-        } else {
-          const res = await Pouch.viewRemouteByDrivers(Number(user_id))
-          const ids = res.rows?.map(row => row.id)
-          selector = {
-            "_id": { "$in": ids }
-          }
-        }
-      } catch (error) {
-        throw error
-      }
-    }
-    return selector
-  }
+  // const getUserSelector = async (config = {}) => {
+  //   if (localStg.userData && !localStg.userData._id && !offline.value) {
+  //     localStg.userData = await Pouch.getUserData(localStg.user_name)
+  //   }
+
+  //   const user_id = localStg.userData.typhoonId
+
+  //   let selector = {}
+  //   if (localStg.userData.role == 'manager') {
+  //     const carriers = localStg.userData.carrierId ? localStg.userData.carrierId.map(el => Number(el)) : []
+  //     selector = {
+  //       carrierId: { $in: carriers },
+  //     }
+  //     config.active ? selector.status = 'active' : null
+  //   } else {
+  //     try {
+  //       if (offline.value) {
+  //         //усі записи в відсутності зв'язку
+  //         selector = {
+  //           "_id": { "$gt": null }
+  //         }
+  //       } else {
+  //         const res = config.active ? await Pouch.viewByActiveRoutesDrivers(Number(user_id)) : await Pouch.viewRemouteByDrivers(Number(user_id))
+  //         const ids = res.rows?.map(row => row.id)
+  //         selector = {
+  //           "_id": { "$in": ids }
+  //         }
+  //       }
+  //     } catch (error) {
+  //       throw error
+  //     }
+  //   }
+  //   return selector
+  // }
 
   const explain = async (dbName) => {
     try {
@@ -471,6 +608,74 @@ export const useAppStore = defineStore('appStore', () => {
       throw error
     }
   }
+
+  // const getTripsCounter = async () => {
+  //   try {
+  //     const user_id = localStg.userData.typhoonId
+  //     if (!offline.value) {
+  //       if (localStg.userData.role == 'manager') {
+  //         const carriers = localStg.userData.carrierId ? localStg.userData.carrierId.map(el => Number(el)) : []
+  //         const result = await Pouch.countByManagers(carriers)
+  //         tripsCounter.value = result?.rows?.reduce((acc, row) => acc + row.value, 0)
+  //         return tripsCounter.value
+  //       } else {
+  //         const result = await Pouch.countByDrivers(Number(user_id))
+  //         tripsCounter.value = result?.rows?.reduce((acc, row) => acc + row.value, 0)
+  //         return tripsCounter.value
+  //       }
+  //     } else {
+  //       return tripsCounter.value === null ? 0 : tripsCounter.value
+  //     }
+  //   } catch (error) {
+  //     throw error
+  //   }
+  // }
+
+  // const allAvailableTrips = async () => {
+  //   // Для розділу - рейси
+  //   try {
+  //     const docIds = await getAvailableTripsIds()
+  //     const data = await Pouch.viewByDates(docIds)
+  //     tripsByDate.value = data.rows
+  //     return tripsByDate.value
+  //   } catch (error) {
+  //     throw error
+  //   }
+  // }
+
+  // const getFinishedOdometerData = async () => {
+  //   try {
+  //     if (!offline.value) {
+  //       const docIds = await getAvailableTripsIds()
+  //       if (docIds.length) {
+  //         const options = {
+  //           selector: {
+  //             _id: { $in: docIds },
+  //             odometerStart: { $exists: true },
+  //             odometerFinish: { $exists: true },
+  //             odometerFinish: { $gt: 0 },
+  //             status: { $eq: 300 }
+  //           },
+  //           fields: ['_id', 'odometerStart', 'odometerFinish'],
+  //           "use_index": ["_design/odometer_idx"]
+  //         }
+  //         finishedOdometerData.value = await Pouch.fetchRemoteData('statuses', options)
+  //       } else {
+  //         finishedOdometerData.value = []
+  //       }
+  //     }
+  //   } catch (error) {
+  //     throw error
+  //   }
+  // }
+
+  // const odometrTotal = computed(() => {
+  //   return finishedOdometerData.value && finishedOdometerData.value.reduce((acc, el) => {
+  //     return acc + (Number(el.odometerFinish) - Number(el.odometerStart))
+  //   }, 0)
+  // })
+
+
   // --------------------------- дозволи менеджера ------------------------------
   const setSMSstatus = async (tripId, pointId) => {
     try {
@@ -590,7 +795,7 @@ export const useAppStore = defineStore('appStore', () => {
     } catch (error) {
       statusFile = false
     }
-    const trip = await Pouch.getRemoteDoc('routes', tripId)
+    const trip = await Pouch.getDoc('routes', tripId)
     if (!statusFile && trip.status === 'active') {
       for (let point of trip.points) {
         for (let doc of point.docs) {
@@ -785,9 +990,12 @@ export const useAppStore = defineStore('appStore', () => {
     snackbar, setSnackbar, online, data, statuses, navigationDrawerRightShow, menuItems, loading,
     checkOpenTrip, pullTripsData, initNewTripStatus, cancelPoint, inPlace, checkPointDocs, releaseDoc, rejectDoc, cancelDoc,
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
-    createCode, login, logout, allRemoteDocs, availableTrips, currentTrips, carriers, getUserSelector, checkPhone, resetPassword,
-    availableStatuses, pushStatusesData, checkRecaptcha, formatDate, pullStatusesData, localStg, getTmsTripsById, checkTmsTripsProcess,
-    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones, checkEmptyPointDocsExists, connection, offline, skipSync, explain
+    createCode, login, logout, carriers, checkPhone, resetPassword,
+    pushStatusesData, checkRecaptcha, formatDate, localStg, getTmsTripsById, checkTmsTripsProcess,
+    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones, checkEmptyPointDocsExists, connection, offline, skipSync, explain,
+    formatDateTime, routes, pullTripsById, activeTrips, activeStatuses,
+    activeTripsIds, activeStatusesIds, availableTripsIds, 
+    finishedOdometerData, statusesIds, routesIds, tripsByDate, getStats, getAllAvailableTrips, availableTrips
   }
 })
 

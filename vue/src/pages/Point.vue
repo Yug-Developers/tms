@@ -241,7 +241,7 @@
                         <v-col cols="12" lg="6" class="d-flex">
                             <v-text-field v-model="sumPack" label="Пакет №" :rules="[rules.isNotEmpty]"
                                 outlined></v-text-field>
-                            <v-btn @click="openScanDialog()" variant="text" icon="mdi-barcode-scan"
+                            <v-btn @click="openScanBarcodeDialog()" variant="text" icon="mdi-barcode-scan"
                                 class="ml-2"></v-btn>
                         </v-col>
                         <v-col cols="12" lg="6">
@@ -429,7 +429,7 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
-    <v-dialog v-model="isDialogOpen" max-width="600">
+    <!-- <v-dialog v-model="isDialogOpen" max-width="600">
         <v-card>
             <v-card-title>Сканер штрих-кода</v-card-title>
             <v-card-text>
@@ -441,7 +441,8 @@
                 <v-btn color="red" text @click="closeDialog">Закрити</v-btn>
             </v-card-actions>
         </v-card>
-    </v-dialog>
+    </v-dialog> -->
+
     <v-dialog v-model="isQRDialogOpen" max-width="600">
         <v-card>
             <v-card-title>Сканер QR-коду</v-card-title>
@@ -450,6 +451,17 @@
             </v-card-text>
             <v-card-actions>
                 <v-btn color="red" text @click="closeQRDialog">Закрити</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+    <v-dialog v-model="isBarcodeDialogOpen" max-width="600">
+        <v-card>
+            <v-card-title>Сканер штрих-кода</v-card-title>
+            <v-card-text>
+                <QRScanner barcode @barcodeResult="handleBarcodeResult" />
+            </v-card-text>
+            <v-card-actions>
+                <v-btn color="red" text @click="closeBarcodeDialog">Закрити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -468,7 +480,9 @@ import cyrillicToTranslit from 'cyrillic-to-translit-js'
 import md5 from 'md5'
 import Quagga from 'quagga'
 import { useOnlineStatus } from '@/hooks/onlineStatus'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const { updateOnlineStatus } = useOnlineStatus()
 const appStore = useAppStore()
 const route = useRoute()
@@ -537,6 +551,8 @@ const isQRDialogOpen = ref(false)
 const phoneFromQr = ref('')
 const releaseType = ref('')
 const checkInternetConnectionLoading = ref(false)
+const barcodeResult = ref('')
+const isBarcodeDialogOpen = ref(false)
 
 const setSMSstatus = async () => {
     setSMSstatusLoading.value = true
@@ -661,6 +677,18 @@ const handleQrResult = async (result) => {
     qrResult.value = result
 }
 
+const handleBarcodeResult = async (result) => {
+    barcodeResult.value = result
+}
+
+const openScanBarcodeDialog = () => {
+    barcodeResult.value = ''
+    isBarcodeDialogOpen.value = true
+}
+const closeBarcodeDialog = () => {
+    isBarcodeDialogOpen.value = false
+}
+
 watch(qrResult, async (newResult) => {
     if (!newResult) return // Уникаємо виконання дії для порожнього значення
     try {
@@ -691,6 +719,16 @@ watch(qrResult, async (newResult) => {
     }
 })
 
+watch(barcodeResult, async (newResult) => {
+    if (!newResult) return // Уникаємо виконання дії для порожнього значення
+    try {
+        sumPack.value = newResult
+        allSumPack.value = newResult
+        closeBarcodeDialog()
+    } catch (error) {
+        console.error('Помилка перевірки штрих-коду:', error)
+    }
+})
 
 // Слідкуємо за станом попапу
 watch(isDialogOpen, (isOpen) => {
@@ -711,9 +749,28 @@ onBeforeUnmount(() => {
     }
 })
 
+const getTripById = async () => {
+    try {
+        appStore.loading = true
+        if (!appStore.offline) {
+            const availableTripsIds = await appStore.getAllAvailableTrips()
+            if (!availableTripsIds.includes(tripId.value)) {
+                appStore.loading = false
+                //перенаправити на сторінку з помилкою 403 якщо рейсу не знайдено в доступних рейсах
+                router.push('/403')
+                return
+            }
+        }
+        await appStore.pullTripsById([tripId.value])
+        appStore.loading = false
+    } catch (e) {
+        console.log(e)
+    }
+}
+
 const initData = async () => {
     try {
-        await appStore.pullTripsData()
+        await getTripById()
         trip.value = await appStore.getTripDoc(tripId.value)
         managerPerm.value = await appStore.getManagerPermDoc(tripId.value)
 

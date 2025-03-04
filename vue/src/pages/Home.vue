@@ -16,7 +16,9 @@
                             :size="smAndDown ? 60 : 80"></v-icon>
                         <h2 class="text-body-1 text-md-h6 mb-6">Усього<br>рейсів</h2>
                         <p class="mb-4 text-medium-emphasis text-h4">
-                            <span v-if="!tripsLoading">{{ trips.length }}</span>
+                            <span v-if="!statsLoading">
+                                <span>{{ appStore.localStg.stats.tripsCounter || '-' }}</span>
+                            </span>
                             <span v-else><v-progress-circular indeterminate></v-progress-circular></span>
                         </p>
                     </v-sheet>
@@ -26,7 +28,9 @@
                         <v-icon class="mb-5" color="blue" icon="mdi-counter" :size="smAndDown ? 60 : 80"></v-icon>
                         <h2 class="text-body-1 text-md-h6 mb-6">Усього<br>кілометрів</h2>
                         <p class="mb-4 text-medium-emphasis text-h4">
-                            <span v-if="!finishedStatusesLoading">{{ odometrTotal }}</span>
+                            <span v-if="!statsLoading">
+                                <span>{{ appStore.localStg.stats.odometerTotal || '-' }}</span>
+                            </span>
                             <span v-else><v-progress-circular indeterminate></v-progress-circular></span>
                         </p>
                     </v-sheet>
@@ -37,12 +41,13 @@
                 <v-skeleton-loader max-width="600" type="article" class="mx-auto my-4"></v-skeleton-loader>
                 <v-skeleton-loader max-width="600" type="article" class="mx-auto my-4"></v-skeleton-loader>
             </div>
-            <div v-if="!tripsLoading && currentTrips.length">
-                <div v-for="trip in currentTrips" :key="trip.id">
+            <div v-if="!tripsLoading && appStore.activeTrips.length">
+                <div v-for="trip in appStore.activeTrips" :key="trip.id">
                     <TripBlk :trip="trip" />
                 </div>
             </div>
-            <div v-if="!tripsLoading && !finishedStatusesLoading && currentTrips.length == 0" class="text-center text-grey">Рейсів в роботі немає.
+            <div v-if="!tripsLoading && appStore.activeTrips.length == 0" class="text-center text-grey">Рейсів в роботі
+                немає.
             </div>
         </v-container>
     </v-layout>
@@ -54,83 +59,48 @@ import TripBlk from '@/components/TripBlk.vue'
 import { useAppStore } from '../store/appStore'
 import { onMounted, ref, computed } from 'vue'
 import { useDisplay } from 'vuetify'
-import { usePouchDB } from '@/hooks/PouchDb'
 
 const { smAndDown } = useDisplay()
 const appStore = useAppStore()
-const trips = ref([])
-const finishedStatuses = ref([])
-const curTrips = ref([])
 const tripsLoading = ref(false)
-const finishedStatusesLoading = ref(false)
-const allTrips = ref([])
-const Pouch = usePouchDB()
+// const finishedStatusesLoading = ref(false)
+// const tripsCounter = ref(0)
+// const tripsCounterLoading = ref(false)
+const statsLoading = ref(false)
 
 
 onMounted(async () => {
     try {
         tripsLoading.value = true
-        finishedStatusesLoading.value = true
+        if (appStore.localStg.stats.odometerTotal === undefined) {
+            statsLoading.value = true
+            await appStore.getStats()
+            statsLoading.value = false
+        }
+
+        // if (appStore.tripsCounter === null) tripsCounterLoading.value = true
+        // if (appStore.finishedOdometerData === null) finishedStatusesLoading.value = true
+
         await appStore.pullTripsData()
-        const selector = { ... await appStore.getUserSelector() }
-        // Доступні рейси
-        const options = {
-            selector,
-            fields: ['_id']
-        }
-        trips.value = await appStore.availableTrips(options)
-        // Кілометрів усього
-        await allAvailableTrips()
-        const docIds = allTrips.value.map(el => el._id) || []
-        if (!appStore.offline) {
-            const optionsF = {
-                selector: {
-                    _id: { $in: docIds },
-                    odometerStart: { $exists: true },
-                    odometerFinish: { $exists: true },
-                    odometerFinish: { $gt: 0 },
-                    status: { $eq: 300 }
-                },
-                fields: ['_id', 'odometerStart', 'odometerFinish'],
-                "use_index": ["_design/odometer_idx"]
-            }
-            finishedStatuses.value = await Pouch.fetchRemoteData('statuses', optionsF)
-        }
-        finishedStatusesLoading.value = false
-        // Поточні рейси
-        curTrips.value = await appStore.currentTrips()
         tripsLoading.value = false
+
+        // if (appStore.finishedOdometerData === null) {
+        //     await appStore.getFinishedOdometerData()
+        //     finishedStatusesLoading.value = false
+        // }
+
+        // if (appStore.tripsCounter === null && !appStore.offline) {
+        //     tripsCounter.value = await appStore.getTripsCounter()
+        // }
+        // tripsCounterLoading.value = false
+
     }
     catch (error) {
         console.error(error)
         tripsLoading.value = false
-        finishedStatusesLoading.value = false
+        statsLoading.value = false
+        // finishedStatusesLoading.value = false
+        // tripsCounterLoading.value = false
     }
 })
-
-const odometrTotal = computed(() => {
-    return finishedStatuses.value.reduce((acc, el) => {
-        return acc + (Number(el.odometerFinish) - Number(el.odometerStart))
-    }, 0)
-})
-
-const currentTrips = computed(() => {
-    return curTrips.value && curTrips.value.map(el => { return { doc: el, id: el._id, key: el._id } }) || []
-})
-
-const allAvailableTrips = async () => {
-    const options = {
-        selector: {
-            ... await appStore.getUserSelector()
-        },
-        fields: ['_id']
-    }
-    try {
-        allTrips.value = await appStore.availableTrips(options)
-    } catch (e) {
-        console.error(e)
-    }
-}
-
-
 </script>

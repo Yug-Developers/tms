@@ -1,5 +1,5 @@
 <template>
-    <RecaptchaLoader />
+    <RecaptchaLoader v-if="!appStore.offline"/>
     <v-app>
         <v-main :class="appStore.offline ?`bg-red-lighten-5`:``">
            <router-view />

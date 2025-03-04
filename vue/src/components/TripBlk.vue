@@ -9,36 +9,34 @@
                 <StatusChip :tripId="trip.id" />
             </v-card-title>
             <v-card-text class="text-grey text-caption">
-                Дата рейсу: {{ appStore.formatDate(trip.doc.date) }}<br>
-                Водій: {{ trip.doc.driverName }}<br>
-                Відповідальний: {{ trip.doc.editorName }}
+                Дата рейсу: {{ appStore.formatDate(trip.date) }}<br>
+                Водій: {{ trip.driverName }}<br>
+                Відповідальний: {{ trip.editorName }}
             </v-card-text>
-            <!-- <v-card-text class="text-grey text-caption pt-0">
+            <v-card-text class="text-grey text-caption pt-0">
                 <v-row>
                     <v-col cols="6">
                         <v-icon x-small
-                            class="mr-1 ml-n1">mdi-flag-triangle</v-icon>Старт:<br>
-                        <span v-if="statuses.startTime">{{ statuses.startTime }}</span>
+                            class="mr-1 ml-n1">mdi-flag-outline</v-icon>Старт:<br>
+                        <span v-if="statusData.startTime">{{ appStore.formatDateTime(statusData.startTime) }}</span>
                         <span v-else>-</span>
                     </v-col>
                     <v-col cols="6">
                         <v-icon x-small
-                            class="mr-1 ml-n1">mdi-flag-triangle</v-icon>Фініш:<br>
-                        <span v-if="statuses.finishTime">{{ statuses.finishTime }}</span>
+                            class="mr-1 ml-n1">mdi-flag-checkered</v-icon>Фініш:<br>
+                        <span v-if="statusData.finishTime">{{ appStore.formatDateTime(statusData.finishTime) }}</span>
                         <span v-else>-</span>
                     </v-col>
                 </v-row>
-            </v-card-text> -->
+            </v-card-text>
             <v-card-text class="py-0 d-flex justify-space-between align-end">
                 <div>
                     <div><b>На маршруті:</b> {{ pointsNumber }} точок</div>
-                    <div><b>Кілометраж:</b> {{ tripLength(trip.doc._id) }} км</div>
-                    <!-- <div v-if="tripSatatus == 300"><b>Кілометраж факт:</b> {{ tripLengthFact }} км</div> -->
+                    <div><b>Кілометраж:</b> {{ tripLength(trip.id) }} км</div>
                 </div>
                 <div class="text-right">
-                    <div v-if="trip.doc.isCircular || trip.doc.circular" class="text-caption text-grey">кільцевий</div>
+                    <div v-if="trip.isCircular || trip.circular" class="text-caption text-grey">кільцевий</div>
                 </div>
-
             </v-card-text>
         </v-card>
     </v-sheet>
@@ -50,19 +48,17 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import StatusChip from './TripStatusChip.vue'
 
-const statuses = ref({})
-const tripSatatus = ref(0)
 const router = useRouter()
 const props = defineProps({
     trip: Object
 })
-const tripLengthFact = ref(0)
+
 const appStore = useAppStore()
 
 const tripLength = (id) => {
     let length = 0
-    if (props.trip && props.trip.doc && props.trip.doc.points) {
-        length = props.trip.doc.points.reduce((acc, item) => {
+    if (props.trip?.points) {
+        length = props.trip.points.reduce((acc, item) => {
             return acc + item.distance
         }, 0)
     }
@@ -71,27 +67,23 @@ const tripLength = (id) => {
     return length
 }
 
-const getTripLengthFact = async () => {
-    statuses.value = await appStore.getTripStatusesDoc(props.trip.id)
-    if (statuses.value && statuses.value.odometerStart && statuses.value.odometerFinish) {
-        tripSatatus.value = statuses.value.status
-        return statuses.value.odometerFinish - statuses.value.odometerStart
-    }
-}
-
 const pointsNumber = computed(() => {
-    if (props.trip && props.trip.doc && props.trip.doc.points) {
-        return props.trip.doc.isCircular || props.trip.doc.circular ? (props.trip.doc.points.length + 1) : props.trip.doc.points.length
+    if (props.trip?.points) {
+        return props.trip.isCircular || props.trip.circular ? (props.trip.points.length + 1) : props.trip.points.length
     } else {
         return 0
     }
+})
+
+const statusData = computed(() => {
+    const out = appStore.statuses.find(el => el._id === String(props.trip.id))
+    return out || {}
 })
 
 const goToTrip = (id) => {
     router.push(`/trip/${id}`)
 }
 onMounted(async () => {
-    tripLengthFact.value = await getTripLengthFact()
 })
 
 

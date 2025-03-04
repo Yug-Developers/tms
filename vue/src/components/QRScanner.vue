@@ -18,8 +18,10 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Html5Qrcode } from 'html5-qrcode'
 
-const emit = defineEmits(['qrResult']) // Оголошення події для емісії
-
+const emit = defineEmits(['qrResult', 'barcodeResult']) // Оголошення події для емісії
+const props = defineProps({
+    barcode: Boolean
+})
 const qrResult = ref('')
 const cameraOptions = ref([])
 const selectedCamera = ref(null)
@@ -44,7 +46,11 @@ const startQrScanner = async () => {
         },
         (decodedText) => {
             qrResult.value = decodedText
-            emit('qrResult', decodedText) // Емісія події з результатом
+            if (props.barcode) {
+                emit('barcodeResult', decodedText) // Емісія події з результатом
+            } else {
+                emit('qrResult', decodedText) // Емісія події з результатом
+            }
         },
         (error) => {
             // console.warn('QR Error:', error)

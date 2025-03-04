@@ -48,7 +48,7 @@ import MainNavigation from '@/components/MainNavigation.vue'
 import TripHeader from '@/components/TripHeader.vue'
 import PointBlk from '@/components/PointBlk.vue'
 import { useAppStore } from '../store/appStore'
-import { onMounted, ref, computed, toRaw } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useRouter } from 'vue-router'
 const router = useRouter()
@@ -56,9 +56,7 @@ const route = useRoute()
 const appStore = useAppStore()
 const tripData = ref({})
 const doc = ref({})
-const statuses = ref({})
 const tripId = ref(route.params.id)
-const trips = ref([])
 const notClosedPoins = ref(true)
 const reloadLoading = ref(false)
 
@@ -75,7 +73,7 @@ const reload = async () => {
             attempts++
             const result = await appStore.checkTmsTripsProcess()
 
-            if (result.content && result.content.status === 'finished' && result.content.pid === pid) { 
+            if (result.content && result.content.status === 'finished' && result.content.pid === pid) {
                 appStore.setSnackbar({ text: "Оновлення данних маршруту завершено", type: 'success' });
                 clearInterval(intervalId)  // зупиняємо інтервал
                 reloadLoading.value = false
@@ -93,12 +91,13 @@ const reload = async () => {
     }
 }
 
+const statuses = computed(() => appStore.statuses?.find(el => el._id === tripId.value) || {})
 
 const points = computed(() => {
     const points = tripData.value.doc.points
-    return notClosedPoins.value && statuses.value && statuses.value.points ? points.filter(point => 
-    statuses.value.points.find(el => el.id == point.id) 
-    && statuses.value.points.find(el => el.id == point.id).status !== 300) : points
+    return notClosedPoins.value && statuses.value && statuses.value.points ? points.filter(point =>
+        statuses.value.points.find(el => el.id == point.id)
+        && statuses.value.points.find(el => el.id == point.id).status !== 300) : points
 })
 
 const notClosedPointsShow = computed(
@@ -114,26 +113,31 @@ const notClosedPointsShow = computed(
     }
 )
 
+const getTripById = async () => {
+    try {
+        appStore.loading = true
+        if (!appStore.offline) {
+            const availableTripsIds = await appStore.getAllAvailableTrips()
+            if (!availableTripsIds.includes(tripId.value)) {
+                doc.value = null
+                appStore.loading = false
+                //перенаправити на сторінку з помилкою 403 якщо рейсу не знайдено в доступних рейсах
+                router.push('/403')
+                return
+            }
+        }
+        await appStore.pullTripsById([tripId.value])
+        doc.value = appStore.routes.find(el => el._id === tripId.value)
+        appStore.loading = false
+    } catch (e) {
+        console.log(e)
+    }
+}
+
 onMounted(async () => {
     try {
-        await appStore.pullTripsData()
-        const selector = { ... await appStore.getUserSelector() }
-        // Доступні рейси
-        const options = {
-            selector,
-            fields: ["_id"]
-        }
-        trips.value = await appStore.availableTrips(options)
-        // Якщо рейсу не знайдено в доступних рейсах
-        if (!trips.value.find(trip => trip._id === tripId.value)) {
-            doc.value = null
-            //перенаправити на сторінку з помилкою 403
-            router.push('/403')
-            return
-        }
-        await appStore.pullStatusesData([tripId.value])
-        doc.value = await appStore.getTripDoc(tripId.value)
-        statuses.value = await appStore.getTripStatusesDoc(tripId.value)
+        await getTripById()
+
         if (doc.value.isCircular || doc.value.circular) {
             const firstPointCopy = { ...doc.value.points[0], id: -1, status: 100, sortNumber: doc.value.points.length + 1 }
             doc.value.points = [...doc.value.points, firstPointCopy];
