@@ -10,7 +10,7 @@
                     max-width="600" rounded="lg" width="100%"
                     class="pa-0 mx-auto mb-4 d-flex justify-center bg-transparent">
                     <v-btn prepend-icon="mdi-cellphone-message-off" @click="setSMSstatus()"
-                        :loading="setSMSstatusLoading" :disabled="pointStatus != 200" class="mx-auto">
+                        :loading="setSMSstatusLoading" :disabled="pointStatus && pointStatus != 200" class="mx-auto">
                         Без Коду SMS
                     </v-btn>
                 </v-sheet>
@@ -813,7 +813,7 @@ const rules = {
 
 
 const selectDoc = (id) => {
-    if (!isEditor.value || pointStatus.value !== 200 || docStatuses.value[id]?.status !== 200) return
+    if (!isEditor.value || (pointStatus.value && pointStatus.value !== 200) || docStatuses.value[id]?.status !== 200) return
     if (docsSelected.value[id]) {
         delete docsSelected.value[id]
     } else {

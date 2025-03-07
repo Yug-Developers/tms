@@ -3,12 +3,14 @@ import { onMounted, onBeforeUnmount, computed } from 'vue'
 import axios from 'axios'
 import Config from '@/Config'
 
-const pingServerInterval = 60000 // 1 хв
+const pingServerInterval = 180000 // 3 хв
 const pingServerTimeout = 5000 // 5 сек
 const pingServerIntervalOffline = 10000 // 10 сек
 let wasOffline = false
 let pingOfflineInterval = null
 let pingOnlineInterval = null
+let isInitialized = false
+let eventHandlersAdded = false
 
 export function useOnlineStatus() {
     const appStore = useAppStore()
@@ -53,13 +55,18 @@ export function useOnlineStatus() {
                     } else {
                         await appStore.pullTripsData()
                         await appStore.pushStatusesData()
+                        await appStore.pushManagerPermData()
                     }
                     wasOffline = false
                 }
                 // Якщо поновлено зв'язок — запускаємо інтервал pingServerInterval
                 if (pingOnlineInterval) {
                     clearInterval(pingOnlineInterval)
+                    pingOnlineInterval = null
+                }
+                if (pingOfflineInterval) {
                     clearInterval(pingOfflineInterval)
+                    pingOfflineInterval = null
                 }
                 pingOnlineInterval = setInterval(updateOnlineStatus, pingServerInterval)
             }
@@ -72,16 +79,34 @@ export function useOnlineStatus() {
     }
 
     onMounted(() => {
-        updateOnlineStatus()
-        window.addEventListener('online', updateOnlineStatus)
-        window.addEventListener('offline', updateOnlineStatus)
+        if (!isInitialized) {
+            updateOnlineStatus()
+            isInitialized = true
+        }
+        setTimeout(() => {
+            if (!eventHandlersAdded) {
+                window.addEventListener('online', updateOnlineStatus)
+                window.addEventListener('offline', updateOnlineStatus)
+                eventHandlersAdded = true
+            }
+        },
+            100)
     })
 
     onBeforeUnmount(() => {
-        window.removeEventListener('online', updateOnlineStatus)
-        window.removeEventListener('offline', updateOnlineStatus)
-        clearInterval(pingOnlineInterval)
-        clearInterval(pingOfflineInterval)
+        if (eventHandlersAdded) {
+            window.removeEventListener('online', updateOnlineStatus)
+            window.removeEventListener('offline', updateOnlineStatus)
+            eventHandlersAdded = true
+        }
+        if (pingOnlineInterval) {
+            clearInterval(pingOnlineInterval)
+            pingOnlineInterval = null
+        }
+        if (pingOfflineInterval) {
+            clearInterval(pingOfflineInterval)
+            pingOfflineInterval = null
+        }
     })
     const offline = computed(() => appStore.offline)
 

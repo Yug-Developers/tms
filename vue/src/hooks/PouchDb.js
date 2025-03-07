@@ -1,32 +1,33 @@
 import PouchDB from 'pouchdb-browser'
 import Config from '../Config'
-import PouchDBFind from 'pouchdb-find'
 import PouchDBAuth from 'pouchdb-authentication'
 
 PouchDB.plugin(PouchDBAuth)
-PouchDB.plugin(PouchDBFind)
 
-const dbObj = {}
+const dBObj = {}
 const dbRemoteObj = {}
 const dbUsersName = '_users'
 const user_name = 'tms'
 
 export function usePouchDB() {
     //----------------------------- ініціалізація ------------------------------
-    const initDb = (db) => {
+    const getDB = async (db) => {
         if (db !== '_users') {
             db = user_name + '_' + db
         }
-        if (!dbObj[db]) {
-            dbObj[db] = new PouchDB(db)
+
+        if (!dBObj[db] || dBObj[db]._destroyed) {
+            dBObj[db] = new PouchDB(db)
         }
 
-        if (!dbRemoteObj[db]) {
-            dbRemoteObj[db] = new PouchDB(Config.remoteCouchDb + db, {
-                skip_setup: true
-            })
+        try {
+            await dBObj[db].info()
+        } catch (error) {
+            console.warn(`З'єднання з ${db} втрачено, перевідкриваю...`)
+            dBObj[db] = new PouchDB(db)
         }
-        return db
+
+        return dBObj[db]
     }
 
     const initUsersDb = async (array) => {
@@ -38,20 +39,20 @@ export function usePouchDB() {
     }
 
     const destroyDB = (dbName) => {
-        return new Promise((resolve, reject) => {
-            const db = initDb(dbName)
-            dbObj[db].info().then(function (info) {
-                dbObj[db].destroy(function (err, response) {
+        return new Promise(async (resolve, reject) => {
+            const db = await getDB(dbName)
+            db.info().then(function (info) {
+                db.destroy(function (err, response) {
                     if (err) {
-                        console.log(`Помилка видалення бази ${db}`, err);
+                        console.error(`Помилка видалення бази ${dbName}`, err);
                         reject(err)
                     } else {
-                        console.log(`Базу ${db} видалено`, response);
+                        console.error(`Базу ${db} видалено`, response);
                         resolve(response)
                     }
                 })
             }).catch(function (err) {
-                console.log(`База ${db} не існує`);
+                console.error(`База ${db} не існує`);
                 resolve()
             })
         })
@@ -116,12 +117,12 @@ export function usePouchDB() {
 
 
     // ------------------------ робота з локальними даними ---------------------
-    const fetchData = async (dbName, options = { selector: {} }) => {
+    const fetchData = async (dbName) => {
         try {
-            const db = initDb(dbName)
-            const result = await dbObj[db].find(options)
-            console.log('CouchDb data fetched')
-            return result && result.docs
+            const db = await getDB(dbName)
+            const result = await db.allDocs({ include_docs: true })
+            console.log('CouchDb data fetched', result)
+            return result?.rows?.map(row => row.doc)
         } catch (error) {
             throw error
         }
@@ -129,8 +130,8 @@ export function usePouchDB() {
 
     const getDoc = async (dbName, docId) => {
         try {
-            const db = initDb(dbName)
-            const doc = await dbObj[db].get(docId)
+            const db = await getDB(dbName)
+            const doc = await db.get(docId)
             return doc
         } catch (error) {
             throw error
@@ -139,17 +140,17 @@ export function usePouchDB() {
 
     const putData = async (dbName, doc) => {
         try {
-            const db = initDb(dbName)
-            return await dbObj[db].put(doc)
+            const db = await getDB(dbName)
+            return await db.put(doc)
         } catch (error) {
             throw error
         }
     }
 
     const updateDoc = async (dbName, docId, payload) => {
-        const db = initDb(dbName)
-        const doc = await dbObj[db].get(docId);
-        return await dbObj[db].put({
+        const db = await getDB(dbName)
+        const doc = await db.get(docId);
+        return await db.put({
             _id: docId,
             _rev: doc._rev,
             ...payload
@@ -157,9 +158,9 @@ export function usePouchDB() {
     }
 
     const deleteDoc = async (dbName, docId) => {
-        const db = initDb(dbName)
-        const doc = await dbObj[db].get(docId)
-        return await dbObj[db].remove(doc, { _deleted: true })
+        const db = await getDB(dbName)
+        const doc = await db.get(docId)
+        return await db.remove(doc, { _deleted: true })
     }
 
     const updateDontSendSMS = async (dbName, docId, pointId) => {
@@ -168,12 +169,12 @@ export function usePouchDB() {
                 throw new Error('docId is required')
             }
 
-            const db = initDb(dbName)
+            const db = await getDB(dbName)
 
             // Перевіряємо, чи існує документ
             let doc
             try {
-                doc = await dbObj[db].get(docId)
+                doc = await db.get(docId)
             } catch (error) {
                 if (error.status === 404) {
                     // Документ не знайдено, створюємо новий
@@ -198,164 +199,51 @@ export function usePouchDB() {
                 dontSendSMS: updatedDontSendSMS,
             }
 
-            return await dbObj[db].put(updatedDoc)
+            return await db.put(updatedDoc)
         } catch (error) {
             console.error('Error updating document:', error)
             throw error
         }
     }
 
-    // ------------------ работа з віддаленними данними ------------------------
-    const fetchRemoteData = async (dbName, options = { selector: {} }) => {
+    const bulkDocs = async (dbName, docs) => {
         try {
-            const db = initDb(dbName)
-            options = {
-                ...options,
-                limit: options.limit || 1000
-            }
-
-            const result = await dbRemoteObj[db].find(options)
-            // const explain = await dbRemoteObj[db].explain(options)
-            // console.log('explain', JSON.stringify(explain, null, 2))
-            console.log(JSON.stringify(options, null, 2), result)
-            console.log('CouchDb data fetched')
-            return result && result.docs
-        } catch (error) {
-            throw error
+            const db = await getDB(dbName)
+            return await db.bulkDocs(docs, { new_edits: false })
         }
-    }
-    // const getRemoteDocs = async (dbName, keys) => {
-    //     try {
-    //         const db = initDb(dbName)
-    //         const result = await dbRemoteObj[db].allDocs({
-    //             include_docs: true,
-    //             keys
-    //         })
-    //         const docs = result.rows
-    //             .filter(row => row.doc) // Фільтруємо, якщо деякі документи не знайдено
-    //             .map(row => row.doc)
-    //         return docs
-    //     } catch (error) {
-    //         throw error
-    //     }
-    // }
-    // const allRemoteDocs = async (dbName, ids) => {
-    //     try {
-    //         const db = initDb(dbName)
-    //         console.log('fetchRemoteData', db)
-    //         return await dbRemoteObj[db].allDocs({
-    //             include_docs: true,
-    //             keys: ids
-    //         })
-    //     } catch (error) {
-    //         console.error("plk1", error)
-    //     }
-    // }
-
-    // const getRemoteDoc = async (dbName, docId) => {
-    //     try {
-    //         const db = initDb(dbName)
-    //         console.log('getRemoteDoc', db)
-    //         return await dbRemoteObj[db].get(docId)
-    //     } catch (error) {
-    //         console.error("Документ не знайдено", docId)
-    //     }
-    // }
-    const viewRemoteByDrivers = async (key) => {
-        try {
-            const db = initDb('routes')
-            console.log('viewByDriver', db)
-            return await dbRemoteObj[db].query('my_search_index/by_driver_ids', { key })
-        } catch (error) {
-            console.error("view error", error)
-        }
-    }
-    const viewRemoteByCarriers = async (keys) => {
-        try {
-            const db = initDb('routes')
-            console.log('viewByDriver', db)
-            return await dbRemoteObj[db].query('my_search_index/by_carrier_ids', { keys })
-        } catch (error) {
-            console.error("view error", error)
-        }
-    }
-    // const countByDrivers = async (key) => {
-    //     try {
-    //         const db = initDb('routes')
-    //         console.log('viewByDriver', db)
-    //         return await dbRemoteObj[db].query('driver_count/count_by_driver', { key, group: true })
-    //     } catch (error) {
-    //         console.error("view error", error)
-    //     }
-    // }
-    // const countByManagers = async (keys) => {
-    //     try {
-    //         const db = initDb('routes')
-    //         console.log('viewByDriver', db)
-    //         return await dbRemoteObj[db].query('driver_count/count_by_manager', { keys, group: true })
-    //     } catch (error) {
-    //         console.error("view error", error)
-    //     }
-    // }
-    const viewByActiveRoutesDrivers = async (key) => {
-        try {
-            const db = initDb('routes')
-            console.log('viewByDriver', db)
-            return await dbRemoteObj[db].query('my_search_index/by_active_routes_driver_ids', { key })
-        } catch (error) {
-            console.error("view error", error)
-        }
-    }
-    const viewByDates = async (keys) => {
-        try {
-            const db = initDb('routes')
-            console.log('viewByDriver', db)
-            return await dbRemoteObj[db].query('my_search_index/by_date', { keys })
-        } catch (error) {
-            console.error("view error", error)
-        }
-    }
-    // ------------------------------- індекси тестування ------------------------
-    const getIndexes = async (dbName) => {
-        try {
-            const db = initDb(dbName)
-            return await dbRemoteObj[db].getIndexes()
-        } catch (error) {
-            console.error("getIndexes", error)
-        }
-    }
-    const explain = async (dbName) => {
-        try {
-            const db = initDb(dbName)
-            return await dbRemoteObj[db].explain()
-        } catch (error) {
-            console.error("explain", error)
-        }
-    }
-    // ------------------------------- реплікація ------------------------------
-    const pull = async (dbName, options = {}) => {
-        try {
-            const db = initDb(dbName)
-            console.log('CouchDb data pulled')
-            return await dbObj[db].replicate.from(dbRemoteObj[db], options)
-        } catch (error) {
+        catch (error) {
             throw error
         }
     }
 
-    const push = async (dbName) => {
+    const deleteBulkDocs = async (dbName, docs) => {
         try {
-            const db = initDb(dbName)
-            console.log('CouchDb data pushed')
-            return await dbObj[db].replicate.to(dbRemoteObj[db])
+            const db = await getDB(dbName)
+            docs = docs.map(async d => {
+                const doc = await db.get(d._id)
+                doc._id = d._id
+                doc._rev = doc._rev
+                doc._deleted = true
+                return doc
+            })
+            return await db.bulkDocs(docs)
+        }
+        catch (error) {
+            throw error
+        }
+    }
+
+    const changes = async (dbName, options = {}) => {
+        try {
+            const db = await getDB(dbName)
+            return db.changes(options)
         } catch (error) {
             throw error
         }
     }
 
     return {
-        fetchData, pull, getDoc, putData, updateDoc, deleteDoc, destroyDB, login, logout, initUsersDb, getUserSession,
-        fetchRemoteData, push, getUserData, updateDontSendSMS, viewByActiveRoutesDrivers, getIndexes, explain,
-        viewRemoteByDrivers, viewByDates, viewRemoteByCarriers
+        fetchData, getDoc, putData, updateDoc, deleteDoc, destroyDB, login, logout, initUsersDb, getUserSession,
+        getUserData, updateDontSendSMS, bulkDocs, changes, deleteBulkDocs
     }
 }

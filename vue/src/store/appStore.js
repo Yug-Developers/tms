@@ -45,6 +45,12 @@ export const useAppStore = defineStore('appStore', () => {
   // const tripsCounter = ref(null)
   const tripsByDate = ref([])
 
+  // флаги оновлення даних
+  const lastRoutesSeq = ref(0)
+  const lastStatusesSeq = ref(0)
+  const lastLocalStatusesSeq = ref(0)
+  const lastLocalManagersPerlSeq = ref(0)
+
   const menuItems = ref([
     { title: 'Головна', icon: 'mdi-home', to: '/' },
     { title: 'Рейси', icon: 'mdi-routes', to: '/trips' },
@@ -261,6 +267,7 @@ export const useAppStore = defineStore('appStore', () => {
 
   const getStats = async () => {
     try {
+      if (offline.value) return localStg.stats
       const res = await axios.get(Config.misUrl + '/tms/get-stats', { withCredentials: true })
       if (res.data?.content) localStg.stats = res.data?.content
       return res.data?.content
@@ -272,10 +279,11 @@ export const useAppStore = defineStore('appStore', () => {
   const getAllAvailableTrips = async () => {
     // Для розділу - рейси
     try {
-        const res = await axios.get(Config.misUrl + '/tms/get-all-available-trips', { withCredentials: true })
-        const out = res.data?.content || []
-        tripsByDate.value = out
-        return out.map(trip => trip.id)
+      if (offline.value) return []
+      const res = await axios.get(Config.misUrl + '/tms/get-all-available-trips', { withCredentials: true })
+      const out = res.data?.content || []
+      tripsByDate.value = out
+      return out.map(trip => trip.id)
     } catch (error) {
       throw error
     }
@@ -285,6 +293,88 @@ export const useAppStore = defineStore('appStore', () => {
     return tripsByDate.value.map(trip => trip.id)
   })
 
+  const pullRoutes = async (ids) => {
+    try {
+      if (offline.value) return
+      const res = await axios.get(Config.misUrl + `/tms/pull-routes?since=${lastRoutesSeq.value}${ids?.length ? ('&ids=' + ids) : ''}`, { withCredentials: true })
+      const data = res.data?.content || {}
+      if (data?.docs.length > 0) {
+        await Pouch.bulkDocs('routes', data.docs)
+        lastRoutesSeq.value = data.last_seq // Оновлюємо позицію змін
+      }
+      return data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const pullStatuses = async (ids) => {
+    try {
+      if (offline.value) return
+      const res = await axios.get(Config.misUrl + `/tms/pull-statuses?since=${lastStatusesSeq.value}${ids?.length ? ('&ids=' + ids) : ''}`, { withCredentials: true })
+      const data = res.data?.content || {}
+      if (data?.docs.length > 0) {
+        const res = await Pouch.bulkDocs('statuses', data.docs)
+        console.log('Відбулись зміни в статусах', res)
+        lastStatusesSeq.value = data.last_seq // Оновлюємо позицію змін
+      }
+      return data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const pullManagersPerm = async (ids) => {
+    try {
+      if (offline.value) return
+      const res = await axios.get(Config.misUrl + `/tms/pull-manager-perm?ids=${ids}`, { withCredentials: true })
+      const data = res.data?.content || {}
+      if (data?.docs.length > 0) {
+        const res = await Pouch.bulkDocs('manager_perm', data.docs)
+        console.log('Відбулись зміни в дозволах менеджера', res)
+      }
+      return data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const pushStatusesData = async () => {
+    try {
+      console.log('--------------------->pushStatusesData')
+      if (localStg.userData.role !== 'driver') return
+      if (offline.value) return
+      const changes = await Pouch.changes('statuses', {
+        since: lastLocalStatusesSeq.value || 0, // Отримуємо тільки нові зміни
+        include_docs: true
+      })
+      if (changes.results.length === 0) return
+      const docs = changes.results.map(row => row.doc)
+      const res = await axios.post(Config.misUrl + '/tms/push-statuses', { docs }, { withCredentials: true })
+      lastLocalStatusesSeq.value = changes.last_seq
+      return res.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const pushManagerPermData = async () => {
+    try {
+      if (localStg.userData.role !== 'manager') return
+      if (offline.value) return
+      const changes = await Pouch.changes('manager_perm', {
+        since: lastLocalManagersPerlSeq.value || 0, // Отримуємо тільки нові зміни
+        include_docs: true
+      })
+      if (changes.results.length === 0) return
+      const docs = changes.results.map(row => row.doc)
+      const res = await axios.post(Config.misUrl + '/tms/push-manager-perm', { docs }, { withCredentials: true })
+      lastLocalManagersPerlSeq.value = changes.last_seq
+      return res.data
+    } catch (error) {
+      throw error
+    }
+  }
 
   // --------------------------------- actions --------------------------------
   const createCode = (phone) => {
@@ -296,17 +386,11 @@ export const useAppStore = defineStore('appStore', () => {
   //------------------------ login logout ----------------------------------
   const login = async (user, pass) => {
     try {
-      Pouch.destroyDB('statuses')
-      Pouch.destroyDB('routes')
-      Pouch.destroyDB('users')
-      Pouch.destroyDB('manager_perm')
+      await clearDB()
     } catch (error) {
       console.error(error)
     }
-    localStg.userData = {}
-    localStg.user_name = ''
-    localStg.user_id = ''
-    localStg.stats = {}
+    clearVars()
     try {
       skipSync.value = true
       await updateOnlineStatus()
@@ -322,22 +406,38 @@ export const useAppStore = defineStore('appStore', () => {
         await Pouch.logout()
       }
       try {
-        Pouch.destroyDB('statuses')
-        Pouch.destroyDB('routes')
-        Pouch.destroyDB('users')
-        Pouch.destroyDB('manager_perm')
+        await clearDB()
       } catch (error) {
         console.error(error)
       }
-      localStg.userData = {}
-      localStg.user_name = ''
-      localStg.user_id = ''
-      localStg.stats = {}
+      clearVars()
       return
     } catch (error) {
       throw error
     }
 
+  }
+  const clearVars = () => {
+    localStg.userData = {}
+    localStg.user_name = ''
+    localStg.user_id = ''
+    localStg.stats = {}
+
+    lastRoutesSeq.value = 0
+    lastStatusesSeq.value = 0
+    lastLocalStatusesSeq.value = 0
+    lastLocalManagersPerlSeq.value = 0
+  }
+
+  const clearDB = async () => {
+    try {
+      await Pouch.destroyDB('statuses')
+      await Pouch.destroyDB('routes')
+      await Pouch.destroyDB('users')
+      await Pouch.destroyDB('manager_perm')
+    } catch (error) {
+      throw error
+    }
   }
 
   // ---------------------- реплікація -----------------------------------
@@ -345,22 +445,18 @@ export const useAppStore = defineStore('appStore', () => {
     try {
       loading.value = true
       if (!offline.value) {
-        const carriers = localStg.userData.carrierId ? localStg.userData.carrierId.map(el => Number(el)) : []
-        const options = {
-          filter: localStg.userData.role === 'manager' ? 'filter/by_status_carrier' : 'filter/by_status_editor',
-          query_params: { editorId: Number(localStg.user_id), carrierIds: carriers }
-        }
         // Репликація маршрутів
-        await Pouch.pull('routes', options)
+        await pullRoutes()
         routes.value = await Pouch.fetchData('routes')
-
         const doc_ids = activeTripsIds.value
         if (doc_ids.length === 0) doc_ids.push('-1')
-        const opt = { doc_ids }
+
         // Репликація статусів
-        await Pouch.pull('statuses', opt)
+        await pullStatuses(doc_ids)
+
         // Репликація дозволів менеджера
-        await Pouch.pull('manager_perm', opt)
+        await pullManagersPerm(doc_ids)
+
         statuses.value = await Pouch.fetchData('statuses')
       } else {
         routes.value = await Pouch.fetchData('routes')
@@ -375,10 +471,9 @@ export const useAppStore = defineStore('appStore', () => {
   const pullTripsById = async (ids) => {
     try {
       if (!offline.value) {
-        const opt = { doc_ids: ids }
-        await Pouch.pull('routes', opt)
-        await Pouch.pull('statuses', opt)
-        await Pouch.pull('manager_perm', opt)
+        await pullRoutes(ids)
+        await pullStatuses(ids)
+        await pullManagersPerm(ids)
       }
       routes.value = await Pouch.fetchData('routes')
       statuses.value = await Pouch.fetchData('statuses')
@@ -387,37 +482,6 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
-  const pushStatusesData = async () => {
-    try {
-      if (!offline.value) {
-        const pushRes = await Pouch.push('statuses')
-      }
-    } catch (error) {
-      throw error
-    }
-  }
-
-  const pushManagerPermData = async () => {
-    try {
-      if (!offline.value) {
-        const pushRes = await Pouch.push('manager_perm')
-      }
-    } catch (error) {
-      throw error
-    }
-  }
-
-  // const pullStatusesData = async (docIds) => {
-  //   try {
-  //     if (!offline.value) {
-  //       const opt = { doc_ids: docIds }
-  //       const pullSt = await Pouch.pull('statuses', opt)
-  //     }
-  //     statuses.value = await Pouch.fetchData('statuses')
-  //   } catch (error) {
-  //     throw error
-  //   }
-  // }
 
   // ---------------------- робота з локальними даними ---------------------
 
@@ -468,6 +532,14 @@ export const useAppStore = defineStore('appStore', () => {
     return statuses.value.filter(status => status.status === 200)
   })
 
+  const closedStatuses = computed(() => {
+    return statuses.value.filter(status => status.status === 300)
+  })
+
+  const closedStatusesIds = computed(() => {
+    return closedStatuses.value.map(status => status._id)
+  })
+
   const activeStatusesIds = computed(() => {
     return activeStatuses.value.map(status => status._id)
   })
@@ -479,202 +551,6 @@ export const useAppStore = defineStore('appStore', () => {
   const statusesIds = computed(() => {
     return statuses.value.map(status => status._id)
   })
-
-  // --------------------------- робота з віддаленими данними ------------------------
-  // const allRemoteDocs = async (dbName) => {
-  //   try {
-  //     return await Pouch.allRemoteDocs(dbName)
-  //   } catch (error) {
-  //     throw error
-  //   }
-  // }
-
-  // const availableTrips = async (options) => {
-  //   try {
-  //     const dbName = 'routes'
-  //     if (!offline.value) {
-  //       return await Pouch.fetchRemoteData(dbName, options)
-  //     } else {
-  //       return await Pouch.fetchData(dbName, options)
-  //     }
-  //   } catch (error) {
-  //     throw error
-  //   }
-  // }
-
-  // const availableStatuses = async (options) => {
-  //   try {
-  //     const dbName = 'statuses'
-  //     if (!offline.value) {
-  //       return await Pouch.fetchRemoteData(dbName, options)
-  //     } else {
-  //       return await Pouch.fetchData(dbName, options)
-  //     }
-  //   } catch (error) {
-  //     throw error
-  //   }
-  // }
-
-  // const currentTrips = async () => {
-  //   try {
-  //     const dbName = 'routes'
-  //     let selector = await getUserSelector({ active: true })
-  //     const options = {
-  //       selector,
-  //       "fields": ["_id"]
-  //     }
-  //     if (!offline.value && localStg.userData.role === 'manager') {
-  //       const res = await Pouch.fetchRemoteData(dbName, options)
-  //       const ids = res.map(row => row._id)
-  //       const result = await Pouch.getRemoteDocs(dbName, ids)
-  //       return result
-  //     } else {
-  //       return await Pouch.fetchData(dbName, options)
-  //     }
-  //   } catch (error) {
-  //     throw error
-  //   }
-  // }
-
-  // const getRemoteTripStatusesDoc = async (tripId) => {
-  //   try {
-  //     const statuses = await Pouch.getRemoteDoc('statuses', tripId)
-  //     return statuses
-  //   } catch (error) {
-  //     return {}
-  //   }
-  // }
-
-  // const getAvailableTripsIds = async (status) => {
-  //   //Отримуємо усі id доступних рейсів. Для водіїв - це рейси, які відносяться до них. Для менеджерів - це рейси, які відносяться до їх перевізників
-  //   try {
-  //     let data = {}
-  //     if (localStg.userData.role === 'manager') {
-  //       const carriers = localStg.userData.carrierId ? localStg.userData.carrierId.map(el => Number(el)) : []
-  //       data = await Pouch.viewRemoteByCarriers(carriers)
-  //     } else {
-  //       data = await Pouch.viewRemoteByDrivers(Number(localStg.userData.typhoonId))
-  //     }
-  //     if (status) {
-  //       data.rows = data.rows.filter(row => row.value === status)
-  //     }
-  //     const out = data.rows?.map(row => row.id)
-  //     availableTripsIds.value = out
-  //     return out
-  //   } catch (error) {
-  //     throw error
-  //   }
-  // }
-
-  // const getUserSelector = async (config = {}) => {
-  //   if (localStg.userData && !localStg.userData._id && !offline.value) {
-  //     localStg.userData = await Pouch.getUserData(localStg.user_name)
-  //   }
-
-  //   const user_id = localStg.userData.typhoonId
-
-  //   let selector = {}
-  //   if (localStg.userData.role == 'manager') {
-  //     const carriers = localStg.userData.carrierId ? localStg.userData.carrierId.map(el => Number(el)) : []
-  //     selector = {
-  //       carrierId: { $in: carriers },
-  //     }
-  //     config.active ? selector.status = 'active' : null
-  //   } else {
-  //     try {
-  //       if (offline.value) {
-  //         //усі записи в відсутності зв'язку
-  //         selector = {
-  //           "_id": { "$gt": null }
-  //         }
-  //       } else {
-  //         const res = config.active ? await Pouch.viewByActiveRoutesDrivers(Number(user_id)) : await Pouch.viewRemouteByDrivers(Number(user_id))
-  //         const ids = res.rows?.map(row => row.id)
-  //         selector = {
-  //           "_id": { "$in": ids }
-  //         }
-  //       }
-  //     } catch (error) {
-  //       throw error
-  //     }
-  //   }
-  //   return selector
-  // }
-
-  const explain = async (dbName) => {
-    try {
-      return await Pouch.explain(dbName)
-    } catch (error) {
-      throw error
-    }
-  }
-
-  // const getTripsCounter = async () => {
-  //   try {
-  //     const user_id = localStg.userData.typhoonId
-  //     if (!offline.value) {
-  //       if (localStg.userData.role == 'manager') {
-  //         const carriers = localStg.userData.carrierId ? localStg.userData.carrierId.map(el => Number(el)) : []
-  //         const result = await Pouch.countByManagers(carriers)
-  //         tripsCounter.value = result?.rows?.reduce((acc, row) => acc + row.value, 0)
-  //         return tripsCounter.value
-  //       } else {
-  //         const result = await Pouch.countByDrivers(Number(user_id))
-  //         tripsCounter.value = result?.rows?.reduce((acc, row) => acc + row.value, 0)
-  //         return tripsCounter.value
-  //       }
-  //     } else {
-  //       return tripsCounter.value === null ? 0 : tripsCounter.value
-  //     }
-  //   } catch (error) {
-  //     throw error
-  //   }
-  // }
-
-  // const allAvailableTrips = async () => {
-  //   // Для розділу - рейси
-  //   try {
-  //     const docIds = await getAvailableTripsIds()
-  //     const data = await Pouch.viewByDates(docIds)
-  //     tripsByDate.value = data.rows
-  //     return tripsByDate.value
-  //   } catch (error) {
-  //     throw error
-  //   }
-  // }
-
-  // const getFinishedOdometerData = async () => {
-  //   try {
-  //     if (!offline.value) {
-  //       const docIds = await getAvailableTripsIds()
-  //       if (docIds.length) {
-  //         const options = {
-  //           selector: {
-  //             _id: { $in: docIds },
-  //             odometerStart: { $exists: true },
-  //             odometerFinish: { $exists: true },
-  //             odometerFinish: { $gt: 0 },
-  //             status: { $eq: 300 }
-  //           },
-  //           fields: ['_id', 'odometerStart', 'odometerFinish'],
-  //           "use_index": ["_design/odometer_idx"]
-  //         }
-  //         finishedOdometerData.value = await Pouch.fetchRemoteData('statuses', options)
-  //       } else {
-  //         finishedOdometerData.value = []
-  //       }
-  //     }
-  //   } catch (error) {
-  //     throw error
-  //   }
-  // }
-
-  // const odometrTotal = computed(() => {
-  //   return finishedOdometerData.value && finishedOdometerData.value.reduce((acc, el) => {
-  //     return acc + (Number(el.odometerFinish) - Number(el.odometerStart))
-  //   }, 0)
-  // })
-
 
   // --------------------------- дозволи менеджера ------------------------------
   const setSMSstatus = async (tripId, pointId) => {
@@ -750,7 +626,6 @@ export const useAppStore = defineStore('appStore', () => {
           const cpoint = trip.points.find(point => point.id === pointId)
           if (cpoint.sortNumber == 1) {
             const res = await Pouch.deleteDoc('statuses', tripId)
-            // const res = await Pouch.updateDoc('statuses', tripId, {_id: st._id, _rev: st._rev})
             statuses.value = await Pouch.fetchData('statuses')
             await pushStatusesData()
             return
@@ -758,9 +633,6 @@ export const useAppStore = defineStore('appStore', () => {
           point.status = 100
           point.arrivalTime = ''
           delete point.coordinates
-          // for (let doc of point.docs) {
-          //   doc.status = 100
-          // }
         }
       }
       Object.assign(st, { points })
@@ -808,8 +680,6 @@ export const useAppStore = defineStore('appStore', () => {
     }
     return false
   }
-
-
 
   const inPlace = async (tripId, pointId, tripPoints) => {
     try {
@@ -992,10 +862,10 @@ export const useAppStore = defineStore('appStore', () => {
     getTripDoc, getTripStatusesDoc, tripStatusObj, pointStatusObj, documentStatusObj, completePoint, completeTrip, sendSMScode,
     createCode, login, logout, carriers, checkPhone, resetPassword,
     pushStatusesData, checkRecaptcha, formatDate, localStg, getTmsTripsById, checkTmsTripsProcess,
-    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones, checkEmptyPointDocsExists, connection, offline, skipSync, explain,
+    setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones, checkEmptyPointDocsExists, connection, offline, skipSync,
     formatDateTime, routes, pullTripsById, activeTrips, activeStatuses,
-    activeTripsIds, activeStatusesIds, availableTripsIds, 
-    finishedOdometerData, statusesIds, routesIds, tripsByDate, getStats, getAllAvailableTrips, availableTrips
+    activeTripsIds, activeStatusesIds, availableTripsIds, closedStatuses, closedStatusesIds,
+    finishedOdometerData, statusesIds, routesIds, tripsByDate, getStats, getAllAvailableTrips, availableTrips, pushManagerPermData
   }
 })
 

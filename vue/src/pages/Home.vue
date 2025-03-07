@@ -41,8 +41,8 @@
                 <v-skeleton-loader max-width="600" type="article" class="mx-auto my-4"></v-skeleton-loader>
                 <v-skeleton-loader max-width="600" type="article" class="mx-auto my-4"></v-skeleton-loader>
             </div>
-            <div v-if="!tripsLoading && appStore.activeTrips.length">
-                <div v-for="trip in appStore.activeTrips" :key="trip.id">
+            <div v-if="!tripsLoading && filteredTrips.length">
+                <div v-for="trip in filteredTrips" :key="trip.id">
                     <TripBlk :trip="trip" />
                 </div>
             </div>
@@ -63,44 +63,29 @@ import { useDisplay } from 'vuetify'
 const { smAndDown } = useDisplay()
 const appStore = useAppStore()
 const tripsLoading = ref(false)
-// const finishedStatusesLoading = ref(false)
-// const tripsCounter = ref(0)
-// const tripsCounterLoading = ref(false)
 const statsLoading = ref(false)
 
+const filteredTrips = computed(() => {
+    // якщо в базі статусів статус 300 то він не відображається в списку рейсів
+    return appStore.activeTrips.filter(trip => appStore.closedStatusesIds.includes(trip._id) === false)
+})
 
 onMounted(async () => {
     try {
         tripsLoading.value = true
-        if (appStore.localStg.stats.odometerTotal === undefined) {
-            statsLoading.value = true
-            await appStore.getStats()
-            statsLoading.value = false
-        }
 
-        // if (appStore.tripsCounter === null) tripsCounterLoading.value = true
-        // if (appStore.finishedOdometerData === null) finishedStatusesLoading.value = true
+        statsLoading.value = true
+        await appStore.getStats()
+        statsLoading.value = false
 
         await appStore.pullTripsData()
         tripsLoading.value = false
-
-        // if (appStore.finishedOdometerData === null) {
-        //     await appStore.getFinishedOdometerData()
-        //     finishedStatusesLoading.value = false
-        // }
-
-        // if (appStore.tripsCounter === null && !appStore.offline) {
-        //     tripsCounter.value = await appStore.getTripsCounter()
-        // }
-        // tripsCounterLoading.value = false
 
     }
     catch (error) {
         console.error(error)
         tripsLoading.value = false
         statsLoading.value = false
-        // finishedStatusesLoading.value = false
-        // tripsCounterLoading.value = false
     }
 })
 </script>
