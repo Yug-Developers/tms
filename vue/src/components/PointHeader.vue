@@ -192,7 +192,7 @@ const completePoint = async () => {
 
 const odometerSet = async () => {
     try {
-        await appStore.initNewTripStatus(props.tripId, { odometerStart: odometer.value, points: props.points })
+        await appStore.initNewTripStatus(props.tripId, { odometerStart: odometer.value  })
         appStore.setSnackbar({ text: "Збережено координати та час", type: 'success' })
         odometerDialog.value = false
     } catch (error) {

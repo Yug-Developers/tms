@@ -567,8 +567,9 @@ export const useAppStore = defineStore('appStore', () => {
 
   const initNewTripStatus = async (tripId, config) => {
     try {
+      const doc = await getTripDoc(tripId)
       const points = []
-      for (let point of config.points) {
+      for (let point of doc?.points) {
         const cPoint = {}
         if (point.sortNumber == 1) {
           cPoint.id = point.id
