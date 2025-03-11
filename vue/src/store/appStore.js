@@ -602,6 +602,9 @@ export const useAppStore = defineStore('appStore', () => {
         }
         points.push(cPoint)
       }
+      if (doc.isCircular || doc.circular) {
+        points.push({ id: -1, status: 100, docs: [] })
+      }
       const data = {
         _id: tripId,
         status: 200,
@@ -682,8 +685,10 @@ export const useAppStore = defineStore('appStore', () => {
     return false
   }
 
-  const inPlace = async (tripId, pointId, tripPoints) => {
+  const inPlace = async (tripId, pointId) => {
     try {
+      const doc = await getTripDoc(tripId)
+      const tripPoints = doc.points
       const st = await Pouch.getDoc('statuses', tripId)
       const currentPoint = tripPoints.find(point => point.id === pointId)
       const points = st.points
@@ -702,15 +707,17 @@ export const useAppStore = defineStore('appStore', () => {
             point.coordinates = { latitude: '', longitude: '' }
           }
           point.docs = []
-          for (let doc of currentPoint.docs) {
-            point.docs.push({
-              id: doc.id,
-              status: 200,
-              sumPack: null,
-              sumFact: 0,
-              palletsFact: 0,
-              boxesFact: 0
-            })
+          if (pointId !== -1) {
+            for (let doc of currentPoint.docs) {
+              point.docs.push({
+                id: doc.id,
+                status: 200,
+                sumPack: null,
+                sumFact: 0,
+                palletsFact: 0,
+                boxesFact: 0
+              })
+            }
           }
         }
       }

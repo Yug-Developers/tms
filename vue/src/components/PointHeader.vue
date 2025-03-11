@@ -165,7 +165,7 @@ const inPlace = async () => {
         odometer.value = ''
     } else {
         try {
-            await appStore.inPlace(props.tripId, props.point.id, props.points)
+            await appStore.inPlace(props.tripId, props.point.id)
             appStore.setSnackbar({ text: "Збережено координати та час", type: 'success'})
         } catch (error) {
             appStore.setSnackbar({ text: "Помилка збереження", type: 'error' })
