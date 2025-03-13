@@ -25,6 +25,7 @@
                                 </span>
                             </div>  
                         </div>
+                        <!-- <div><b>Час на точці: </b> {{ pointTime }}</div> -->
                     </div>
                         <v-btn :disabled="coordinates ? false : true" @click.stop="openGoogleMap(coordinates)" title="На карті"
                         variant="text" icon="mdi-google-maps"></v-btn>                        
@@ -37,6 +38,9 @@
                     <div><b>Факт виконання:</b></div>
                 <div><v-icon size="small" color="green" class="mr-2">mdi-package-variant-closed</v-icon>Місць: {{ allBoxesPalletsFact }} </div>
                 <div><v-icon size="small" color="green" class="mr-2">mdi-email-outline</v-icon>COD: {{ allSumFact }} <span v-if="sumPack">(Пакети: {{ sumPack }})</span></div>
+                </div>
+                <div class="text-caption d-flex justify-space-between mt-3">
+                    <div><v-icon x-small class="green mr-2 mb-1">mdi-timer-check-outline</v-icon>{{ pointTime }}</div>
                 </div>
             </v-card-text>
         </v-card>
@@ -227,6 +231,27 @@ const pointStatus = computed(() => {
     const point = trip && trip.points && trip.points.find((item) => item.id == pointId.value)
     return point && point.status || 100
 })
+
+const pointTime = computed(() => {
+    const trip = appStore.statuses && appStore.statuses.find((item) => item._id == props.tripId)
+    const pointStatus = trip && trip.points && trip.points.find((item) => item.id == pointId.value)
+    if (pointStatus.arrivalTime && pointStatus.departureTime) {
+        //вирахувати різницю в часі
+        const arrival = new Date(pointStatus.arrivalTime)
+        const departure = new Date(pointStatus.departureTime)
+        const diff = Math.abs(departure - arrival) / 1000
+        const minutes = (Math.floor(diff / 60) % 60) || 1
+        const hours = Math.floor(diff / 3600)
+        if (hours) {
+            return hours + ' год ' + minutes + ' хв'
+        } else {
+            return minutes + ' хв'
+        }
+    } else {
+        return '-'
+    }
+})
+
 
 const cancelPoint = async () => {
     try {

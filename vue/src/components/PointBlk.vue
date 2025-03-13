@@ -8,7 +8,7 @@
                 <StatusChip :tripId="tripId" :pointId="pointId" />
             </v-card-title>
             <v-card-text class="pa-0 text-left mx-auto">
-                <div class="d-flex justify-space-between align-end">
+                <div class="d-flex justify-space-between align-end mb-2">
                     <div>
                         <div v-if="point.pointType != 'wh'"><b>Контрагент:</b> {{ point.counterpartyName }}</div>
                         <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">({{ point.description
@@ -27,7 +27,7 @@
                     <v-btn :disabled="coordinates ? false : true" @click.stop="openGoogleMap(coordinates)"
                         title="На карті" variant="text" icon="mdi-google-maps"></v-btn>
                 </div>
-                <v-row v-if="point.pointType != 'wh'" class="my-2 text-left">
+                <v-row v-if="point.pointType != 'wh'" class="mb-2 text-left">
                     <v-col class="d-flex flex-nowrap">
                         Видача <v-badge :color="docTypeOutPoint == 0 ? `grey` : `info`" :content="docTypeOutPoint"
                             inline></v-badge>
@@ -41,9 +41,11 @@
                             inline></v-badge>
                     </v-col>
                 </v-row>
-                <div v-if="point.sortNumber != '1'" class="text-right"><v-icon icon="mdi-map-marker-distance" /> <span
+                <div class="text-caption d-flex justify-space-between">
+                    <div><v-icon x-small class="green mr-2 mb-1">mdi-timer-check-outline</v-icon>{{ pointTime }}</div>
+                    <div v-if="point.sortNumber != '1'"><v-icon x-small icon="mdi-map-marker-distance" /> <span
                         v-if="distance">{{ distance }}</span><span v-else>-</span> км</div>
-
+                </div>
             </v-card-text>
         </v-card>
     </v-sheet>
@@ -111,6 +113,26 @@ const distance = computed(() => {
         }
     }
     return distance
+})
+
+const pointTime = computed(() => {
+    const points = props.statuses.points || []
+    const pointStatus = points.find(el => el.id === Number(props.point.id))
+    if (pointStatus.arrivalTime && pointStatus.departureTime) {
+        //вирахувати різницю в часі
+        const arrival = new Date(pointStatus.arrivalTime)
+        const departure = new Date(pointStatus.departureTime)
+        const diff = Math.abs(departure - arrival) / 1000
+        const minutes = (Math.floor(diff / 60) % 60) || 1
+        const hours = Math.floor(diff / 3600)
+        if (hours) {
+            return hours + ' год ' + minutes + ' хв'
+        } else {
+            return minutes + ' хв'
+        }
+    } else {
+        return '-'
+    }
 })
 
 const pointId = computed(() => {

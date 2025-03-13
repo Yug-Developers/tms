@@ -374,7 +374,7 @@
                         <v-col cols="12" lg="6" class="d-flex">
                             <v-text-field v-model="allSumPack" :rules="[rules.isNotEmpty]" label="Пакет №"
                                 outlined></v-text-field>
-                            <v-btn @click="openScanDialog()" variant="text" icon="mdi-barcode-scan"
+                            <v-btn @click="openScanBarcodeDialog()" variant="text" icon="mdi-barcode-scan"
                                 class="ml-2"></v-btn>
                         </v-col>
                         <v-col cols="12" lg="6">
@@ -429,19 +429,6 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
-    <!-- <v-dialog v-model="isDialogOpen" max-width="600">
-        <v-card>
-            <v-card-title>Сканер штрих-кода</v-card-title>
-            <v-card-text>
-                <div ref="scannerContainer"
-                    style="width: 100%; height: 300px; background-color: #000; overflow: hidden;">
-                </div>
-            </v-card-text>
-            <v-card-actions>
-                <v-btn color="red" text @click="closeDialog">Закрити</v-btn>
-            </v-card-actions>
-        </v-card>
-    </v-dialog> -->
 
     <v-dialog v-model="isQRDialogOpen" max-width="600">
         <v-card>
@@ -598,61 +585,6 @@ const hidePhone = (phone) => {
     return nphone.substr(0, 4) + ') XXX-X' + nphone.substr(11, 3)
 }
 
-// Функція для ініціалізації Quagga
-// const startScanner = () => {
-
-//     if (!scannerContainer.value) {
-//         console.error('Сканер контейнер ще не готовий')
-//         return
-//     }
-//     try {
-//         Quagga.init(
-//             {
-//                 inputStream: {
-//                     type: 'LiveStream',
-//                     target: scannerContainer.value, // Елемент для відображення камери
-//                     constraints: {
-//                         facingMode: 'environment', // Використовує задню камеру
-//                     },
-//                 },
-//                 decoder: {
-//                     readers: ['code_128_reader', 'ean_reader', 'upc_reader'], // Налаштування форматів
-//                 },
-//             },
-//             (err) => {
-//                 if (err) {
-//                     console.error('Помилка ініціалізації Quagga:', err)
-//                     return
-//                 }
-//                 Quagga.start()
-//             }
-//         )
-
-//         // Підписка на подію розпізнавання штрих-коду
-//         Quagga.onDetected((result) => {
-//             sumPack.value = result.codeResult.code
-//             allSumPack.value = result.codeResult.code
-//             closeDialog()
-//         })
-//     } catch (error) {
-//         console.error(error)
-//     }
-// }
-
-// Зупинка сканера та очищення
-// const stopScanner = () => {
-//     try {
-//         Quagga.stop()
-//         Quagga.offDetected()
-//     } catch (error) {
-//         console.error(error)
-//     }
-// }
-
-// Відкрити попап
-// const openScanDialog = () => {
-//     isDialogOpen.value = true
-// }
 
 // Відкрити попап
 const openQRScanDialog = (input) => {
@@ -662,12 +594,6 @@ const openQRScanDialog = (input) => {
     phoneFromQr.value = ''
     isQRDialogOpen.value = true
 }
-
-// Закрити попап і зупинити сканер
-// const closeDialog = () => {
-//     isDialogOpen.value = false
-//     stopScanner()
-// }
 
 const closeQRDialog = () => {
     isQRDialogOpen.value = false
@@ -729,25 +655,6 @@ watch(barcodeResult, async (newResult) => {
         console.error('Помилка перевірки штрих-коду:', error)
     }
 })
-
-// Слідкуємо за станом попапу
-// watch(isDialogOpen, (isOpen) => {
-//     if (window.location.protocol === "https:") {
-//         if (isOpen) {
-//             // Переконуємося, що DOM оновлений перед запуском сканера
-//             nextTick(() => startScanner())
-//         } else {
-//             stopScanner()
-//         }
-//     }
-// })
-
-// Очистити все при виході з компонента
-// onBeforeUnmount(() => {
-//     if (window.location.protocol === "https:") {
-//         stopScanner()
-//     }
-// })
 
 const getTripById = async () => {
     try {
