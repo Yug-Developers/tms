@@ -234,7 +234,7 @@ const pointStatus = computed(() => {
 
 const pointTime = computed(() => {
     const trip = appStore.statuses && appStore.statuses.find((item) => item._id == props.tripId)
-    const pointStatus = trip && trip.points && trip.points.find((item) => item.id == pointId.value)
+    const pointStatus = trip?.points?.find((item) => item.id == pointId.value) || {}
     if (pointStatus.arrivalTime && pointStatus.departureTime) {
         //вирахувати різницю в часі
         const arrival = new Date(pointStatus.arrivalTime)

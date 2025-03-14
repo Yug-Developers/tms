@@ -117,7 +117,7 @@ const distance = computed(() => {
 
 const pointTime = computed(() => {
     const points = props.statuses.points || []
-    const pointStatus = points.find(el => el.id === Number(props.point.id))
+    const pointStatus = points.find(el => el.id === Number(props.point.id)) || {}
     if (pointStatus.arrivalTime && pointStatus.departureTime) {
         //вирахувати різницю в часі
         const arrival = new Date(pointStatus.arrivalTime)
