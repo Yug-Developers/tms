@@ -27,8 +27,8 @@ const getUsersByCarrierId = async (carrierId) => {
           }
         ]
       }
-    } 
-  )
+    }
+    )
     return result.docs
   } catch (error) {
     console.error('Помилка при виконанні запиту:', error)
@@ -67,6 +67,9 @@ module.exports = {
 
       if (dataList.length > 0) {
         await this.createExcelFile({
+          id: data._id,
+          date: this.formatDate(doc.date),
+          editorName: doc.editorName,
           title: 'Звіт про інкасацію',
           fileName,
           options: [
@@ -76,6 +79,7 @@ module.exports = {
             { name: 'Сума, грн (заявлена)', col: 'sum', xml: "sum", default: true, width: 30 },
             { name: 'Сума, грн (зі слів клієнта)', col: 'sumFact', xml: "sumFact", default: true, width: 30 },
             { name: 'Підключення', col: 'statusConnection', xml: "statusConnection", default: true },
+            { name: 'Прийнято (перераховано)', col: 'userDef', xml: "userDef", default: true },
 
           ],
           dataList,
@@ -124,7 +128,7 @@ module.exports = {
       for (const point of data.points) {
         for (const doc of point.docs) {
           const sum = tripPoints[point.id]?.docs?.find(d => d.id === doc.id)?.sum || 0
-          if (sum >= 0 && doc.sumPack != null) {
+          if ((sum >= 0 && doc.sumPack != null) || doc.status === 400) { // Також Статус відмова
             if (!points[point.id]) {
               points[point.id] = {}
             }
@@ -226,7 +230,7 @@ module.exports = {
       400: 2,
       500: 3
     }
-  
+
     const points = data.points.map(point => ({
       ...point,
       docs: point.docs.map(doc => ({
@@ -234,7 +238,7 @@ module.exports = {
         status: statusMap[doc.status] // Створюємо новий об'єкт із оновленим статусом
       }))
     }))
-  
+
     return {
       id: data._id,
       status: data.status,
@@ -245,11 +249,64 @@ module.exports = {
       points
     }
   },
-  createExcelFile({ title, fileName, options, dataList = [], extendedCols }) {
+  createExcelFile({ title, id, date, editorName, fileName, options, dataList = [], extendedCols }) {
     return new Promise(async (resolve, reject) => {
 
       const authToken = await Token.create(1)
       const rows = []
+      const rowsSets = {
+        1: {
+          merge: [{ from: 1, to: 6 }]
+        },
+        2:
+        {
+          style: {
+            alignment: { vertical: 'center', horizontal: 'left' },
+            font: { name: 'Arial Black', size: 12, color: { 'argb': '00E91E63' } },
+          },
+        },
+        3: {
+          style: {
+            alignment: { vertical: 'center', horizontal: 'left' },
+            font: { name: 'Arial', 'italic': true, size: 10 },
+          },
+        },
+        6: {
+          style: {
+            alignment: { vertical: 'center', horizontal: 'left' },
+            font: { name: 'Arial Black', size: 10 },
+          },
+          fill: {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: '80eceff1' },
+            bgColor: { argb: '80eceff1' }
+          }
+        },
+        7: {
+          style: {
+            alignment: { vertical: 'center', horizontal: 'left' },
+            font: { name: 'Arial', size: 10 },
+            border: { bottom: { style: 'thin', color: { argb: '8078909C' } }, top: { style: 'thin', color: { argb: '8078909C' } } },
+          },
+        },
+      }
+
+      const cellsSets = {}
+      rows.push([])
+      rows.push(["Інкасація по рейсу:", id])
+      rows.push(["Дата рейсу:", date])
+      rows.push(["Відповідальний:", editorName])
+      rows.push([])
+
+      const headerCols = []
+      for (let col of options) {
+        if (col.default || extendedCols[col.col]) {
+          headerCols.push(col.name)
+        }
+      }
+      rows.push(headerCols)
+
       for (let rowData of dataList) {
         let row = []
         for (let col of options) {
@@ -265,81 +322,60 @@ module.exports = {
         }
         rows.push(row)
       }
-
-      const headerCols = []
-      const columns = []
-      for (let col of options) {
-        if (col.default || extendedCols[col.col]) {
-          headerCols.push(col.name)
-          columns.push({ key: col.col, width: col.width || '25' })
-        }
+      rowsSets[rows.length + 1] = {
+        style: {
+          alignment: { vertical: 'center', horizontal: 'right' },
+          font: { name: 'Arial Black', size: 10, italic: true },
+        },
       }
+      rows.push([])
+      rows.push([])
+      rows.push(["", "", "Здав", "______________________", "Прийняв", "______________________"])
+      rowsSets[rows.length + 1] = {
+        style: {
+          alignment: { vertical: 'center', horizontal: 'center' },
+          font: { name: 'Arial', size: 10, italic: true },
+        },
+      }
+      rows.push(["", "", "", "(підпис, ПІБ)", "", "(підпис, ПІБ)"])
+
 
       const xlsx = {
         fileName,
         workbook: {
           creator: 'Yugcontract Excel server',
-          views: [{
-            x: 0,
-            y: 0,
-            width: 10000,
-            height: 20000,
-            firstSheet: 0,
-            activeTab: 0,
-            visibility: 'visible'
-          }]
+          views: [
+            {
+              x: 0, y: 0, width: 10000, height: 20000,
+              firstSheet: 0, activeTab: 0, visibility: 'visible'
+            }
+          ]
         },
-        worksheets: [{
-          name: title,
-          properties: {
-            tabColor: {
-              argb: 'FFC0000'
-            }
-          },
-          columns,
-          header: {
-            values: headerCols,
-            style: {
-              font: {
-                name: 'Arial Black',
-                size: 10,
-              },
-              border: {
-                top: {
-                  style: 'thin'
-                },
-                left: {
-                  style: 'thin'
-                },
-                bottom: {
-                  style: 'thin'
-                },
-                right: {
-                  style: 'thin'
-                }
-              }
+        worksheets: [
+          {
+            name: title,
+            properties: {
+              tabColor: { argb: 'FFC0000' }
             },
-            fill: {
-              type: 'pattern',
-              pattern: 'none',
-            }
-          },
-          content: {
-            style: {
-              font: {
-                name: 'Arial',
-                size: 10
-              }
-            },
-          },
-          rows
-        }]
-
+            columns: [
+              { key: 'a', width: 35 },
+              { key: 'b', width: 20 },
+              { key: 'c', width: 25 },
+              { key: 'd', width: 25 },
+              { key: 'e', width: 25 },
+              { key: 'f', width: 25 },
+            ],
+            rows,
+            rowsSets,
+            cellsSets
+          }
+        ]
       }
+
       try {
         const res = await axios({
           method: 'POST',
-          url: (process.env.NODE_ENV ? 'https://xlsx.yugcontract.ua/api/create-xlsx-file' : 'http://dev.yugcontract.ua:3050/api/create-xlsx-file'),
+          url: (process.env.NODE_ENV ? 'https://xlsx.yugcontract.ua/api/create-excel-file' : 'http://dev.yugcontract.ua:3050/api/create-excel-file'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + authToken
@@ -554,7 +590,7 @@ module.exports = {
     const contractorId = config.contractorId || -1
     const token = config.token || ''
     const type = config.type
-    const carrierId = config.carrierId 
+    const carrierId = config.carrierId
     try {
       const res = await axios({
         method: 'GET',
