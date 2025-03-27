@@ -91,7 +91,7 @@ const startChangesListener = () => {
 
   }).on('error', (err) => {
     console.log('Помилка при відстеженні змін:', err)
-    throw err
+    process.exit(1)
   })
 }
 
