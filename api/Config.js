@@ -28,8 +28,8 @@ module.exports = {
     alphaName: 'YUGcontract',
     tag: 'TMS',
   },
-  // debugEmail: "kuzminetskiy-a@yugcontract.ua",
-  debugEmail: "tanya-ka@yugcontract.ua",
+  debugEmail: "kuzminetskiy-a@yugcontract.ua",
+  // debugEmail: "tanya-ka@yugcontract.ua",
   defaultManagerEmail: "tanya-ka@yugcontract.ua",
   jwt: {
     secret: 'jlkjasd23032mlm342kjklj241lkjlkjlj243',

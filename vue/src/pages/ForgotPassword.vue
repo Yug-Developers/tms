@@ -5,7 +5,7 @@
                 <v-card class="elevation-12 mx-auto" max-width="600">
                     <v-toolbar color="header" class="px-4">
                         <!-- <v-img height="30" position="left center" contain src="/img/icons/logo_sun_n_sm.png" /> -->
-                        TMS.Доставки <span class="font-italic ml-2 text-caption">(v.{{ version }})</span>
+                        ЮК.Доставка <span class="font-italic ml-2 text-caption">(v.{{ version }})</span>
                         <v-spacer></v-spacer>
                         <v-icon color="grey">mdi-account-question-outline</v-icon>
                     </v-toolbar>
@@ -98,7 +98,6 @@ const resetPassword = async () => {
         await recaptcha()
         await appStore.checkRecaptcha(reCAPTCHA.value)
         const response = await appStore.resetPassword({ phone: phone.value, code: code.value, hash: hash.value })
-        console.log(response)
         if (response) {
             appStore.setSnackbar({ text: "Пароль успішно змінено та відправлено на вказаний телефон", type: 'success' });
             setTimeout(() => {
@@ -107,7 +106,6 @@ const resetPassword = async () => {
         } else {
             appStore.setSnackbar({ text: "Невідома помилка", type: 'error' });
         }
-        console.log(response)
 
     } catch (err) {
         const error = err.response && err.response.data && err.response.data.error && err.response.data.error.message ? err.response.data.error.message : err.message

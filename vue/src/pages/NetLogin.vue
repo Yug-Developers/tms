@@ -41,6 +41,7 @@
 import { useAppStore } from '@/store/appStore'
 import { ref, onMounted } from 'vue'
 import { useOnlineStatus } from '@/hooks/onlineStatus'
+import Config from '@/Config'
 
 const { updateOnlineStatus } = useOnlineStatus()
 const version = process.env.__VERSION__
@@ -48,6 +49,7 @@ const appStore = useAppStore()
 const USER = ref('')
 const PASS = ref('')
 const showPassword = ref(false)
+const reCAPTCHA = ref('')
 
 const resetData = () => {
     USER.value = ''
@@ -57,15 +59,26 @@ const loading = ref(false)
 const Login = async () => {
     try {
         loading.value = true
-        await appStore.login(USER.value, PASS.value)
-        appStore.user_name = USER.value
-        appStore.setSnackbar({ text: "Вхід виконано успішно!", type: 'success' });
-        setTimeout(() => {
-            window.location.href = '/'
-        }, 500)
+        await recaptcha()
+
+        const loginData = await appStore.netLogin(USER.value, PASS.value, reCAPTCHA.value, appStore.localStg.deviceId)
+        if (loginData.content?.token) {
+            appStore.user_name = USER.value
+            appStore.setSnackbar({ text: "Вхід виконано успішно!", type: 'success' })
+            appStore.localStg.token = loginData.content.token
+            appStore.localStg.deviceId = loginData.content.deviceId
+            appStore.localStg.user_name = USER.value
+            appStore.localStg.user_id = loginData.content.userData?.typhoonId
+            appStore.localStg.userData = loginData.content.userData
+            setTimeout(() => {
+                window.location.href = '/'
+            }, 500)
+        } else {
+            appStore.setSnackbar({ text: "Помилка", type: 'error' })
+        }
         loading.value = false
     } catch (err) {
-        if (err.status === 401) {
+        if (err.status === 401 || err.status === 404 || err.status === 403) {
             appStore.setSnackbar({ text: "Некоректний логін чи пароль.", type: 'error' })
         } else if (err.status === 403) {
             appStore.setSnackbar({ text: "Вибачте, але ви не маєте доступу до цієї сторінки.", type: 'error' })
@@ -76,6 +89,37 @@ const Login = async () => {
         loading.value = false
     }
 }
+const recaptcha = async () => {
+    try {
+        reCAPTCHA.value = await executeRecaptcha()
+    } catch (error) {
+        throw error
+    }
+}
+
+const executeRecaptcha = () => {
+  return new Promise((resolve, reject) => {
+    if (typeof grecaptcha !== 'undefined') {
+      grecaptcha.ready(() => {
+        grecaptcha
+          .execute(Config.recaptchaSiteKey, { action: 'forgot' })
+          .then((generatedToken) => {
+            console.log('Отримано токен reCAPTCHA:', generatedToken)
+            resolve(generatedToken) // Передаємо токен у виклик `resolve`
+          })
+          .catch((error) => {
+            console.error('Помилка reCAPTCHA:', error)
+            reject(error) // Передаємо помилку
+          })
+      })
+    } else {
+      const error = 'Google reCAPTCHA не завантажений'
+      console.error(error)
+      reject(error)
+    }
+  })
+}
+
 onMounted(() => {
     appStore.skipSync = true
     updateOnlineStatus()

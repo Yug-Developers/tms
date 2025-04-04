@@ -8,6 +8,7 @@ import Config from '@/Config'
 import md5 from 'md5'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { useOnlineStatus } from '@/hooks/onlineStatus'
+import { HTTP } from '@/http-common'
 
 // ініціалізація локального сховища
 const localStg = useLocalStorage({
@@ -15,6 +16,9 @@ const localStg = useLocalStorage({
   'stats': {},
   'user_name': '',
   'user_id': '',
+  'token': '',
+  'deviceId': '',
+  'cameraId': '',
 })
 
 const { location, locationError, getLocation } = useGeolocation();
@@ -161,7 +165,7 @@ export const useAppStore = defineStore('appStore', () => {
 
   const checkPhone = async (phone) => {
     try {
-      const res = await axios.post(Config.misUrl + '/tms/check-phone', { phone })
+      const res = await HTTP.post('/tms/check-phone', { phone })
       return res.data
 
     } catch (error) {
@@ -171,7 +175,7 @@ export const useAppStore = defineStore('appStore', () => {
 
   const resetPassword = async (data) => {
     try {
-      const res = await axios.post(Config.misUrl + '/tms/reset-password', data)
+      const res = await HTTP.post('/tms/reset-password', data)
       return res.data
     } catch (error) {
       throw error
@@ -180,7 +184,7 @@ export const useAppStore = defineStore('appStore', () => {
 
   const checkRecaptcha = async (token) => {
     try {
-      const res = await axios.post(Config.misUrl + '/tms/check-recaptcha', { token })
+      const res = await HTTP.post('/tms/check-recaptcha', { token })
       return res.data
     } catch (error) {
       throw error
@@ -189,7 +193,7 @@ export const useAppStore = defineStore('appStore', () => {
 
   const getTmsTripsById = async (id) => {
     try {
-      const res = await axios.post(Config.misUrl + '/tms/get-tms-trips-by-id', { id }, { withCredentials: true })
+      const res = await HTTP.post('/tms/get-tms-trips-by-id', { id })
       return res.data
     } catch (error) {
       throw error
@@ -199,7 +203,129 @@ export const useAppStore = defineStore('appStore', () => {
   const checkTmsTripsProcess = async () => {
     //check-tms-trips-process
     try {
-      const res = await axios.post(Config.misUrl + '/tms/check-tms-trips-process', {}, { withCredentials: true })
+      const res = await HTTP.post('/tms/check-tms-trips-process')
+      return res.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const checkQrCode = async (code) => {
+    try {
+      const res = await HTTP.post('/tms/check-qr-code', { code })
+      return res.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const getStats = async () => {
+    try {
+      if (offline.value) return localStg.stats
+      const res = await HTTP.get('/tms/get-stats')
+      if (res?.data?.content) localStg.stats = res.data.content
+      return res?.data?.content || {}
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const getAllAvailableTrips = async () => {
+    // Для розділу - рейси
+    try {
+      if (offline.value) return []
+      const res = await HTTP.get('/tms/get-all-available-trips')
+      const out = res.data?.content || []
+      tripsByDate.value = out
+      return out.map(trip => trip.id)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const availableTrips = computed(() => {
+    return tripsByDate.value.map(trip => trip.id)
+  })
+
+  const pullRoutes = async (ids) => {
+    try {
+      if (offline.value) return
+      const res = await HTTP.get(`/tms/pull-routes?since=${lastRoutesSeq.value}${ids?.length ? ('&ids=' + ids) : ''}`)
+      const data = res.data?.content || {}
+      if (data?.docs.length > 0) {
+        await Pouch.bulkDocs('routes', data.docs)
+        lastRoutesSeq.value = data.last_seq // Оновлюємо позицію змін
+      }
+      return data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const pullStatuses = async (ids) => {
+    try {
+      if (offline.value) return
+      const res = await HTTP.get(`/tms/pull-statuses?${ids?.length ? ('&ids=' + ids) : ``}`)
+      const data = res.data?.content || {}
+      if (data?.docs.length > 0) {
+        const res = await Pouch.bulkDocs('statuses', data.docs)
+        lastStatusesSeq.value = data.last_seq // Оновлюємо позицію змін
+        const changes = await Pouch.changes('statuses', {
+          since: lastLocalStatusesSeq.value || 0, // Отримуємо тільки нові зміни
+          include_docs: true
+        })
+        lastLocalStatusesSeq.value = changes.last_seq
+        }
+      return data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const pullManagersPerm = async (ids) => {
+    try {
+      if (offline.value) return
+      const res = await HTTP.get(`/tms/pull-manager-perm?ids=${ids}`)
+      const data = res.data?.content || {}
+      if (data?.docs.length > 0) {
+        const res = await Pouch.bulkDocs('manager_perm', data.docs)
+      }
+      return data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const pushStatusesData = async () => {
+    try {
+      if (localStg.userData.role !== 'driver') return
+      if (offline.value) return
+      const changes = await Pouch.changes('statuses', {
+        since: lastLocalStatusesSeq.value || 0, // Отримуємо тільки нові зміни
+        include_docs: true
+      })
+      if (changes.results.length === 0) return
+      const docs = changes.results.map(row => row.doc)
+      const res = await HTTP.post('/tms/push-statuses', { docs })
+      lastLocalStatusesSeq.value = changes.last_seq
+      return res.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const pushManagerPermData = async () => {
+    try {
+      if (localStg.userData.role !== 'manager') return
+      if (offline.value) return
+      const changes = await Pouch.changes('manager_perm', {
+        since: lastLocalManagersPerlSeq.value || 0, // Отримуємо тільки нові зміни
+        include_docs: true
+      })
+      if (changes.results.length === 0) return
+      const docs = changes.results.map(row => row.doc)
+      const res = await HTTP.post('/tms/push-manager-perm', { docs })
+      lastLocalManagersPerlSeq.value = changes.last_seq
       return res.data
     } catch (error) {
       throw error
@@ -243,134 +369,23 @@ export const useAppStore = defineStore('appStore', () => {
       if (process.env.NODE_ENV !== 'production') {
         return {} //Якщо не продакшен, то просто повертаємо пустий об'єкт
       }
-      const res = await axios.post(Config.misUrl + '/tms/send-sms', {
+      const res = await HTTP.post('/tms/send-sms', {
         phone: phoneNum,
         message,
         alpha_name: Config.messengerMs.alphaName,
         tag: Config.messengerMs.tag
-      },
-        { withCredentials: true })
-      return res.data
-    } catch (error) {
-      throw error
-    }
-  }
-
-  const checkQrCode = async (code) => {
-    try {
-      const res = await axios.post(Config.misUrl + '/tms/check-qr-code', { code }, { withCredentials: true })
-      return res.data
-    } catch (error) {
-      throw error
-    }
-  }
-
-  const getStats = async () => {
-    try {
-      if (offline.value) return localStg.stats
-      const res = await axios.get(Config.misUrl + '/tms/get-stats', { withCredentials: true })
-      if (res.data?.content) localStg.stats = res.data?.content
-      return res.data?.content
-    } catch (error) {
-      throw error
-    }
-  }
-
-  const getAllAvailableTrips = async () => {
-    // Для розділу - рейси
-    try {
-      if (offline.value) return []
-      const res = await axios.get(Config.misUrl + '/tms/get-all-available-trips', { withCredentials: true })
-      const out = res.data?.content || []
-      tripsByDate.value = out
-      return out.map(trip => trip.id)
-    } catch (error) {
-      throw error
-    }
-  }
-
-  const availableTrips = computed(() => {
-    return tripsByDate.value.map(trip => trip.id)
-  })
-
-  const pullRoutes = async (ids) => {
-    try {
-      if (offline.value) return
-      const res = await axios.get(Config.misUrl + `/tms/pull-routes?since=${lastRoutesSeq.value}${ids?.length ? ('&ids=' + ids) : ''}`, { withCredentials: true })
-      const data = res.data?.content || {}
-      if (data?.docs.length > 0) {
-        await Pouch.bulkDocs('routes', data.docs)
-        lastRoutesSeq.value = data.last_seq // Оновлюємо позицію змін
-      }
-      return data
-    } catch (error) {
-      throw error
-    }
-  }
-
-  const pullStatuses = async (ids) => {
-    try {
-      if (offline.value) return
-      const res = await axios.get(Config.misUrl + `/tms/pull-statuses?since=${lastStatusesSeq.value}${ids?.length ? ('&ids=' + ids) : ''}`, { withCredentials: true })
-      const data = res.data?.content || {}
-      if (data?.docs.length > 0) {
-        const res = await Pouch.bulkDocs('statuses', data.docs)
-        console.log('Відбулись зміни в статусах', res)
-        lastStatusesSeq.value = data.last_seq // Оновлюємо позицію змін
-      }
-      return data
-    } catch (error) {
-      throw error
-    }
-  }
-
-  const pullManagersPerm = async (ids) => {
-    try {
-      if (offline.value) return
-      const res = await axios.get(Config.misUrl + `/tms/pull-manager-perm?ids=${ids}`, { withCredentials: true })
-      const data = res.data?.content || {}
-      if (data?.docs.length > 0) {
-        const res = await Pouch.bulkDocs('manager_perm', data.docs)
-        console.log('Відбулись зміни в дозволах менеджера', res)
-      }
-      return data
-    } catch (error) {
-      throw error
-    }
-  }
-
-  const pushStatusesData = async () => {
-    try {
-      console.log('--------------------->pushStatusesData')
-      if (localStg.userData.role !== 'driver') return
-      if (offline.value) return
-      const changes = await Pouch.changes('statuses', {
-        since: lastLocalStatusesSeq.value || 0, // Отримуємо тільки нові зміни
-        include_docs: true
       })
-      if (changes.results.length === 0) return
-      const docs = changes.results.map(row => row.doc)
-      const res = await axios.post(Config.misUrl + '/tms/push-statuses', { docs }, { withCredentials: true })
-      lastLocalStatusesSeq.value = changes.last_seq
       return res.data
     } catch (error) {
       throw error
     }
   }
 
-  const pushManagerPermData = async () => {
+  const touch = async () => {
     try {
-      if (localStg.userData.role !== 'manager') return
-      if (offline.value) return
-      const changes = await Pouch.changes('manager_perm', {
-        since: lastLocalManagersPerlSeq.value || 0, // Отримуємо тільки нові зміни
-        include_docs: true
-      })
-      if (changes.results.length === 0) return
-      const docs = changes.results.map(row => row.doc)
-      const res = await axios.post(Config.misUrl + '/tms/push-manager-perm', { docs }, { withCredentials: true })
-      lastLocalManagersPerlSeq.value = changes.last_seq
-      return res.data
+      if (offline.value) return true
+      await HTTP.get('/tms/touch')
+      return true
     } catch (error) {
       throw error
     }
@@ -400,28 +415,37 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
+  const netLogin = async (user, pass, reCAPTCHA, deviceId) => {
+    try {
+      if (offline.value) return
+      clearVars()
+      const res = await axios.post(Config.authUrl + `/auth/login`, { user, pass, reCAPTCHA, deviceId })
+      return res.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+
   const logout = async () => {
     try {
-      if (!offline.value) {
-        await Pouch.logout()
-      }
+      clearVars()
       try {
         await clearDB()
       } catch (error) {
         console.error(error)
       }
-      clearVars()
       return
     } catch (error) {
       throw error
     }
-
   }
   const clearVars = () => {
     localStg.userData = {}
     localStg.user_name = ''
     localStg.user_id = ''
     localStg.stats = {}
+    localStg.token = ''
 
     lastRoutesSeq.value = 0
     lastStatusesSeq.value = 0
@@ -627,7 +651,7 @@ export const useAppStore = defineStore('appStore', () => {
       const points = st.points
       for (let point of points) {
         if (point.id === pointId) {
-          const cpoint = trip.points.find(point => point.id === pointId)
+          const cpoint = trip.points.find(point => point.id === pointId) || {}
           if (cpoint.sortNumber == 1) {
             const res = await Pouch.deleteDoc('statuses', tripId)
             statuses.value = await Pouch.fetchData('statuses')
@@ -685,6 +709,12 @@ export const useAppStore = defineStore('appStore', () => {
     return false
   }
 
+  const isThisWhPoint = async (tripId, pointId) => {
+    // Перевіряємо, чи точка є складом та перша у списку точок
+    const doc = await getTripDoc(tripId)
+    return doc.points.find(point => point.id === pointId && point.sortNumber == 1 && point.pointType == 'wh') ? true : false
+  }
+
   const inPlace = async (tripId, pointId) => {
     try {
       const doc = await getTripDoc(tripId)
@@ -724,7 +754,7 @@ export const useAppStore = defineStore('appStore', () => {
       Object.assign(st, { points })
       delete st._id
       delete st._rev
-      const res = await Pouch.updateDoc('statuses', tripId, st)
+      await Pouch.updateDoc('statuses', tripId, st)
       statuses.value = await Pouch.fetchData('statuses')
       await pushStatusesData()
     } catch (error) {
@@ -872,8 +902,9 @@ export const useAppStore = defineStore('appStore', () => {
     pushStatusesData, checkRecaptcha, formatDate, localStg, getTmsTripsById, checkTmsTripsProcess,
     setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones, checkEmptyPointDocsExists, connection, offline, skipSync,
     formatDateTime, routes, pullTripsById, activeTrips, activeStatuses,
-    activeTripsIds, activeStatusesIds, availableTripsIds, closedStatuses, closedStatusesIds,
-    finishedOdometerData, statusesIds, routesIds, tripsByDate, getStats, getAllAvailableTrips, availableTrips, pushManagerPermData
+    activeTripsIds, activeStatusesIds, availableTripsIds, closedStatuses, closedStatusesIds, pullStatuses, pullManagersPerm, pullRoutes,
+    finishedOdometerData, statusesIds, routesIds, tripsByDate, getStats, getAllAvailableTrips, availableTrips, pushManagerPermData, netLogin, touch,
+    isThisWhPoint
   }
 })
 

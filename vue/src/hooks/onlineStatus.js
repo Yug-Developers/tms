@@ -1,7 +1,6 @@
 import { useAppStore } from '@/store/appStore'
 import { onMounted, onBeforeUnmount, computed } from 'vue'
-import axios from 'axios'
-import Config from '@/Config'
+import { HTTP } from '@/http-common'
 
 const pingServerInterval = 180000 // 3 хв
 const pingServerTimeout = 5000 // 5 сек
@@ -18,7 +17,7 @@ export function useOnlineStatus() {
     const pingServer = async () => {
         if (!navigator.onLine) return false
         try {
-            const response = await axios.post(Config.misUrl + '/tms/ping', {}, {
+            const response = await HTTP.post('/tms/ping', {}, {
                 timeout: pingServerTimeout,
                 withCredentials: true
             })
@@ -53,7 +52,7 @@ export function useOnlineStatus() {
                     if (appStore.skipSync) {
                         appStore.skipSync = false
                     } else {
-                        await appStore.pullTripsData()
+                        // await appStore.pullTripsData()
                         await appStore.pushStatusesData()
                         await appStore.pushManagerPermData()
                     }

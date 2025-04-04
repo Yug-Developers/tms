@@ -5,16 +5,12 @@ import PouchDBAuth from 'pouchdb-authentication'
 PouchDB.plugin(PouchDBAuth)
 
 const dBObj = {}
-const dbRemoteObj = {}
-const dbUsersName = '_users'
 const user_name = 'tms'
 
 export function usePouchDB() {
     //----------------------------- ініціалізація ------------------------------
     const getDB = async (db) => {
-        if (db !== '_users') {
-            db = user_name + '_' + db
-        }
+        db = user_name + '_' + db
 
         if (!dBObj[db] || dBObj[db]._destroyed) {
             dBObj[db] = new PouchDB(db)
@@ -28,14 +24,6 @@ export function usePouchDB() {
         }
 
         return dBObj[db]
-    }
-
-    const initUsersDb = async (array) => {
-        if (!dbRemoteObj[dbUsersName]) {
-            dbRemoteObj[dbUsersName] = new PouchDB(Config.remoteCouchDb + dbUsersName, {
-                skip_setup: true
-            })
-        }
     }
 
     const destroyDB = (dbName) => {
@@ -57,71 +45,12 @@ export function usePouchDB() {
             })
         })
     }
-    const login = (username, password) => {
-        return new Promise((resolve, reject) => {
-            initUsersDb()
-            dbRemoteObj[dbUsersName].login(username, password, function (err, response) {
-                if (err) {
-                    reject(err)
-                } else {
-                    resolve(response)
-                }
-            })
-        })
-    }
-
-    const logout = () => {
-        return new Promise((resolve, reject) => {
-            initUsersDb()
-            dbRemoteObj[dbUsersName].logout(function (err, response) {
-                if (err) {
-                    reject(err)
-                } else {
-                    resolve(response)
-                }
-            })
-        })
-    }
-
-    const getUserSession = async () => {
-        return new Promise((resolve, reject) => {
-            initUsersDb()
-            dbRemoteObj[dbUsersName].getSession(function (err, response) {
-                console.log("авторизация ->", response)
-                if (err) {
-                    console.error("Помилка", err);
-                    reject(err)
-                } else if (!response.userCtx.name) {
-                    console.log("Не авторизований");
-                    reject(response)
-                } else {
-                    console.log("Авторизований", response.userCtx.name);
-                    resolve(response)
-                }
-            })
-        })
-    }
-
-    const getUserData = async (user) => {
-        return new Promise((resolve, reject) => {
-            initUsersDb()
-            dbRemoteObj[dbUsersName].getUser(user, function (err, response) {
-                if (err) {
-                    reject(err)
-                } else {
-                    resolve(response)
-                }
-            })
-        })
-    }
-
 
     // ------------------------ робота з локальними даними ---------------------
     const fetchData = async (dbName) => {
         try {
             const db = await getDB(dbName)
             const result = await db.allDocs({ include_docs: true })
-            console.log('CouchDb data fetched', result)
             return result?.rows?.map(row => row.doc)
         } catch (error) {
             throw error
@@ -243,7 +172,7 @@ export function usePouchDB() {
     }
 
     return {
-        fetchData, getDoc, putData, updateDoc, deleteDoc, destroyDB, login, logout, initUsersDb, getUserSession,
-        getUserData, updateDontSendSMS, bulkDocs, changes, deleteBulkDocs
+        fetchData, getDoc, putData, updateDoc, deleteDoc, destroyDB, 
+        updateDontSendSMS, bulkDocs, changes, deleteBulkDocs
     }
 }

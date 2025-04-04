@@ -17,7 +17,7 @@
                         <h2 class="text-body-1 text-md-h6 mb-6">Усього<br>рейсів</h2>
                         <p class="mb-4 text-medium-emphasis text-h4">
                             <span v-if="!statsLoading">
-                                <span>{{ appStore.localStg.stats.tripsCounter || '-' }}</span>
+                                <span>{{ appStore.localStg.stats?.tripsCounter || '-' }}</span>
                             </span>
                             <span v-else><v-progress-circular indeterminate></v-progress-circular></span>
                         </p>
@@ -29,7 +29,7 @@
                         <h2 class="text-body-1 text-md-h6 mb-6">Усього<br>кілометрів</h2>
                         <p class="mb-4 text-medium-emphasis text-h4">
                             <span v-if="!statsLoading">
-                                <span>{{ appStore.localStg.stats.odometerTotal || '-' }}</span>
+                                <span>{{ appStore.localStg.stats?.odometerTotal || '-' }}</span>
                             </span>
                             <span v-else><v-progress-circular indeterminate></v-progress-circular></span>
                         </p>
@@ -46,7 +46,7 @@
                     <TripBlk :trip="trip" />
                 </div>
             </div>
-            <div v-if="!tripsLoading && appStore.activeTrips.length == 0" class="text-center text-grey">Рейсів в роботі
+            <div v-if="!tripsLoading && filteredTrips.length === 0" class="text-center text-grey">Рейсів в роботі
                 немає.
             </div>
         </v-container>
@@ -73,7 +73,6 @@ const filteredTrips = computed(() => {
 onMounted(async () => {
     try {
         tripsLoading.value = true
-
         statsLoading.value = true
         await appStore.getStats()
         statsLoading.value = false

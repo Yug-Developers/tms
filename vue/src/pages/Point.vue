@@ -14,10 +14,10 @@
                         Без Коду SMS
                     </v-btn>
                 </v-sheet>
-                <v-alert v-if="dontSendSms" variant="tonal" type="success" border="start"
+                <v-alert v-if="dontSendSms" variant="tonal" type="success" border="start" max-width="600"
                     icon="mdi-cellphone-message-off" class="mx-auto mb-4">Дозволено без підтвердження через Код
                     SMS</v-alert>
-                <v-alert v-if="permitWithoutConfirm" variant="tonal" type="error" border="start" icon="mdi-alert"
+                <v-alert v-if="permitWithoutConfirm" variant="tonal" type="error" border="start" icon="mdi-alert" max-width="600"
                     class="mx-auto mb-4">Обов'язково підпишіть ТТН та Видаткову накладну!</v-alert>
                 <v-sheet elevation="0" max-width="600" width="100%" class="mx-auto bg-transparent">
                     <template v-for="(type) in types" :key="type">
@@ -484,15 +484,19 @@ const typesObj = {
     task: 'Завдання'
 }
 const rejectReasons = {
-    1: 'Помилка менеджера ЮК',
-    2: 'Товар в некондиційному стані',
-    3: 'Невірна кількість товару',
-    4: 'Помилка доставки (невчасно)'
+    1: 'Невірний товар у замовленні',
+    2: 'Невірна кількість товару (з оформленням Акту!)',
+    3: 'Товар в некондиційному стані (з оформленням Акту!)',
+    4: 'Відсутність оплати Клієнтом'
 }
 const cancelReasons = {
-    1: 'Невірна адреса',
-    2: 'Відсутність клієнта',
-    3: 'Поломка авто'
+    1: 'Доставка не у погоджене часове вікно (невчасна доставка)',
+    2: 'Відсутність клієнта на точці доставки / закрита точка доставки',
+    3: 'Невірно вказано адресу доставки',
+    4: 'Відмова від доставки до прибуття на точку доставки',
+    5: 'Не додзвонилися Клієнту (після 3х викликів протягом 5 хвилин з Клієнтом немає зв’язку)',
+    6: 'Відсутність товару у авто (з оформленням Акту!)',
+    7: 'Поломка авто'
 }
 const rejectReason = ref(null)
 const cancelReason = ref(null)

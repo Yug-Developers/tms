@@ -2,7 +2,7 @@
     <v-navigation-drawer width="330" location="left" v-model="appStore.navigationDrawerLeftShow" temporary app>
         <v-toolbar class="pl-4 font-weight-bold mb-4">
             <!-- <v-img height="30" position="center" contain src="/img/icons/logo_sun_n.png" /> -->
-            TMS.Доставки
+            ЮК.Доставка
         </v-toolbar>
         <v-card elevation="0">
             <v-card-subtitle>Вітаємо,</v-card-subtitle>

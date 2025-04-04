@@ -7,7 +7,6 @@ const Token = require('./token-class')
 const Auth = require('./auth-class')
 const auth = Config.adminAuthCouchDb
 const remoteMailingDB = new PouchDB(Config.remoteCouchDb + 'tms_mailing', { auth })
-const remoteUsersDB = new PouchDB(Config.remoteCouchDb + '_users', { auth })
 const dbNameRoutes = 'tms_routes'
 const remoteDBRoutes = new PouchDB(Config.remoteCouchDb + dbNameRoutes, { auth })
 
@@ -87,7 +86,7 @@ module.exports = {
         })
         console.log('Відправка листа звіту про інкасацію')
         console.log({
-          from: 'support@yugcontract.ua',
+          from: 'ЮК.Доставка <yug_dostavka@yugcontract.ua>',
           to: managersEmails,
           subject,
           html: message,
@@ -100,7 +99,7 @@ module.exports = {
         })
 
         await mes.sendMail({
-          from: 'support@yugcontract.ua',
+          from: 'ЮК.Доставка <yug_dostavka@yugcontract.ua>',
           to: managersEmails,
           subject,
           html: message,
@@ -128,7 +127,7 @@ module.exports = {
       for (const point of data.points) {
         for (const doc of point.docs) {
           const sum = tripPoints[point.id]?.docs?.find(d => d.id === doc.id)?.sum || 0
-          if ((sum >= 0 && doc.sumPack != null) || doc.status === 400) { // Також Статус відмова
+          if (sum > 0) { // В документі маршруту є сума, зазначен номер пакету Також Статус відмова
             if (!points[point.id]) {
               points[point.id] = {}
             }
@@ -138,7 +137,7 @@ module.exports = {
             points[point.id][doc.sumPack].push({
               docId: doc.id,
               rcpt: tripPoints[point.id].counterpartyName,
-              sumPack: String(doc.sumPack),
+              sumPack: doc.sumPack || '0',
               sumFact: doc.sumFact,
               statusConnection: doc.statusConnection ? 'Online' : 'Offline',
               sum
@@ -497,14 +496,14 @@ module.exports = {
           console.log('managers', managerEmail)
 
           console.log({
-            from: 'support@yugcontract.ua',
+            from: 'ЮК.Доставка <yug_dostavka@yugcontract.ua>',
             to: managerEmail,
             subject,
             token
           })
 
           await mes.sendMail({
-            from: 'support@yugcontract.ua',
+            from: 'ЮК.Доставка <yug_dostavka@yugcontract.ua>',
             to: managerEmail,
             subject,
             html: message,
@@ -671,14 +670,14 @@ module.exports = {
           console.log('managers', managerEmail)
 
           console.log({
-            from: 'support@yugcontract.ua',
+            from: 'ЮК.Доставка <yug_dostavka@yugcontract.ua>',
             to: managerEmail,
             subject,
             token
           })
 
           await mes.sendMail({
-            from: 'support@yugcontract.ua',
+            from: 'ЮК.Доставка <yug_dostavka@yugcontract.ua>',
             to: managerEmail,
             subject,
             html: message,

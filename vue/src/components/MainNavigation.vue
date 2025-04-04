@@ -7,7 +7,7 @@
 
         </template>
         <v-toolbar-title><div class="d-none d-sm-block" @click="router.push('/')" >
-            TMS.Доставки</div>
+            ЮК.Доставка</div>
         </v-toolbar-title>
         
         <span v-if="route.name != 'Home'">

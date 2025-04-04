@@ -17,7 +17,9 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Html5Qrcode } from 'html5-qrcode'
+import { useAppStore } from '@/store/appStore'
 
+const appStore = useAppStore()
 const emit = defineEmits(['qrResult', 'barcodeResult']) // Оголошення події для емісії
 const props = defineProps({
     barcode: Boolean
@@ -74,9 +76,13 @@ const loadCameras = async () => {
             title: camera.label || `Камера ${camera.id}`,
             value: camera.id,
         }))
-        if (cameraOptions.value.length > 0) {
+        if (cameraOptions.value.length > 0 && !selectedCamera.value) {
+            // Вибір першої доступної камери, якщо не вибрано
             selectedCamera.value = cameraOptions.value[1]?.value || cameraOptions.value[0]?.value
+        } else {
+            selectedCamera.value = appStore.localStg.cameraId || cameraOptions.value[0]?.value
         }
+
         loading.value = false
     } catch (error) {
         loading.value = false
@@ -86,13 +92,16 @@ const loadCameras = async () => {
 }
 
 const handleCameraChange = async () => {
+    appStore.localStg.cameraId = selectedCamera.value
     if (html5QrCode) {
         await stopQrScanner()
     }
     await startQrScanner()
 }
 
+
 onMounted(async () => {
+    selectedCamera.value = appStore.localStg.cameraId
     await loadCameras()
     await startQrScanner()
 })

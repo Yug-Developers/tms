@@ -2,15 +2,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import Home from '@/pages/Home.vue'
-import Login from '@/pages/Login.vue'
+import NetLogin from '@/pages/NetLogin.vue'
 import Trip from '@/pages/Trip.vue'
 import Trips from '@/pages/Trips.vue'
 import Point from '@/pages/Point.vue'
 import notFound from '@/pages/404.vue'
 import forbidden from '@/pages/403.vue'
-import { usePouchDB } from '@/hooks/PouchDb'
 import ForgotPassword from '@/pages/ForgotPassword.vue'
-const Pouch = usePouchDB()
 
 const routes = [
   {
@@ -32,7 +30,7 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: Login,
+    component: NetLogin,
     meta: {
       title: 'Login',
     },
@@ -90,19 +88,11 @@ router.beforeEach(async (to, from, next) => {
   const appStore = useAppStore()
   if (navigator.onLine && !appStore.offline && to.name != 'Login' && to.name != '403' && to.name != 'ForgotPassword') {
     try {
-      const response = await Pouch.getUserSession()
-      appStore.user_name = response.userCtx.name
-      if (response.userCtx && response.userCtx.name) {
-        console.log('Авторизований', response.userCtx.name)
-        const user = await Pouch.getUserData(response.userCtx.name)
-        if (user.isActive) {
-          appStore.localStg.userData = user
-          appStore.localStg.user_name = response.userCtx.name
-          appStore.localStg.user_id = user.typhoonId
-          next()
-        } else {
-          next({ name: 'Login' })
-        }
+      if (appStore.localStg.token) {
+        await appStore.touch()
+      }
+      if (appStore.localStg.userData?.isActive) {
+        next()
       } else {
         next({ name: 'Login' })
       }

@@ -4,6 +4,9 @@ export default {
 
     misUrl: process.env.NODE_ENV === 'production'  ? 'https://mis.yugcontract.ua/api' : 
     (process.env.NODE_ENV === 'dev_production' ? 'https://dev.mis.yugcontract.ua/api' : 'http://dev.mis.yugcontract.ua:4040/api'),
+
+    authUrl: process.env.NODE_ENV === 'production'  ? 'https://auth.yugcontract.ua/api' : 
+    (process.env.NODE_ENV === 'dev_production' ? 'https://dev.auth.yugcontract.ua/api' : 'http://dev.yugcontract.ua:3400/api'),
     
     messengerMs: {
         url: process.env.NODE_ENV === 'production' ? 'https://messenger.yugcontract.ua/api' : 'http://dev.yugcontract.ua:3077/api',

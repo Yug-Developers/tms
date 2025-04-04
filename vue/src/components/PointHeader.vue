@@ -8,7 +8,7 @@
             <span v-if="point.pointType == 'wh'" class="mt-1 text-caption font-weight-bold">СКЛАД</span>
             <StatusChip :tripId="tripId" :pointId="pointId" />
         </div>
-
+        
         <v-card flat color="headerBlk" elevation="2">
             <v-card-text class="pa-4 text-left mx-auto">
                 <div class="d-flex justify-space-between align-end">
@@ -55,18 +55,21 @@
             <div v-if="disableInPlaceBtn && existsTripStatus && pointStatus == 100" class="text-center text-primary my-2 mt-4">
                 <v-icon  icon="mdi-alert-circle-outline" color="primary" class="mr-2 mb-1"></v-icon>На Рейсі інша Точка знаходиться в роботі. Завершіть роботу з нею.
             </div>
+            <div v-if="isThisFirstWhPoint && pointStatus == 100" class="text-center text-primary my-2 mt-4">
+                <v-icon  icon="mdi-alert-circle-outline" color="primary" class="mr-2 mb-1"></v-icon>Увага! Розпочинайте рейс лише після повного завантаження автомобіля на складі.
+            </div>
+
+            
         </div>
         <div class="d-flex justify-space-around">
             <v-btn :disabled="disableInPlaceBtn" v-if="pointStatus == 100" variant="elevated" color="blue" 
-                @click="inPlace()" :loading="inplaceLoading">На місці </v-btn>
+                @click="inPlace()" :loading="inplaceLoading">{{ isThisFirstWhPoint || firstPoint ? `Старт` : `На місці` }}</v-btn>
             <v-btn v-if="pointStatus == 200" variant="elevated" color="error"  @click="cancelDialog = true">Скасувати</v-btn>
             <v-btn :disabled="uncomletedDocs" v-if="pointStatus == 200" @click="completePoint()" variant="elevated"
                 color="success">Виконано</v-btn>
             <div v-if="pointStatus == 300" class="text-center">
                 <v-icon  icon="mdi-check-circle" color="green" class="mr-2 mb-1"></v-icon>Точка виконана
             </div>
-            <!-- <v-alert v-if="disableInPlaceBtn && existsTripStatus && pointStatus == 100" dense type="warning" class="text-center mt-2 pa-1">На Рейсі інша Точка знаходиться в роботі. Завершіть роботу з нею.</v-alert> -->
-            <!-- <v-alert v-if="disableInPlaceBtn && existsTripStatus == null" dense type="warning" class="text-center mt-2 pa-1">Рейс не розпочато.</v-alert> -->
         </div>
         <v-divider class="mt-2"></v-divider>
     </v-sheet>
@@ -123,10 +126,11 @@
 </template>
 
 <script setup>
-import { ref, computed  } from 'vue'
+import { ref, computed, onMounted  } from 'vue'
 import { useRouter } from 'vue-router'
 import StatusChip from './PointStatusChip.vue'
 import { useAppStore } from '@/store/appStore'
+import { on } from 'events'
 const appStore = useAppStore()
 const router = useRouter()
 const props = defineProps({
@@ -141,6 +145,8 @@ const cancelDialog = ref(false)
 const odometrFinishDialog = ref(false)
 const isFormValid = ref(false)
 const inplaceLoading = ref(false)
+const isThisFirstWhPoint = ref(false)
+
 
 const emit = defineEmits(['init-data'])
 
@@ -197,8 +203,13 @@ const completePoint = async () => {
 const odometerSet = async () => {
     try {
         await appStore.initNewTripStatus(props.tripId, { odometerStart: odometer.value  })
-        appStore.setSnackbar({ text: "Збережено координати та час", type: 'success' })
         odometerDialog.value = false
+        if (isThisFirstWhPoint.value) {
+            await appStore.completePoint(props.tripId, props.point.id)
+            appStore.setSnackbar({ text: "Точка завершена", type: 'success' })
+        } else {
+            appStore.setSnackbar({ text: "Збережено координати та час", type: 'success' })
+        }
     } catch (error) {
         appStore.setSnackbar({ text: "Помилка збереження", type: 'error' })
         console.error(error)
@@ -224,6 +235,10 @@ const openGoogleMap = (url) => {
 
 const pointId = computed(() => {
     return props.point.id
+})
+
+const firstPoint = computed(() => {
+    return props.point.sortNumber == 1 && !existsTripStatus.value ? true : false
 })
 
 const pointStatus = computed(() => {
@@ -408,6 +423,9 @@ const coordinates = computed(() => {
     return 'https://www.google.com/maps?q=' + props.point.coordinates.latitude + ',' + props.point.coordinates.longitude 
 })
 
+onMounted( async () => {
+    isThisFirstWhPoint.value = await appStore.isThisWhPoint(props.tripId, props.point.id)
+})
 
 </script>
 
