@@ -46,7 +46,7 @@ module.exports = {
         managersEmails.push(Config.defaultManagerEmail)
       }
       const currTime = new Date().toLocaleString()
-      subject = `[TMS] Рейс № ${data._id} - звіт про інкасацію`
+      subject = `[ЮК.Доставка] Рейс № ${data._id} - звіт про інкасацію`
       message = `
           <!DOCTYPE html>
           <body>
@@ -475,7 +475,7 @@ module.exports = {
           }
           table += '</table>'
 
-          subject = `[TMS] Рейс № ${data._id} - Звіт про виконання рейса`
+          subject = `[ЮК.Доставка] Рейс № ${data._id} - Звіт про виконання рейса`
           message = `
               <!DOCTYPE html>
               <body>
@@ -649,7 +649,7 @@ module.exports = {
           }
           table += '</table>'
 
-          subject = `[TMS] Рейс № ${data._id} - Звіт про повернення`
+          subject = `[ЮК.Доставка] Рейс № ${data._id} - Звіт про повернення`
           message = `
               <!DOCTYPE html>
               <body>

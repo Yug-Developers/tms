@@ -292,7 +292,7 @@
             <v-card-text>
                 <v-radio-group v-model="cancelReason" row>
                     <v-radio v-for="(reason, index) in cancelReasons" :key="index" :label="reason"
-                        :value="index"></v-radio>
+                        :value="index" class="align-start mb-2"></v-radio>
                 </v-radio-group>
 
                 <v-textarea v-model="cancelText" label="Коментар" outlined></v-textarea>
@@ -336,7 +336,7 @@
             <v-card-text>
                 <v-radio-group v-model="cancelReason" row>
                     <v-radio v-for="(reason, index) in cancelReasons" :key="index" :label="reason"
-                        :value="index"></v-radio>
+                        :value="index" class="align-start mb-2"></v-radio>
                 </v-radio-group>
 
                 <v-textarea v-model="cancelText" label="Коментар" outlined></v-textarea>
@@ -769,7 +769,7 @@ const sendSMS = async () => {
     const messageSum = sumFact.value ? `прийняв ${sumFact.value} грн (№ пакету ${sumPack.value})` : ``
     const codeText = `Код: ${code}`
     const coma = messageSum && message ? `, ` : ``
-    const translit = cyrillicToTranslit({ preset: "uk" }).transform(`Водій ${message}${coma}${messageSum}. ${codeText}`)
+    const translit = cyrillicToTranslit({ preset: "uk" }).transform(`YUG.Dostavka. Водій ${message}${coma}${messageSum}. ${codeText}`)
     console.log(translit)
     timer.value = 100
     interval.value = setInterval(() => {
