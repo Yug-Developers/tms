@@ -154,7 +154,7 @@ module.exports = {
             docId: points[point][pack].map(doc => doc.docId).join(', '),
             rcpt: points[point][pack][0].rcpt,
             sumPack: points[point][pack][0].sumPack,
-            sumFact,
+            sumFact: '', // тимчасово не виводимо
             statusConnection: points[point][pack][0].statusConnection,
             sum
           }
@@ -453,7 +453,9 @@ module.exports = {
           `
           for (const row of dataList[email]) {
             const colorized = (row.type === 'out' && (row.boxQty !== row.boxesFact || row.pallQty !== row.palletsFact))
-              || row.sum !== row.sumFact || row.statusCode !== 300 ?
+              // || row.sum !== row.sumFact 
+              || (row.sum && row.sumPack == 0 )
+              || row.statusCode !== 300 ?
               'style="background-color: #ffcccc;"' : ''
             table += `
             <tr ${colorized}>
@@ -572,7 +574,7 @@ module.exports = {
               boxesFact: doc.boxesFact,
               palletsFact: doc.palletsFact,
               sumPack: doc.sumPack || 0,
-              sumFact: doc.sumFact,
+              sumFact: '', // doc.sumFact Тимчасово не виводимо
               statusConnection: doc.statusConnection ? 'Online' : 'Offline',
               contractor: tripPoints[point.id].counterpartyName,
               id: doc.id
@@ -743,7 +745,7 @@ module.exports = {
               boxesFact: doc.boxesFact,
               palletsFact: doc.palletsFact,
               sumPack: doc.sumPack || 0,
-              sumFact: doc.sumFact,
+              sumFact: '', //doc.sumFact Тимчасово не виводимо,
               statusConnection: doc.statusConnection ? 'Online' : 'Offline',
               contractor: tripPoints[point.id].counterpartyName,
               id: doc.id

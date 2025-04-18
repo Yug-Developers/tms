@@ -219,10 +219,13 @@
                 Видано по {{ curDoc.id }}:
             </v-card-title>
             <v-card-title v-if="curDoc.docType == 'in' || curDoc.docType == 'task'">
-                Прийнято по {{ curDoc.id }}:
+                Прийнято повернення:
             </v-card-title>
+            <v-card-text>
+                {{ curDoc.id }}
+            </v-card-text>
             <v-form v-model="isFormValid">
-                <v-card-text v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP' || curDoc.docType == 'in'"
+                <v-card-text v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP' "
                     class="pb-0">
                     <v-row>
                         <v-col>
@@ -309,7 +312,7 @@
     <v-dialog v-model="massRejectDialog" max-width="600">
         <v-card>
             <v-card-title>
-                Відмова від отримання загалом
+                Відмова від отримання по вибраним
             </v-card-title>
             <v-card-text>
                 <v-radio-group v-model="rejectReason" row>
@@ -331,7 +334,7 @@
     <v-dialog v-model="massCancelDialog" max-width="600">
         <v-card>
             <v-card-title>
-                Скасування доставки загалом
+                Скасування доставки по вибраним
             </v-card-title>
             <v-card-text>
                 <v-radio-group v-model="cancelReason" row>
@@ -352,11 +355,18 @@
 
     <v-dialog v-model="massReleaseDialog" max-width="600">
         <v-card>
-            <v-card-title class="mt-2">
+            <v-card-title v-if="allInDocTypeIn" class="mt-2">
+                Прийнято повернення
+            </v-card-title>
+            <v-card-title v-else class="mt-2">
                 Видано по вибраним
             </v-card-title>
+
+            <v-card-text v-html="docsSelectedList">
+            </v-card-text>
+
             <v-form v-model="isFormValid">
-                <v-card-text v-if="allBoxes || allPallets" class="pb-2 px-4">
+                <v-card-text v-if="(allBoxes || allPallets) && !allInDocTypeIn" class="pb-2 px-4">
                     <v-row>
                         <v-col>
                             <v-text-field v-model="allBoxes" :rules="[rules.number]" readonly label="Коробок"
@@ -387,9 +397,9 @@
                     <v-btn color="grey" @click="massReleaseDialog = false">Скасувати</v-btn>
                     <v-spacer></v-spacer>
                     <v-btn @click="openQRScanDialog('massReleaseDoc')" variant="text" icon="mdi-qrcode-scan"
-                        :disabled="isFormValid ? false : true" class="ml-2"></v-btn>
+                        :disabled="checkMassReleaseForm" class="ml-2"></v-btn>
                     <v-spacer></v-spacer>
-                    <v-btn :disabled="isFormValid ? false : true" @click="acceptMassRelease()"
+                    <v-btn :disabled="checkMassReleaseForm" @click="acceptMassRelease()"
                         :loading="checkInternetConnectionLoading">Підтвердити</v-btn>
                 </v-card-actions>
             </v-form>
@@ -402,13 +412,13 @@
                 Підтвердження
             </v-card-title>
             <v-card-text v-if="statusConnection" class="px-2">
-                <div class="mb-4 px-2">Одержувачу на тел. {{ hidePhone(pointData.rcptPhone) }} <br> було надіслано SMS з
+                <div v-if="!smsPhoneError" class="mb-4 px-2">Одержувачу на тел. {{ hidePhone(pointData.rcptPhone) }} <br> було надіслано SMS з
                     Кодом підтвердження.</div>
                 <v-alert v-if="smsPhoneError" type="error" elevation="2" class="mx-2 mb-4">
                     {{ smsPhoneError }}
                 </v-alert>
                 <div class="text-center">
-                    <v-text-field label="Код з SMS" v-model="smsCode" style="width: 120px" outlined
+                    <v-text-field v-if="!smsPhoneError" label="Код з SMS" v-model="smsCode" style="width: 120px" outlined
                         class="mx-auto"></v-text-field>
                     <div v-if="timer !== 0" class="text-grey">
                         Повторно відправити SMS через
@@ -425,7 +435,7 @@
             <v-card-actions>
                 <v-btn color="grey" @click="acceptSmsDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn @click="accept()" :loading="loading">Підтвердити</v-btn>
+                <v-btn @click="accept()" :disabled="smsPhoneError ? true : false" :loading="loading">Підтвердити</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -460,7 +470,7 @@ import MainNavigation from '@/components/MainNavigation.vue'
 import PointHeader from '@/components/PointHeader.vue'
 import StatusChip from '@/components/DocumentStatusChip.vue'
 import QRScanner from '@/components/QRScanner.vue'
-import { onMounted, onBeforeUnmount, ref, computed, reactive, watch, nextTick } from 'vue'
+import { onMounted,  ref, computed, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import cyrillicToTranslit from 'cyrillic-to-translit-js'
@@ -484,7 +494,7 @@ const typesObj = {
     task: 'Завдання'
 }
 const rejectReasons = {
-    1: 'Невірний товар у замовленні',
+    1: 'Невірний товар у замовленні (з оформленням Акту!)',
     2: 'Невірна кількість товару (з оформленням Акту!)',
     3: 'Товар в некондиційному стані (з оформленням Акту!)',
     4: 'Відсутність оплати Клієнтом'
@@ -709,6 +719,9 @@ const initData = async () => {
         }
     }
     catch (error) {
+        appStore.inplaceLoading = false
+        appStore.loading = false
+        appStore.setSnackbar({ text: 'Помилка ініціалізації даних', type: 'error' })
         console.error(error)
     }
 }
@@ -765,8 +778,9 @@ const sendSMS = async () => {
     checkSmsHash.value = hash
     const message = curDoc.value.docType == 'out' || curDoc.value.docType == 'out_RP' ?
         `видав ${curBoxes.value} кор / ${curPallets.value} пал` :
-        (curDoc.value.docType == 'in' ? `прийняв ${curBoxes.value} кор / ${curPallets.value} пал` : ``)
-    const messageSum = sumFact.value ? `прийняв ${sumFact.value} грн (№ пакету ${sumPack.value})` : ``
+        (curDoc.value.docType == 'in' ? `прийняв ${curDoc.value.id}` : ``)
+    // const messageSum = sumFact.value ? `прийняв ${sumFact.value} грн (№ пакету ${sumPack.value})` : ``
+    const messageSum = sumFact.value ? `прийняв № пакету ${sumPack.value}` : ``
     const codeText = `Код: ${code}`
     const coma = messageSum && message ? `, ` : ``
     const translit = cyrillicToTranslit({ preset: "uk" }).transform(`YUG.Dostavka. Водій ${message}${coma}${messageSum}. ${codeText}`)
@@ -786,6 +800,7 @@ const sendSMS = async () => {
     } catch (error) {
         console.error(error)
         smsPhoneError.value = error
+        appStore.setSnackbar({ text: 'Помилка відправки SMS', type: 'error' })
     }
 }
 
@@ -795,15 +810,17 @@ const sendResultSMS = async (phone) => {
     if (releaseType.value === 'releaseDoc') {
         const message = curDoc.value.docType == 'out' || curDoc.value.docType == 'out_RP' ?
             `видав ${curBoxes.value} кор / ${curPallets.value} пал` :
-            (curDoc.value.docType == 'in' ? `прийняв ${curBoxes.value} кор / ${curPallets.value} пал` : ``)
-        const messageSum = sumFact.value ? `прийняв ${sumFact.value} грн (№ пакету ${sumPack.value})` : ``
+            (curDoc.value.docType == 'in' ? `прийняв ${curDoc.value.id}` : ``)
+        // const messageSum = sumFact.value ? `прийняв ${sumFact.value} грн (№ пакету ${sumPack.value})` : ``
+        const messageSum = sumFact.value ? `прийняв № пакету ${sumPack.value}` : ``
         const coma = messageSum && message ? `, ` : ``
-        translit = cyrillicToTranslit({ preset: "uk" }).transform(`Водій ${message}${coma}${messageSum}.`)
+        translit = cyrillicToTranslit({ preset: "uk" }).transform(`YUG.Dostavka. Водій ${message}${coma}${messageSum}.`)
     } else {
         const message = `видав ${allBoxes.value} кор / ${allPallets.value} пал`
-        const messageSum = allSumFact.value ? `прийняв ${allSumFact.value} грн (№ пакету ${allSumPack.value})` : ``
+        // const messageSum = allSumFact.value ? `прийняв ${allSumFact.value} грн (№ пакету ${allSumPack.value})` : ``
+        const messageSum = allSumFact.value ? `прийняв № пакету ${allSumPack.value}` : ``
         const coma = messageSum && message ? `, ` : ``
-        translit = cyrillicToTranslit({ preset: "uk" }).transform(`Водій ${message}${coma}${messageSum}.`)
+        translit = cyrillicToTranslit({ preset: "uk" }).transform(`YUG.Dostavka. Водій ${message}${coma}${messageSum}.`)
     }
 
     console.log(translit)
@@ -822,6 +839,7 @@ const sendResultSMS = async (phone) => {
     } catch (error) {
         console.error(error)
         smsPhoneError.value = error
+        appStore.setSnackbar({ text: 'Помилка відправки SMS', type: 'error' })
     }
 }
 
@@ -830,11 +848,12 @@ const sendMassSMS = async () => {
     smsCode.value = ''
     const [code, hash] = await appStore.createCode()
     checkSmsHash.value = hash
-    const message = `видав ${allBoxes.value} кор / ${allPallets.value} пал`
+    const message = allInDocTypeIn.value ? `прийняв ${allInDocTypeIn.value} док-тів`:`видав ${allBoxes.value} кор / ${allPallets.value} пал`
     const codeText = `Код: ${code}`
-    const messageSum = allSumFact.value ? `прийняв ${allSumFact.value} грн (№ пакету ${allSumPack.value})` : ``
+    // const messageSum = allSumFact.value ? `прийняв ${allSumFact.value} грн (№ пакету ${allSumPack.value})` : ``
+    const messageSum = allSumFact.value ? `прийняв № пакету ${allSumPack.value}` : ``
     const coma = messageSum && message ? `, ` : ``
-    const translit = cyrillicToTranslit({ preset: "uk" }).transform(`Водій ${message}${coma}${messageSum}. ${codeText}`)
+    const translit = cyrillicToTranslit({ preset: "uk" }).transform(`YUG.Dostavka. Водій ${message}${coma}${messageSum}. ${codeText}`)
     console.log(translit)
     timer.value = 100
     interval.value = setInterval(() => {
@@ -850,6 +869,7 @@ const sendMassSMS = async () => {
     } catch (error) {
         console.error(error)
         smsPhoneError.value = error
+        appStore.setSnackbar({ text: 'Помилка відправки SMS', type: 'error' })
     }
 }
 
@@ -880,6 +900,8 @@ const acceptRelease = async () => {
             acceptDocDialog.value = false
         }
     } catch (error) {
+        appStore.setSnackbar({ text: 'Помилка [1]', type: 'error' })
+        checkInternetConnectionLoading.value = false
         console.error(error)
     }
 }
@@ -909,6 +931,8 @@ const releaseDoc = async () => {
         }
     } catch (error) {
         console.error(error)
+        loading.value = false
+        appStore.setSnackbar({ text: "Помилка [2]", type: 'error' })
     }
 }
 
@@ -948,6 +972,8 @@ const rejectDoc = async () => {
         docsSelected.value = {}
     } catch (error) {
         console.error(error)
+        loading.value = false
+        appStore.setSnackbar({ text: "Помилка [3]", type: 'error' })
     }
 }
 
@@ -972,6 +998,8 @@ const cancelDoc = async () => {
         docsSelected.value = {}
     } catch (error) {
         console.error(error)
+        loading.value = false
+        appStore.setSnackbar({ text: "Помилка [4]", type: 'error' })
     }
 }
 
@@ -1002,6 +1030,9 @@ const acceptMassRelease = async () => {
         }
     } catch (error) {
         console.error(error)
+        appStore.setSnackbar({ text: 'Помилка [5]', type: 'error' })
+        checkInternetConnectionLoading.value = false
+        loading.value = false
     }
 }
 
@@ -1045,6 +1076,8 @@ const massRelease = async () => {
         }
     } catch (error) {
         console.error(error)
+        loading.value = false
+        appStore.setSnackbar({ text: "Помилка [6]", type: 'error' })
     }
 }
 
@@ -1065,6 +1098,8 @@ const massReject = async () => {
         massRejectDialog.value = false
     } catch (error) {
         console.error(error)
+        loading.value = false
+        appStore.setSnackbar({ text: "Помилка [7]", type: 'error' })
     }
 }
 
@@ -1085,10 +1120,14 @@ const massCancel = async () => {
         massCancelDialog.value = false
     } catch (error) {
         console.error(error)
+        loading.value = false
+        appStore.setSnackbar({ text: "Помилка [8]", type: 'error' })
     }
 }
 
 const selectAllDocs = (type) => {
+    console.log('selectAllDocs', type)
+
     if (selectAll[type]) {
         docsSelected.value = {}
         selectAll[type] = false
@@ -1130,6 +1169,12 @@ const inData = computed(() => {
 const taskData = computed(() => {
     return docs.value.filter((item) => item.docType == 'task').sort((a, b) => a.id - b.id)
 })
+
+const docsSelectedList = computed(() => {
+    const selectedDocs = Object.keys(docsSelected.value)
+    return selectedDocs && selectedDocs.length ? selectedDocs.join('<br>') : ''
+ })
+
 
 const docsData = computed(() => {
     return {
@@ -1180,7 +1225,6 @@ const completeAllSelectedTasks = computed(() => {
     for (let item of Object.keys(docsSelected.value)) {
         const docData = docs.value.find((doc) => doc.id == item)
         if (docData && docData.tasks && docData.tasks.length) {
-
             for (let task of docData.tasks) {
                 if (!tasks.value[`${item}_${task.id}`]) {
                     result = false
@@ -1197,14 +1241,29 @@ const releaseBottomBtn = computed(() => {
     let result = true
     for (let item of Object.keys(docsSelected.value)) {
         const docData = docs.value.find((doc) => doc.id == item)
-        if (docStatuses.value[item] && docStatuses.value[item].status == 200 && (docData.docType == 'out' || docData.docType == 'out_RP' || docData.docType == 'task')
-            && completeAllSelectedTasks.value) {
+        if ((docStatuses.value[item] && docStatuses.value[item].status == 200 && (docData.docType == 'out' || docData.docType == 'out_RP' || docData.docType == 'task')
+            && completeAllSelectedTasks.value) || allInDocTypeIn.value) {
             result = false
-        } else {
+        } else 
+        {
             return true
         }
     }
     return result
+})
+
+const allInDocTypeIn = computed(() => {
+    // усі документи типу in
+    let count = 0
+    for (let item of Object.keys(docsSelected.value)) {
+        const docData = docs.value.find((doc) => doc.id == item)
+        if (docData.docType != 'in') {
+            return 0
+        } else {
+            count++
+        }
+    }
+    return count
 })
 
 const cancelBottomBtn = computed(() => {
@@ -1280,8 +1339,22 @@ const allDocsCompleteByType = computed(() => {
 })
 
 const checkReleaseForm = computed(() => {
-    return isFormValid.value && (curDoc.value.docType === 'task' ? true : (curPallets.value > 0 || curBoxes.value > 0))
+    if (curDoc.value.docType === 'task' ||  curDoc.value.docType === 'in') {
+        return true
+    } else {
+        return isFormValid.value && (curPallets.value > 0 || curBoxes.value > 0) 
+    }
+    
 })
+
+const checkMassReleaseForm = computed(() => {
+    if (allInDocTypeIn.value) {
+        return false
+    } else {
+        return isFormValid.value ? false : true
+    }
+})
+
 </script>
 
 <style scoped>

@@ -59,6 +59,11 @@ const loading = ref(false)
 const Login = async () => {
     try {
         loading.value = true
+        await updateOnlineStatus()
+        if (appStore.offline) {
+            loading.value = false
+            return
+        }
         await recaptcha()
 
         const loginData = await appStore.netLogin(USER.value, PASS.value, reCAPTCHA.value, appStore.localStg.deviceId)
@@ -80,10 +85,14 @@ const Login = async () => {
     } catch (err) {
         if (err.status === 401 || err.status === 404 || err.status === 403) {
             appStore.setSnackbar({ text: "Некоректний логін чи пароль.", type: 'error' })
-        } else if (err.status === 403) {
-            appStore.setSnackbar({ text: "Вибачте, але ви не маєте доступу до цієї сторінки.", type: 'error' })
+        } else if (err.status === 417) {
+            appStore.setSnackbar({ text: "Помилка reCAPTCHA. Спробуйте ще раз.", type: 'error' })
         } else {
-            appStore.setSnackbar({ text: `Помилка сервера - ${err.status}. Спробуйте пізніше.`, type: 'error' })
+            if (err.status) {
+                appStore.setSnackbar({ text: `Помилка сервера - ${err.status}. Спробуйте пізніше.`, type: 'error' })
+            } else {
+                appStore.setSnackbar({ text: "Невідома помилка сервера. Спробуйте пізніше.", type: 'error' })
+            }
         }
         console.error(err)
         loading.value = false

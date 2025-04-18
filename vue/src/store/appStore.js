@@ -48,7 +48,7 @@ export const useAppStore = defineStore('appStore', () => {
   const availableTripsIds = ref([])
   // const tripsCounter = ref(null)
   const tripsByDate = ref([])
-
+  const inplaceLoading = ref(false)
   // флаги оновлення даних
   const lastRoutesSeq = ref(0)
   const lastStatusesSeq = ref(0)
@@ -540,7 +540,7 @@ export const useAppStore = defineStore('appStore', () => {
       const statuses = await Pouch.fetchData('statuses')
       return statuses.find(status => status.status === 200 && status._id != tripId) ? true : false
     } catch (error) {
-      throw error
+      return false
     }
   }
 
@@ -904,7 +904,7 @@ export const useAppStore = defineStore('appStore', () => {
     formatDateTime, routes, pullTripsById, activeTrips, activeStatuses,
     activeTripsIds, activeStatusesIds, availableTripsIds, closedStatuses, closedStatusesIds, pullStatuses, pullManagersPerm, pullRoutes,
     finishedOdometerData, statusesIds, routesIds, tripsByDate, getStats, getAllAvailableTrips, availableTrips, pushManagerPermData, netLogin, touch,
-    isThisWhPoint
+    isThisWhPoint, inplaceLoading
   }
 })
 

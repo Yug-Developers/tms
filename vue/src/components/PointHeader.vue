@@ -63,7 +63,7 @@
         </div>
         <div class="d-flex justify-space-around">
             <v-btn :disabled="disableInPlaceBtn" v-if="pointStatus == 100" variant="elevated" color="blue" 
-                @click="inPlace()" :loading="inplaceLoading">{{ isThisFirstWhPoint || firstPoint ? `Старт` : `На місці` }}</v-btn>
+                @click="inPlace()" :loading="appStore.inplaceLoading">{{ isThisFirstWhPoint || firstPoint ? `Старт` : `На місці` }}</v-btn>
             <v-btn v-if="pointStatus == 200" variant="elevated" color="error"  @click="cancelDialog = true">Скасувати</v-btn>
             <v-btn :disabled="uncomletedDocs" v-if="pointStatus == 200" @click="completePoint()" variant="elevated"
                 color="success">Виконано</v-btn>
@@ -144,7 +144,6 @@ const odometerDialog = ref(false)
 const cancelDialog = ref(false)
 const odometrFinishDialog = ref(false)
 const isFormValid = ref(false)
-const inplaceLoading = ref(false)
 const isThisFirstWhPoint = ref(false)
 
 
@@ -156,10 +155,10 @@ const rules = {
 }
 
 const inPlace = async () => {
-    inplaceLoading.value = true
+    appStore.inplaceLoading = true
     if (await appStore.checkEmptyPointDocsExists(props.tripId)) {
         appStore.setSnackbar({ text: "Рейс має документи з 0 місць. Для запуску рейса необхідно виправити документи - зверніться до логіста!", type: 'error' })
-        inplaceLoading.value = false
+        appStore.inplaceLoading = false
         return 
     }
     
@@ -167,22 +166,22 @@ const inPlace = async () => {
     const activTrips = await appStore.checkOpenTrip(props.tripId)
     if (activTrips) {
         appStore.setSnackbar({ text: "Неможливо відкрити новий рейс. Є інші активні рейси.", type: 'error' })
-        inplaceLoading.value = false
+        appStore.inplaceLoading = false
         return
     }
-    if (props.point.sortNumber == 1 && !existsTripStatus.value) {
+    if (props.point?.sortNumber == 1 && !existsTripStatus.value) {
         odometerDialog.value = true
         odometer.value = ''
     } else {
         try {
-            await appStore.inPlace(props.tripId, props.point.id)
+            await appStore.inPlace(props.tripId, props.point?.id)
             appStore.setSnackbar({ text: "Збережено координати та час", type: 'success'})
         } catch (error) {
             appStore.setSnackbar({ text: "Помилка збереження", type: 'error' })
             console.error(error)
         }
     }
-    inplaceLoading.value = false
+    appStore.inplaceLoading = false
 }
 
 const completePoint = async () => {
