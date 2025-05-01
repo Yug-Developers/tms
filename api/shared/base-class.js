@@ -562,7 +562,7 @@ module.exports = {
             }
             points[email].push({
               rcpt: tripPoints[point.id].rcpt + ' ' + tripPoints[point.id].rcptPhone,
-              address: tripPoints[point.id].address + (tripPoints[point.id].description ? ' (' + tripPoints[point.id].description + ')' : ''),
+              address: tripPoints[point.id].city + ', ' + tripPoints[point.id].address + (tripPoints[point.id].description ? ' (' + tripPoints[point.id].description + ')' : ''),
               docType: typesObj[routeDoc.docType] || 'Невідомo',
               type: routeDoc.docType,
               boxQty: routeDoc.boxQty,
@@ -733,7 +733,7 @@ module.exports = {
             }
             points[email].push({
               rcpt: tripPoints[point.id].rcpt + ' ' + tripPoints[point.id].rcptPhone,
-              address: tripPoints[point.id].address + (tripPoints[point.id].description ? ' (' + tripPoints[point.id].description + ')' : ''),
+              address: tripPoints[point.id].city + ', ' + tripPoints[point.id].address + (tripPoints[point.id].description ? ' (' + tripPoints[point.id].description + ')' : ''),
               docType: typesObj[routeDoc.docType] || 'Невідомo',
               type: routeDoc.docType,
               boxQty: routeDoc.boxQty,

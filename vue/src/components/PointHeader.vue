@@ -14,7 +14,7 @@
                 <div class="d-flex justify-space-between align-end">
                     <div>
                         <div v-if="point.pointType != 'wh'"><b>Контрагент:</b> {{ point.counterpartyName }}</div>
-                        <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">({{ point.description }})</span></div>
+                        <div><b>Адреса:</b> {{ point.city }},  {{ point.address }} <span v-if="point.description">({{ point.description }})</span></div>
                         <div v-if="point.rcpt"><b>Отримувач:</b> {{ point.rcpt }}, 
                             <div class="d-flex flex-wrap">
                                 <span class="d-flex flex-nowrap pr-2"

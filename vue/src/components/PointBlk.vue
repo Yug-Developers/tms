@@ -4,14 +4,15 @@
         <v-card flat>
             <v-card-title class="d-flex justify-space-between pa-0 pb-2">
                 <div># {{ point.sortNumber }}</div>
-                <span v-if="point.pointType == 'wh'" class="text-caption font-weight-bold">СКЛАД</span>
+                <span v-if="point.pointType == 'wh'" class="text-caption font-weight-bold">СКЛАД ({{ point.city }})</span>
+                <span v-if="point.pointType != 'wh'" class="text-caption font-weight-bold text-uppercase">{{ point.city }}</span>
                 <StatusChip :tripId="tripId" :pointId="pointId" />
             </v-card-title>
             <v-card-text class="pa-0 text-left mx-auto">
                 <div class="d-flex justify-space-between align-end mb-2">
                     <div>
                         <div v-if="point.pointType != 'wh'"><b>Контрагент:</b> {{ point.counterpartyName }}</div>
-                        <div><b>Адреса:</b> {{ point.address }} <span v-if="point.description">({{ point.description
+                        <div><b>Адреса:</b> {{ point.city }}, {{ point.address }} <span v-if="point.description">({{ point.description
                                 }})</span></div>
                         <div v-if="point.rcpt"><b>Отримувач:</b> {{ point.rcpt }},
                             <div class="d-flex flex-wrap">
