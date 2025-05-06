@@ -53,7 +53,7 @@ export function useOnlineStatus() {
                         appStore.skipSync = false
                     } else {
                         // await appStore.pullTripsData()
-                        await appStore.pushStatusesData()
+                        await appStore.pushStatusesData(true)
                         await appStore.pushManagerPermData()
                     }
                     wasOffline = false

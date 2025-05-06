@@ -28,10 +28,15 @@
             </v-card-actions>
             <v-card-text>
                 <v-divider class="mb-4"></v-divider>
-                <div class="text-caption text-center">version: {{ version }}</div>
-                <div class="text-caption text-center">type: {{ type }}</div>
+                <div class="text-caption text-center">Остання передача даних:<br>{{ appStore.localStg.lastSync }}</div>
             </v-card-text>
         </v-card>
+        <v-row class="pa-4 d-flex align-stretch">
+            <v-col cols="12" class="text-caption d-flex justify-space-between mt-auto">
+                <div>version: {{ version }}</div>
+                <div>type: {{ type }}</div>
+            </v-col>
+        </v-row>
     </v-navigation-drawer>
     <v-dialog scrim="grey" v-model="logoutDialog" max-width="600">
         <v-card class="d-flex align-center justify-center flex-wrap text-center mx-auto pa-4">

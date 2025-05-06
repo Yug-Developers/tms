@@ -19,6 +19,7 @@ const localStg = useLocalStorage({
   'token': '',
   'deviceId': '',
   'cameraId': '',
+  'lastSync': '',
 })
 
 const { location, locationError, getLocation } = useGeolocation();
@@ -296,18 +297,19 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
-  const pushStatusesData = async () => {
+  const pushStatusesData = async (force = false) => {
     try {
       if (localStg.userData.role !== 'driver') return
       if (offline.value) return
       const changes = await Pouch.changes('statuses', {
-        since: lastLocalStatusesSeq.value || 0, // Отримуємо тільки нові зміни
+        since: force ? 0 : (lastLocalStatusesSeq.value || 0), // Отримуємо тільки нові зміни
         include_docs: true
       })
       if (changes.results.length === 0) return
       const docs = changes.results.map(row => row.doc)
       const res = await HTTP.post('/tms/push-statuses', { docs })
       lastLocalStatusesSeq.value = changes.last_seq
+      localStg.lastSync = new Date().toLocaleString('uk-UA', { timeZone: 'Europe/Kiev' })
       return res.data
     } catch (error) {
       throw error
@@ -416,6 +418,12 @@ export const useAppStore = defineStore('appStore', () => {
   }
 
   const netLogin = async (user, pass, reCAPTCHA, deviceId) => {
+    try {
+      await clearDB()
+    } catch (error) {
+      console.error(error)
+    }
+
     try {
       if (offline.value) return
       clearVars()
