@@ -86,7 +86,7 @@ const Login = async () => {
         if (err.status === 401 || err.status === 404 || err.status === 403) {
             appStore.setSnackbar({ text: "Некоректний логін чи пароль.", type: 'error' })
         } else if (err.status === 417) {
-            appStore.setSnackbar({ text: "Помилка reCAPTCHA. Спробуйте ще раз.", type: 'error' })
+            appStore.setSnackbar({ text: "Помилка Google reCAPTCHA. Спробуйте ще раз.", type: 'error' })
         } else {
             if (err.status) {
                 appStore.setSnackbar({ text: `Помилка сервера - ${err.status}. Спробуйте пізніше.`, type: 'error' })
@@ -117,7 +117,7 @@ const executeRecaptcha = () => {
             resolve(generatedToken) // Передаємо токен у виклик `resolve`
           })
           .catch((error) => {
-            console.error('Помилка reCAPTCHA:', error)
+            console.error('Помилка Google reCAPTCHA:', error)
             reject(error) // Передаємо помилку
           })
       })

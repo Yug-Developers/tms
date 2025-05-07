@@ -63,11 +63,11 @@ const logout = () => {
     logoutDialog.value = false
     appStore.logout()
         .then(() => {
-            appStore.setSnackbar({ text: "Вы вышли из системы", type: 'success' });
+            appStore.setSnackbar({ text: "Ви вийшли з системи", type: 'success' });
             router.push('/login')
         })
         .catch((err) => {
-            appStore.setSnackbar({ text: "Ошибка выхода из системы", type: 'error' });
+            appStore.setSnackbar({ text: "Помилка виходу", type: 'error' });
             console.error(err);
         })
 

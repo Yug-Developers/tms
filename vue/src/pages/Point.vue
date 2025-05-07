@@ -900,7 +900,7 @@ const acceptRelease = async () => {
             acceptDocDialog.value = false
         }
     } catch (error) {
-        appStore.setSnackbar({ text: 'Помилка [1]', type: 'error' })
+        appStore.setSnackbar({ text: 'Помилка [1] ' + error.message, type: 'error' })
         checkInternetConnectionLoading.value = false
         console.error(error)
     }
@@ -1030,7 +1030,7 @@ const acceptMassRelease = async () => {
         }
     } catch (error) {
         console.error(error)
-        appStore.setSnackbar({ text: 'Помилка [5]', type: 'error' })
+        appStore.setSnackbar({ text: 'Помилка [5] ' + error.message, type: 'error' })
         checkInternetConnectionLoading.value = false
         loading.value = false
     }

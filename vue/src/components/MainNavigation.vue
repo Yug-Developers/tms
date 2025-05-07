@@ -18,7 +18,7 @@
         <!-- <span :color="appStore.offline ? 'error' : 'success'" v-if="online">{{ connection }}</span> -->
         <!-- <v-icon class="mr-5 ml-1" v-if="appStore.offline" color="warning">mdi-wifi-off</v-icon>
         <v-icon class="mr-5 ml-1" v-else color="success">mdi-wifi</v-icon> -->
-        <v-btn icon @click="pushData()" :loading="pushLoading" v-if="!appStore.offline" title="Передати дані">
+        <v-btn icon @click="pushData()" :loading="pushLoading" v-if="!appStore.offline && appStore.localStg.userData.role == 'driver'" title="Передати дані">
             <v-icon>mdi-sync</v-icon>
         </v-btn>
         <v-avatar size="15" class="mr-5 ml-2" :color="appStore.offline ? 'error' : 'success'" :title="appStore.offline ? 'Ви зараз off-line' : 'Ви зараз on-line'"></v-avatar>
@@ -57,11 +57,10 @@ const pushData = async () => {
         pushLoading.value = true
         const statusRes = await appStore.pushStatusesData(true)
         const docsCnt = statusRes.content?.length || 0
-        await appStore.pushManagerPermData()
         appStore.setSnackbar({ text: `Обмін даними проведено успішно. Передано документів: ${docsCnt}`, type: 'success' })
     } catch (error) {
         console.error('Error pushing data:', error)
-        appStore.setSnackbar({ text: "Під час обміну виникла помилка ", type: 'error' })
+        appStore.setSnackbar({ text: "Під час обміну виникла помилка " + error.message , type: 'error' })
     } finally {
         pushLoading.value = false
     }
