@@ -1,5 +1,6 @@
 <template>
-    <v-sheet v-if="point.id" elevation="0" max-width="600" rounded="sm" width="100%" class="pa-0 mx-auto mb-4 bg-transparent">
+    <v-sheet v-if="point.id" elevation="0" max-width="600" rounded="sm" width="100%"
+        class="pa-0 mx-auto mb-4 bg-transparent">
         <div class="text-grey text-caption">
             Рейс № {{ tripId }}
         </div>
@@ -8,14 +9,15 @@
             <span v-if="point.pointType == 'wh'" class="mt-1 text-caption font-weight-bold">СКЛАД</span>
             <StatusChip :tripId="tripId" :pointId="pointId" />
         </div>
-        
+
         <v-card flat color="headerBlk" elevation="2">
             <v-card-text class="pa-4 text-left mx-auto">
                 <div class="d-flex justify-space-between align-end">
                     <div>
                         <div v-if="point.pointType != 'wh'"><b>Контрагент:</b> {{ point.counterpartyName }}</div>
-                        <div><b>Адреса:</b> {{ point.city }},  {{ point.address }} <span v-if="point.description">({{ point.description }})</span></div>
-                        <div v-if="point.rcpt"><b>Отримувач:</b> {{ point.rcpt }}, 
+                        <div><b>Адреса:</b> {{ point.city }}, {{ point.address }} <span v-if="point.description">({{
+                            point.description }})</span></div>
+                        <div v-if="point.rcpt"><b>Отримувач:</b> {{ point.rcpt }},
                             <div class="d-flex flex-wrap">
                                 <span class="d-flex flex-nowrap pr-2"
                                     v-for="phone in appStore.parsePhones(point.rcptPhone)">
@@ -23,21 +25,25 @@
                                     <a :href="'tel:' + phone" @click.stop>{{
                                         phone }}</a>
                                 </span>
-                            </div>  
+                            </div>
                         </div>
                         <!-- <div><b>Час на точці: </b> {{ pointTime }}</div> -->
                     </div>
-                        <v-btn :disabled="coordinates ? false : true" @click.stop="openGoogleMap(coordinates)" title="На карті"
-                        variant="text" icon="mdi-google-maps"></v-btn>                        
+                    <v-btn :disabled="coordinates ? false : true" @click.stop="openGoogleMap(coordinates)"
+                        title="На карті" variant="text" icon="mdi-google-maps"></v-btn>
                 </div>
-                <div class="mt-2"><v-icon size="small" color="grey" class="mr-2">mdi-package-variant-closed</v-icon>Місць: {{ allBoxesPallets }}</div>
+                <div class="mt-2"><v-icon size="small" color="grey"
+                        class="mr-2">mdi-package-variant-closed</v-icon>Місць: {{ allBoxesPallets }}</div>
                 <div><v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>COD: {{ allSum }}</div>
                 <div v-if="point.sortNumber != '1'" class="text-right"><v-icon icon="mdi-map-marker-distance" /> <span
                         v-if="distance">{{ distance }}</span><span v-else>-</span> км</div>
                 <div v-if="pointStatus != 100 && point.pointType != 'wh'">
                     <div><b>Факт виконання:</b></div>
-                <div><v-icon size="small" color="green" class="mr-2">mdi-package-variant-closed</v-icon>Місць: {{ allBoxesPalletsFact }} </div>
-                <div><v-icon size="small" color="green" class="mr-2">mdi-email-outline</v-icon>COD: {{ allSumFact }} <span v-if="sumPack">(Пакети: {{ sumPack }})</span></div>
+                    <div><v-icon size="small" color="green" class="mr-2">mdi-package-variant-closed</v-icon>Місць: {{
+                        allBoxesPalletsFact }} </div>
+                    <div><v-icon size="small" color="green" class="mr-2">mdi-email-outline</v-icon>COD: {{ allSumFact }}
+                        <span v-if="sumPack">(Пакети: {{ sumPack }})</span>
+                    </div>
                 </div>
                 <div class="text-caption d-flex justify-space-between mt-3">
                     <div><v-icon x-small class="green mr-2 mb-1">mdi-timer-check-outline</v-icon>{{ pointTime }}</div>
@@ -45,30 +51,35 @@
             </v-card-text>
         </v-card>
     </v-sheet>
-    
+
     <v-sheet v-if="editorId" elevation="0" max-width="600" class="pa-0 mx-auto mb-4 bg-transparent">
         <v-divider class="mb-2"></v-divider>
         <div>
             <div v-if="disableInPlaceBtn && existsTripStatus == null" class="text-center text-primary my-2 mt-4">
-                <v-icon  icon="mdi-alert-circle-outline" color="primary" class="mr-2 mb-1"></v-icon>Рейс не розпочато
+                <v-icon icon="mdi-alert-circle-outline" color="primary" class="mr-2 mb-1"></v-icon>Рейс не розпочато
             </div>
-            <div v-if="disableInPlaceBtn && existsTripStatus && pointStatus == 100" class="text-center text-primary my-2 mt-4">
-                <v-icon  icon="mdi-alert-circle-outline" color="primary" class="mr-2 mb-1"></v-icon>На Рейсі інша Точка знаходиться в роботі. Завершіть роботу з нею.
+            <div v-if="disableInPlaceBtn && existsTripStatus && pointStatus == 100"
+                class="text-center text-primary my-2 mt-4">
+                <v-icon icon="mdi-alert-circle-outline" color="primary" class="mr-2 mb-1"></v-icon>На Рейсі інша Точка
+                знаходиться в роботі. Завершіть роботу з нею.
             </div>
             <div v-if="isThisFirstWhPoint && pointStatus == 100" class="text-center text-primary my-2 mt-4">
-                <v-icon  icon="mdi-alert-circle-outline" color="primary" class="mr-2 mb-1"></v-icon>Увага! Розпочинайте рейс лише після повного завантаження автомобіля на складі.
+                <v-icon icon="mdi-alert-circle-outline" color="primary" class="mr-2 mb-1"></v-icon>Увага! Розпочинайте
+                рейс лише після повного завантаження автомобіля на складі.
             </div>
 
-            
+
         </div>
         <div class="d-flex justify-space-around">
-            <v-btn :disabled="disableInPlaceBtn" v-if="pointStatus == 100" variant="elevated" color="blue" 
-                @click="inPlace()" :loading="appStore.inplaceLoading">{{ isThisFirstWhPoint || firstPoint ? `Старт` : `На місці` }}</v-btn>
-            <v-btn v-if="pointStatus == 200" variant="elevated" color="error"  @click="cancelDialog = true">Скасувати</v-btn>
+            <v-btn :disabled="disableInPlaceBtn" v-if="pointStatus == 100" variant="elevated" color="blue"
+                @click="inPlace()" :loading="appStore.inplaceLoading">{{ isThisFirstWhPoint || firstPoint ? `Старт` :
+                    `На місці` }}</v-btn>
+            <v-btn v-if="pointStatus == 200" variant="elevated" color="error"
+                @click="cancelDialog = true">Скасувати</v-btn>
             <v-btn :disabled="uncomletedDocs" v-if="pointStatus == 200" @click="completePoint()" variant="elevated"
                 color="success">Виконано</v-btn>
             <div v-if="pointStatus == 300" class="text-center">
-                <v-icon  icon="mdi-check-circle" color="green" class="mr-2 mb-1"></v-icon>Точка виконана
+                <v-icon icon="mdi-check-circle" color="green" class="mr-2 mb-1"></v-icon>Точка виконана
             </div>
         </div>
         <v-divider class="mt-2"></v-divider>
@@ -122,15 +133,37 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
+    <v-dialog scrim="error" v-model="completeTripDialogError" max-width="600" >
+        <v-card>
+            <v-card-title>
+                <v-icon color="primary" class="mr-2 mb-1">mdi-access-point-network-off</v-icon>Увага!
+            </v-card-title>
+            <v-card-text>
+                <b>Рейс завершено</b>,<br>але дані не вдалося передати на сервер. Спробуйте ще раз пізніше.
+            </v-card-text>
+            <v-card-text v-if="!appStore.offline"> 
+                Якщо проблема повторюється, зверніться до логіста.<br>
+            </v-card-text>
+            <v-card-text v-if="appStore.offline"> 
+                <b>Ви працюєте в off-line режимі.</b> Для передачі даних підключіться до мережі Інтернет.<br>
+            </v-card-text>
+            <v-card-actions>
+                <v-btn @click="completeTripDialogError = false">Закрити</v-btn>
+                <v-spacer></v-spacer>
+                <v-btn color="primary" :disabled="appStore.offline" @click="repostStatuses()">Передати</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
     <!-- <pre>{{ point }}</pre> -->
 </template>
 
 <script setup>
-import { ref, computed, onMounted  } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import StatusChip from './PointStatusChip.vue'
 import { useAppStore } from '@/store/appStore'
-import { on } from 'events'
+
 const appStore = useAppStore()
 const router = useRouter()
 const props = defineProps({
@@ -145,7 +178,7 @@ const cancelDialog = ref(false)
 const odometrFinishDialog = ref(false)
 const isFormValid = ref(false)
 const isThisFirstWhPoint = ref(false)
-
+const completeTripDialogError = ref(false)
 
 const emit = defineEmits(['init-data'])
 
@@ -159,9 +192,9 @@ const inPlace = async () => {
     if (await appStore.checkEmptyPointDocsExists(props.tripId)) {
         appStore.setSnackbar({ text: "Рейс має документи з 0 місць. Для запуску рейса необхідно виправити документи - зверніться до логіста!", type: 'error' })
         appStore.inplaceLoading = false
-        return 
+        return
     }
-    
+
     emit('init-data', {})
     const activTrips = await appStore.checkOpenTrip(props.tripId)
     if (activTrips) {
@@ -175,7 +208,7 @@ const inPlace = async () => {
     } else {
         try {
             await appStore.inPlace(props.tripId, props.point?.id)
-            appStore.setSnackbar({ text: "Збережено координати та час", type: 'success'})
+            appStore.setSnackbar({ text: "Збережено координати та час", type: 'success' })
         } catch (error) {
             appStore.setSnackbar({ text: "Помилка збереження", type: 'error' })
             console.error(error)
@@ -201,7 +234,7 @@ const completePoint = async () => {
 
 const odometerSet = async () => {
     try {
-        await appStore.initNewTripStatus(props.tripId, { odometerStart: odometer.value  })
+        await appStore.initNewTripStatus(props.tripId, { odometerStart: odometer.value })
         odometerDialog.value = false
         if (isThisFirstWhPoint.value) {
             await appStore.completePoint(props.tripId, props.point.id)
@@ -219,12 +252,43 @@ const completeTrip = async () => {
     try {
         await appStore.completePoint(props.tripId, props.point.id)
         appStore.setSnackbar({ text: "Точка завершена", type: 'success' })
-        await appStore.completeTrip(props.tripId, { odometerFinish: odometer.value })
-        appStore.setSnackbar({ text: "Рейс виконано", type: 'success' })
-        router.push('/')
+        try {
+            await appStore.completeTrip(props.tripId, { odometerFinish: odometer.value })
+            appStore.setSnackbar({ text: "Рейс виконано", type: 'success' })
+            odometrFinishDialog.value = false
+        } catch (error) {
+            appStore.setSnackbar({ text: "Помилка завершення рейсу", type: 'error' })
+            console.error(error)
+        }
+        try {
+            const res = await appStore.pushStatusesData(true)
+            if (res) {
+                router.push('/')
+            } else {
+                completeTripDialogError.value = true
+            }
+        } catch (error) {
+            appStore.setSnackbar({ text: "Помилка передачі даних", type: 'error' })
+            console.error(error)
+        }
     } catch (error) {
-        appStore.setSnackbar({ text: "Помилка збереження", type: 'error' })
+        appStore.setSnackbar({ text: "Помилка завершення точки", type: 'error' })
         console.error(error)
+    }
+}
+
+const repostStatuses = async () => {
+    completeTripDialogError.value = false
+    try {
+        appStore.syncLoading = true
+        const statusRes = await appStore.pushStatusesData(true)
+        const docsCnt = statusRes?.content?.length || 0
+        appStore.setSnackbar({ text: `Обмін даними проведено успішно. Передано документів: ${docsCnt}`, type: 'success' })
+    } catch (error) {
+        console.error('Error pushing data:', error)
+        appStore.setSnackbar({ text: "Під час обміну виникла помилка " + error.message , type: 'error' })
+    } finally {
+        appStore.syncLoading = false
     }
 }
 
@@ -294,7 +358,7 @@ const uncomletedDocs = computed(() => {
 
 const uncompetedPoints = computed(() => {
     if (existsTripStatus.value) {
-        return existsTripStatus.value.points.filter((item) => item.id !== pointId.value && item.status < 300 ).length
+        return existsTripStatus.value.points.filter((item) => item.id !== pointId.value && item.status < 300).length
     }
 })
 
@@ -363,7 +427,7 @@ const allSumFact = computed(() => {
         const point = existsTripStatus.value.points.find((item) => item.id == pointId.value)
         if (point && point.docs) {
             point.docs.forEach((doc) => {
-                    if (doc.sumFact) sum += Number(doc.sumFact)
+                if (doc.sumFact) sum += Number(doc.sumFact)
             })
         }
     }
@@ -374,7 +438,7 @@ const allSumFact = computed(() => {
 // Знайти статус у работі по всіх точках
 const existsWorkPoint = computed(() => {
     if (existsTripStatus.value && existsTripStatus.value.points) {
-        return existsTripStatus.value.points.find((item) => item.status == 200 ) ? true : false
+        return existsTripStatus.value.points.find((item) => item.status == 200) ? true : false
     } else {
         return true
     }
@@ -393,7 +457,7 @@ const disableInPlaceBtn = computed(() => {
     if (props.point.id == -1) {
         return existsTripComplete.value ? false : true
     } else {
-        if (!existsTripStatus.value && props.point.sortNumber == 1 ) {
+        if (!existsTripStatus.value && props.point.sortNumber == 1) {
             return false
         }
         if (existsWorkPoint.value) {
@@ -419,15 +483,18 @@ const coordinates = computed(() => {
     if (!props.point.coordinates) {
         return
     }
-    return 'https://www.google.com/maps?q=' + props.point.coordinates.latitude + ',' + props.point.coordinates.longitude 
+    return 'https://www.google.com/maps?q=' + props.point.coordinates.latitude + ',' + props.point.coordinates.longitude
 })
 
-onMounted( async () => {
+onMounted(async () => {
     isThisFirstWhPoint.value = await appStore.isThisWhPoint(props.tripId, props.point.id)
 })
 
 </script>
 
 <style>
-.v-sheet, .v-card {background-color: white}
+.v-sheet,
+.v-card {
+    background-color: white
+}
 </style>

@@ -30,6 +30,7 @@ export const useAppStore = defineStore('appStore', () => {
   // --------------------------------- state ----------------------------------
   const online = ref(navigator.onLine)
   const offline = ref(false)
+  const syncLoading = ref(false)
   const connection = ref(navigator.connection?.effectiveType)
   const isSecureConnection = window.location.protocol === "https:"
   const loading = ref(false)
@@ -276,7 +277,7 @@ export const useAppStore = defineStore('appStore', () => {
           include_docs: true
         })
         lastLocalStatusesSeq.value = changes.last_seq
-        }
+      }
       return data
     } catch (error) {
       throw error
@@ -473,10 +474,14 @@ export const useAppStore = defineStore('appStore', () => {
   }
 
   // ---------------------- реплікація -----------------------------------
-  const pullTripsData = async () => {
+  const pullTripsData = async (config) => {
     try {
       loading.value = true
       if (!offline.value) {
+        if (config && config.destroyDB) {
+          lastRoutesSeq.value = 0
+          await Pouch.destroyDB(config.destroyDB)
+        }
         // Репликація маршрутів
         await pullRoutes()
         routes.value = await Pouch.fetchData('routes')
@@ -888,7 +893,6 @@ export const useAppStore = defineStore('appStore', () => {
       delete st._rev
       const res = await Pouch.updateDoc('statuses', tripId, st)
       statuses.value = await Pouch.fetchData('statuses')
-      await pushStatusesData()
     } catch (error) {
       throw error
     }
@@ -912,7 +916,7 @@ export const useAppStore = defineStore('appStore', () => {
     formatDateTime, routes, pullTripsById, activeTrips, activeStatuses,
     activeTripsIds, activeStatusesIds, availableTripsIds, closedStatuses, closedStatusesIds, pullStatuses, pullManagersPerm, pullRoutes,
     finishedOdometerData, statusesIds, routesIds, tripsByDate, getStats, getAllAvailableTrips, availableTrips, pushManagerPermData, netLogin, touch,
-    isThisWhPoint, inplaceLoading
+    isThisWhPoint, inplaceLoading, syncLoading
   }
 })
 

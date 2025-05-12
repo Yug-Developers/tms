@@ -16,7 +16,7 @@ const startChangesListener = () => {
   }).on('change', async (change) => {
     try {
       console.log('Зміни в документі:', change.id);
-      
+
       const currentDoc = await remoteDB.get(change.id, { revs_info: true })
       const oldRevs = currentDoc._revs_info
         .filter(rev => rev.status === 'available') // Тільки доступні ревізії
@@ -81,6 +81,23 @@ const startChangesListener = () => {
           } else {
             console.log('Розбіжностей у статусах точок не виявлено.');
           }
+        }
+      } else if (currentDoc.status === 300) {
+        console.log('Статус документа змінився з інший на виконано:', currentStatus);
+        await Base.closeDocInDb(currentDoc)
+        // Відправимо дані до Typhoon якщо документ закрито
+        const preparedData = Base.prepareData(currentDoc)
+        try {
+          await Base.sendDataToTyphoon(preparedData)
+        } catch (error) {
+          console.log('Помилка відправки даних до Typhoon:', error.response.data);
+        }
+        try {
+          await Base.sendReportEmail(currentDoc)
+          await Base.sendManagersReportEmail(currentDoc)
+          await Base.sendManagersReturnReportEmail(currentDoc)
+        } catch (error) {
+          console.log('Помилка відправки листів:', error)
         }
       } else {
         console.log(`Для документа ${change.id} немає попередньої ревізії.`)
