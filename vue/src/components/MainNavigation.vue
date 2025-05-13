@@ -52,8 +52,8 @@ const online = computed(() => {
 const syncData = async () => {
     try {
         appStore.syncLoading = true
-        await appStore.pullTripsData({destroyDB: 'routes'})
         const statusRes = await appStore.pushStatusesData(true)
+        await appStore.pullTripsData({destroyDB: 'routes'})
         const docsCnt = statusRes?.content?.length || 0
         appStore.setSnackbar({ text: `Обмін даними проведено успішно. Передано документів: ${docsCnt}`, type: 'success' })
     } catch (error) {

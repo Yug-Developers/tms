@@ -89,6 +89,7 @@ const startChangesListener = () => {
         const preparedData = Base.prepareData(currentDoc)
         try {
           await Base.sendDataToTyphoon(preparedData)
+          await Base.sendDataToTyphoon(preparedData)
         } catch (error) {
           console.log('Помилка відправки даних до Typhoon:', error.response.data);
         }
