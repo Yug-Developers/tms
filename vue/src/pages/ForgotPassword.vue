@@ -88,9 +88,9 @@ const checkPhone = async () => {
             appStore.setSnackbar({ text: "Невідома помилка", type: 'error' });
         }
     } catch (err) {
-        const error = err.response && err.response.data && err.response.data.error && err.response.data.error.message ? err.response.data.error.message : err.message
+        const error = err.status == 404 ? 'Уведений телефон не знайдено.' : err.message
         appStore.setSnackbar({ text: error, type: 'error' });
-        console.error(err.response.data.error.message);
+        console.error(err.status);
     }
 }
 const resetPassword = async () => {

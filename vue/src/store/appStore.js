@@ -56,7 +56,7 @@ export const useAppStore = defineStore('appStore', () => {
   const lastStatusesSeq = ref(0)
   const lastLocalStatusesSeq = ref(0)
   const lastLocalManagersPerlSeq = ref(0)
-
+  const pdfLoading = ref(false)
   const menuItems = ref([
     { title: 'Головна', icon: 'mdi-home', to: '/' },
     { title: 'Рейси', icon: 'mdi-routes', to: '/trips' },
@@ -362,7 +362,7 @@ export const useAppStore = defineStore('appStore', () => {
     )
   }
 
-  const sendSMScode = async ({ phone, message }) => {
+  const sendSMScode = async ({ phone, message, pointId, routeId }) => {
     try {
       const phoneNum = extractPhoneNumber(phone)
       if (!phoneNum) {
@@ -376,7 +376,9 @@ export const useAppStore = defineStore('appStore', () => {
         phone: phoneNum,
         message,
         alpha_name: Config.messengerMs.alphaName,
-        tag: Config.messengerMs.tag
+        tag: Config.messengerMs.tag,
+        pointId,
+        routeId
       })
       return res.data
     } catch (error) {
@@ -389,6 +391,17 @@ export const useAppStore = defineStore('appStore', () => {
       if (offline.value) return true
       await HTTP.get('/tms/touch')
       return true
+    } catch (error) {
+      throw error
+    }
+  }
+  const downloadPointReportPDF = async (tripId, pointId) => {
+    try {
+      if (offline.value) return
+      pdfLoading.value = true
+      const res = await HTTP.post(`/tms/download-point-report-pdf`, { tripId, pointId })
+      pdfLoading.value = false
+      return res.data.content
     } catch (error) {
       throw error
     }
@@ -916,7 +929,7 @@ export const useAppStore = defineStore('appStore', () => {
     formatDateTime, routes, pullTripsById, activeTrips, activeStatuses,
     activeTripsIds, activeStatusesIds, availableTripsIds, closedStatuses, closedStatusesIds, pullStatuses, pullManagersPerm, pullRoutes,
     finishedOdometerData, statusesIds, routesIds, tripsByDate, getStats, getAllAvailableTrips, availableTrips, pushManagerPermData, netLogin, touch,
-    isThisWhPoint, inplaceLoading, syncLoading
+    isThisWhPoint, inplaceLoading, syncLoading, downloadPointReportPDF, pdfLoading
   }
 })
 

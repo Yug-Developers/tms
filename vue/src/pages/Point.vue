@@ -288,6 +288,27 @@
         </v-card>
     </v-dialog>
 
+    <v-dialog v-model="rejectInDialog" max-width="600">
+        <v-card>
+            <v-card-title>
+                Відмова від повернення
+            </v-card-title>
+            <v-card-text>
+                <v-radio-group v-model="rejectReason" row>
+                    <v-radio v-for="(reason, index) in rejectInReasons" :key="index" :label="reason"
+                        :value="index"></v-radio>
+                </v-radio-group>
+                <v-textarea v-model="rejectText" label="Коментар" outlined></v-textarea>
+            </v-card-text>
+            <v-card-actions>
+                <v-btn @click="rejectInDialog = false" color="grey">Скасувати</v-btn>
+                <v-spacer></v-spacer>
+                <v-btn :disabled="rejectReason ? false : true" @click="rejectDoc()"
+                    :loading="loading">Підтвердити</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
     <v-dialog v-model="cancelDialog" max-width="600">
         <v-card>
             <v-card-title>
@@ -325,6 +346,28 @@
             </v-card-text>
             <v-card-actions>
                 <v-btn color="grey" @click="massRejectDialog = false">Скасувати</v-btn>
+                <v-spacer></v-spacer>
+                <v-btn :disabled="rejectReason ? false : true" @click="massReject()"
+                    :loading="loading">Підтвердити</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="massRejectInDialog" max-width="600">
+        <v-card>
+            <v-card-title>
+                Відмова від повернення по вибраним
+            </v-card-title>
+            <v-card-text>
+                <v-radio-group v-model="rejectReason" row>
+                    <v-radio v-for="(reason, index) in rejectInReasons" :key="index" :label="reason"
+                        :value="index"></v-radio>
+                </v-radio-group>
+
+                <v-textarea v-model="rejectText" label="Коментар" outlined></v-textarea>
+            </v-card-text>
+            <v-card-actions>
+                <v-btn color="grey" @click="massRejectInDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
                 <v-btn :disabled="rejectReason ? false : true" @click="massReject()"
                     :loading="loading">Підтвердити</v-btn>
@@ -500,6 +543,10 @@ const rejectReasons = {
     3: 'Товар в некондиційному стані (з оформленням Акту!)',
     4: 'Відсутність оплати Клієнтом'
 }
+const rejectInReasons = {
+    1: 'Товар вже продано',
+    2: 'Клієнт не просив повернення цього товару',
+}
 const cancelReasons = {
     1: 'Доставка не у погоджене часове вікно (невчасна доставка)',
     2: 'Відсутність клієнта на точці доставки / закрита точка доставки',
@@ -527,11 +574,13 @@ const curPallets = ref('')
 const curBoxes = ref('')
 const statusConnection = ref(null)
 const rejectDialog = ref(false)
+const rejectInDialog = ref(false)
 const cancelDialog = ref(false)
 const rejectText = ref('')
 const cancelText = ref('')
 const tasks = ref({})
 const massRejectDialog = ref(false)
+const massRejectInDialog = ref(false)
 const massCancelDialog = ref(false)
 const checkSmsHash = ref('')
 const acceptSmsDialog = ref(false)
@@ -798,7 +847,7 @@ const sendSMS = async () => {
 
     try {
         smsPhoneError.value = ''
-        await appStore.sendSMScode({ phone: pointData.value.rcptPhone, message: translit })
+        await appStore.sendSMScode({ phone: pointData.value.rcptPhone, message: translit, pointId: pointId.value, routeId: tripId.value })
     } catch (error) {
         console.error(error)
         smsPhoneError.value = error
@@ -837,7 +886,7 @@ const sendResultSMS = async (phone) => {
 
     try {
         smsPhoneError.value = ''
-        await appStore.sendSMScode({ phone, message: translit })
+        await appStore.sendSMScode({ phone, message: translit, pointId: pointId.value, routeId: tripId.value })
     } catch (error) {
         console.error(error)
         smsPhoneError.value = error
@@ -867,7 +916,7 @@ const sendMassSMS = async () => {
     }, 600 * 5)
     try {
         smsPhoneError.value = ''
-        await appStore.sendSMScode({ phone: pointData.value.rcptPhone, message: translit })
+        await appStore.sendSMScode({ phone: pointData.value.rcptPhone, message: translit, pointId: pointId.value, routeId: tripId.value })
     } catch (error) {
         console.error(error)
         smsPhoneError.value = error
@@ -943,13 +992,22 @@ const reject = (docId) => {
     curDoc.value = curDocument
     rejectReason.value = null
     rejectText.value = ''
-    rejectDialog.value = true
+    if (curDocument.docType == 'in' ) {
+        rejectInDialog.value = true
+    } else {
+        rejectDialog.value = true
+    }
+    
 }
 
 const massRejectDialogOpen = () => {
     rejectReason.value = null
     rejectText.value = ''
-    massRejectDialog.value = true
+    if (allInDocTypeIn.value) {
+        massRejectInDialog.value = true
+    } else {
+        massRejectDialog.value = true
+    }
 }
 
 const massCancelDialogOpen = () => {
@@ -965,12 +1023,13 @@ const rejectDoc = async () => {
             tripId: tripId.value,
             pointId: pointId.value,
             docId: curDoc.value.id,
-            description: rejectReasons[rejectReason.value] + '. ' + rejectText.value
+            description: (curDoc.value.docType == 'in' ? rejectInReasons[rejectReason.value] : rejectReasons[rejectReason.value]) + '. ' + rejectText.value
         })
         loading.value = false
         rejectReason.value = null
         rejectText.value = ''
         rejectDialog.value = false
+        rejectInDialog.value = false
         docsSelected.value = {}
     } catch (error) {
         console.error(error)
@@ -1092,12 +1151,13 @@ const massReject = async () => {
                 tripId: tripId.value,
                 pointId: pointId.value,
                 docId: Number(doc.id),
-                description: rejectReasons[rejectReason.value] + '. ' + rejectText.value
+                description: (allInDocTypeIn.value ? rejectInReasons[rejectReason.value] : rejectReasons[rejectReason.value]) + '. ' + rejectText.value
             })
         }
         loading.value = false
         docsSelected.value = {}
         massRejectDialog.value = false
+        massRejectInDialog.value = false
     } catch (error) {
         console.error(error)
         loading.value = false
@@ -1268,6 +1328,21 @@ const allInDocTypeIn = computed(() => {
     return count
 })
 
+const allSelectedHaveSameType = computed(() => {
+    // усі документи одного типу
+    let result = true
+    let curDocType = ''
+    for (let item of Object.keys(docsSelected.value)) {
+        const docData = docs.value.find((doc) => doc.id == item)
+        if (curDocType != '' && docData.docType != curDocType) {
+            result = false
+        }
+        curDocType = docData.docType
+    }
+    return result
+})
+
+
 const cancelBottomBtn = computed(() => {
     let result = true
     for (let item of Object.keys(docsSelected.value)) {
@@ -1283,7 +1358,7 @@ const cancelBottomBtn = computed(() => {
 const rejectBottomBtn = computed(() => {
     let result = true
     for (let item of Object.keys(docsSelected.value)) {
-        if (docStatuses.value[item] && docStatuses.value[item].status == 200) {
+        if (docStatuses.value[item] && docStatuses.value[item].status == 200 && allSelectedHaveSameType.value) {
             result = false
         } else {
             return true

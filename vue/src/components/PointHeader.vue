@@ -1,6 +1,7 @@
 <template>
     <v-sheet v-if="point.id" elevation="0" max-width="600" rounded="sm" width="100%"
         class="pa-0 mx-auto mb-4 bg-transparent">
+
         <div class="text-grey text-caption">
             Рейс № {{ tripId }}
         </div>
@@ -45,8 +46,13 @@
                         <span v-if="sumPack">(Пакети: {{ sumPack }})</span>
                     </div>
                 </div>
-                <div class="text-caption d-flex justify-space-between mt-3">
+                <div class="text-caption d-flex justify-space-between align-end mt-3">
                     <div><v-icon x-small class="green mr-2 mb-1">mdi-timer-check-outline</v-icon>{{ pointTime }}</div>
+                    <v-btn icon="mdi-file-download-outline" color="green" variant="text" @click="downloadPDF()" :loading="appStore.pdfLoading"
+                        title="Завантажити PDF звіт про точку"
+                        v-if="!appStore.offline && appStore.localStg.userData.role == 'manager' && pointStatus == 300">
+                    </v-btn>
+
                 </div>
             </v-card-text>
         </v-card>
@@ -133,18 +139,18 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
-    <v-dialog scrim="error" v-model="completeTripDialogError" max-width="600" >
+    <v-dialog scrim="error" v-model="completeTripDialogError" max-width="600">
         <v-card>
             <v-card-title>
                 <v-icon color="primary" class="mr-2 mb-1">mdi-access-point-network-off</v-icon>Увага!
             </v-card-title>
             <v-card-text>
-                <b>Рейс завершено</b>,<br>але дані не вдалося передати на сервер. Спробуйте ще раз пізніше.
+                <b>Рейс завершено</b>,<br>але дані не передані на сервер.
             </v-card-text>
-            <v-card-text v-if="!appStore.offline"> 
+            <v-card-text v-if="!appStore.offline">
                 Якщо проблема повторюється, зверніться до логіста.<br>
             </v-card-text>
-            <v-card-text v-if="appStore.offline"> 
+            <v-card-text v-if="appStore.offline">
                 <b>Ви працюєте в off-line режимі.</b> Для передачі даних підключіться до мережі Інтернет.<br>
             </v-card-text>
             <v-card-actions>
@@ -185,6 +191,32 @@ const emit = defineEmits(['init-data'])
 
 const rules = {
     number: v => v && !isNaN(v) && !/\s+/.test(v) || 'Тільки цифри'
+}
+
+const downloadPDF = async () => {
+    try {
+        const res = await appStore.downloadPointReportPDF(props.tripId, props.point.id)
+        if (res) {
+            const binary = atob(res) // Base64 -> binary string
+            const len = binary.length
+            const bytes = new Uint8Array(len)
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binary.charCodeAt(i)
+            }
+            const blob = new Blob([bytes], { type: 'application/pdf' })
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `report_${props.tripId}_${props.point.id}.pdf`
+            a.click()
+            window.URL.revokeObjectURL(url)
+        } else {
+            appStore.setSnackbar({ text: "Помилка завантаження PDF", type: 'error' })
+        }
+    } catch (error) {
+        console.error(error)
+        appStore.setSnackbar({ text: "Помилка завантаження PDF", type: 'error' })
+    }
 }
 
 const inPlace = async () => {
@@ -286,7 +318,7 @@ const repostStatuses = async () => {
         appStore.setSnackbar({ text: `Обмін даними проведено успішно. Передано документів: ${docsCnt}`, type: 'success' })
     } catch (error) {
         console.error('Error pushing data:', error)
-        appStore.setSnackbar({ text: "Під час обміну виникла помилка " + error.message , type: 'error' })
+        appStore.setSnackbar({ text: "Під час обміну виникла помилка " + error.message, type: 'error' })
     } finally {
         appStore.syncLoading = false
     }
