@@ -10,7 +10,7 @@
                     max-width="600" rounded="lg" width="100%"
                     class="pa-0 mx-auto mb-4 d-flex justify-center bg-transparent">
                     <v-btn prepend-icon="mdi-cellphone-message-off" @click="setSMSstatus()"
-                        :loading="setSMSstatusLoading" :disabled="pointStatus && pointStatus != 200" class="mx-auto">
+                        :loading="setSMSstatusLoading" :disabled="pointStatus && pointStatus == 200 ? false : true" class="mx-auto">
                         Без Коду SMS
                     </v-btn>
                 </v-sheet>
