@@ -1,11 +1,11 @@
 import { useAppStore } from '@/store/appStore'
-import { onMounted, onBeforeUnmount, computed } from 'vue'
+import { onMounted, onBeforeUnmount, computed, ref } from 'vue'
 import { HTTP } from '@/http-common'
 
 const pingServerInterval = 180000 // 3 хв
 const pingServerTimeout = 5000 // 5 сек
 const pingServerIntervalOffline = 10000 // 10 сек
-let wasOffline = false
+const wasOffline = ref(false)
 let pingOfflineInterval = null
 let pingOnlineInterval = null
 let isInitialized = false
@@ -38,15 +38,15 @@ export function useOnlineStatus() {
         if (navigator.onLine) {
             if (appStore.offline) {
                 console.log('Currently offline')
-                if (!wasOffline) {
+                if (!wasOffline.value) {
                     appStore.setSnackbar({ text: "Втрачено зв'язок з мережею", type: 'warning' })
                 }
-                wasOffline = true
+                wasOffline.value = true
                 // Якщо втрачено зв'язок — частіша перевірка pingServerIntervalOffline
                 if (pingOfflineInterval) clearInterval(pingOfflineInterval)
                 pingOfflineInterval = setInterval(updateOnlineStatus, pingServerIntervalOffline)
             } else {
-                if (wasOffline) {
+                if (wasOffline.value) {
                     console.log('Currently online')
                     appStore.setSnackbar({ text: "Зв'язок з мережею встановлено", type: 'success' })
                     if (appStore.skipSync) {
@@ -56,7 +56,7 @@ export function useOnlineStatus() {
                         await appStore.pushStatusesData(true)
                         await appStore.pushManagerPermData()
                     }
-                    wasOffline = false
+                    wasOffline.value = false
                 }
                 // Якщо поновлено зв'язок — запускаємо інтервал pingServerInterval
                 if (pingOnlineInterval) {
@@ -71,7 +71,7 @@ export function useOnlineStatus() {
             }
         } else {
             console.log('Offline works')
-            wasOffline = true
+            wasOffline.value = true
             appStore.offline = true
             appStore.setSnackbar({ text: "Застосунок працює без доступа до мережі", type: 'warning' })
         }
@@ -109,5 +109,5 @@ export function useOnlineStatus() {
     })
     const offline = computed(() => appStore.offline)
 
-    return { pingServer, updateOnlineStatus }
+    return { pingServer, updateOnlineStatus, wasOffline }
 }

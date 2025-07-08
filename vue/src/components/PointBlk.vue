@@ -4,15 +4,18 @@
         <v-card flat>
             <v-card-title class="d-flex justify-space-between pa-0 pb-2">
                 <div># {{ point.sortNumber }}</div>
-                <span v-if="point.pointType == 'wh'" class="text-caption font-weight-bold">СКЛАД ({{ point.city }})</span>
-                <span v-if="point.pointType != 'wh'" class="text-caption font-weight-bold text-uppercase">{{ point.city }}</span>
+                <span v-if="point.pointType == 'wh'" class="text-caption font-weight-bold">СКЛАД ({{ point.city
+                    }})</span>
+                <span v-if="point.pointType != 'wh'" class="text-caption font-weight-bold text-uppercase">{{ point.city
+                    }}</span>
                 <StatusChip :tripId="tripId" :pointId="pointId" />
             </v-card-title>
             <v-card-text class="pa-0 text-left mx-auto">
                 <div class="d-flex justify-space-between align-end mb-2">
                     <div>
                         <div v-if="point.pointType != 'wh'"><b>Контрагент:</b> {{ point.counterpartyName }}</div>
-                        <div><b>Адреса:</b> {{ point.city }}, {{ point.address }} <span v-if="point.description">({{ point.description
+                        <div><b>Адреса:</b> {{ point.city }}, {{ point.address }} <span v-if="point.description">({{
+                            point.description
                                 }})</span></div>
                         <div v-if="point.rcpt"><b>Отримувач:</b> {{ point.rcpt }},
                             <div class="d-flex flex-wrap">
@@ -28,7 +31,7 @@
                     <v-btn :disabled="coordinates ? false : true" @click.stop="openGoogleMap(coordinates)"
                         title="На карті" variant="text" icon="mdi-google-maps"></v-btn>
                 </div>
-                <v-row v-if="point.pointType != 'wh'" class="mb-2 text-left">
+                <v-row v-if="point.pointType != 'wh'" class="text-left">
                     <v-col class="d-flex flex-nowrap">
                         Видача <v-badge :color="docTypeOutPoint == 0 ? `grey` : `info`" :content="docTypeOutPoint"
                             inline></v-badge>
@@ -42,10 +45,18 @@
                             inline></v-badge>
                     </v-col>
                 </v-row>
+                <v-divider v-if="point.pointType != 'wh'" class="my-4"></v-divider>
+                <v-row v-if="point.pointType != 'wh'">
+                    <v-col><v-icon size="small" color="grey"
+                            class="mr-2">mdi-package-variant-closed</v-icon>Місць: {{ allBoxesPallets }}</v-col>
+                    <v-col><v-icon size="small" color="grey" class="mr-2">mdi-email-outline</v-icon>COD: {{ allSum }}</v-col>
+                </v-row>
+                <v-divider v-if="point.pointType != 'wh'" class="my-4"></v-divider>
+
                 <div class="text-caption d-flex justify-space-between">
                     <div><v-icon x-small class="green mr-2 mb-1">mdi-timer-check-outline</v-icon>{{ pointTime }}</div>
                     <div v-if="point.sortNumber != '1'"><v-icon x-small icon="mdi-map-marker-distance" /> <span
-                        v-if="distance">{{ distance }}</span><span v-else>-</span> км</div>
+                            v-if="distance">{{ distance }}</span><span v-else>-</span> км</div>
                 </div>
             </v-card-text>
         </v-card>
@@ -145,6 +156,34 @@ const coordinates = computed(() => {
         return
     }
     return 'https://www.google.com/maps?q=' + props.point.coordinates.latitude + ',' + props.point.coordinates.longitude
+})
+
+const allBoxesPallets = computed(() => {
+    // Кількість кор / пал = Сума по документах з docType = Видача та Завдання (boxes / palletes)
+    let boxes = 0
+    let palletes = 0
+    if (props.point && props.point.docs) {
+        props.point.docs.forEach((doc) => {
+            if (doc.docType == 'out' || doc.docType == 'out_RP' || doc.docType == 'task') {
+                if (doc.boxQty) boxes += Number(doc.boxQty)
+                if (doc.pallQty) palletes += Number(doc.pallQty)
+            }
+        })
+    }
+    return `${boxes} / ${palletes}`
+})
+
+const allSum = computed(() => {
+    // Сума COD = Сума по документах з docType = Видача та Завдання (sum)
+    let sum = 0
+    if (props.point && props.point.docs) {
+        props.point.docs.forEach((doc) => {
+            if (doc.docType == 'out' || doc.docType == 'out_RP' || doc.docType == 'task') {
+                sum += Number(doc.sum)
+            }
+        })
+    }
+    return sum
 })
 
 

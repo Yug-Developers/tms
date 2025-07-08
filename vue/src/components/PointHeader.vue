@@ -94,25 +94,25 @@
     <v-dialog v-model="odometerDialog" max-width="600" persistent>
         <v-card>
             <v-card-title>
-                Показання одометра
+                Покази одометра
             </v-card-title>
             <v-card-text>
                 <v-form v-model="isFormValid">
-                    <v-text-field v-model="odometer" prepend-inner-icon="mdi-counter" :rules="[rules.number]" label="Км"
+                    <v-text-field :loading="lastOdometerLoading" v-model="odometer" prepend-inner-icon="mdi-counter" :rules="[rules.number]" label="Км"
                         outlined></v-text-field>
                 </v-form>
             </v-card-text>
             <v-card-actions>
                 <v-btn color="grey" @click="odometerDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="isFormValid ? false : true" @click="odometerSet()">Зберегти</v-btn>
+                <v-btn :disabled="isFormValid && !lastOdometerLoading ? false : true" @click="odometerSet()" :loading="odometerSetLoading">Зберегти</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
     <v-dialog v-model="odometrFinishDialog" max-width="600" persistent>
         <v-card>
             <v-card-title>
-                Показання одометра
+                Покази одометра
             </v-card-title>
             <v-card-text>
                 <v-form v-model="isFormValid">
@@ -123,7 +123,7 @@
             <v-card-actions>
                 <v-btn color="grey" @click="odometrFinishDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="isFormValid ? false : true" @click="completeTrip()">Зберегти</v-btn>
+                <v-btn :disabled="isFormValid ? false : true" @click="completeTrip()" :loading="odometerSetLoading">Зберегти</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -185,6 +185,8 @@ const odometrFinishDialog = ref(false)
 const isFormValid = ref(false)
 const isThisFirstWhPoint = ref(false)
 const completeTripDialogError = ref(false)
+const lastOdometerLoading = ref(false)
+const odometerSetLoading = ref(false)
 
 const emit = defineEmits(['init-data'])
 
@@ -235,8 +237,11 @@ const inPlace = async () => {
         return
     }
     if (props.point?.sortNumber == 1 && !existsTripStatus.value) {
-        odometerDialog.value = true
         odometer.value = ''
+        odometerDialog.value = true
+        lastOdometerLoading.value = true
+        odometer.value = await appStore.getLastOdometerStatus(props.tripId)
+        lastOdometerLoading.value = false
     } else {
         try {
             await appStore.inPlace(props.tripId, props.point?.id)
@@ -249,11 +254,16 @@ const inPlace = async () => {
     appStore.inplaceLoading = false
 }
 
+const delay = (ms) => {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 const completePoint = async () => {
     try {
         if (!uncompetedPoints.value) {
             odometrFinishDialog.value = true
-            odometer.value = ''
+            console.log(appStore.statuses[0])
+            odometer.value = appStore.statuses[0]?.odometerStart || '0'
         } else {
             await appStore.completePoint(props.tripId, props.point.id)
             appStore.setSnackbar({ text: "Точка завершена", type: 'success' })
@@ -266,15 +276,18 @@ const completePoint = async () => {
 
 const odometerSet = async () => {
     try {
+        odometerSetLoading.value = true
         await appStore.initNewTripStatus(props.tripId, { odometerStart: odometer.value })
-        odometerDialog.value = false
         if (isThisFirstWhPoint.value) {
             await appStore.completePoint(props.tripId, props.point.id)
             appStore.setSnackbar({ text: "Точка завершена", type: 'success' })
         } else {
             appStore.setSnackbar({ text: "Збережено координати та час", type: 'success' })
         }
+        odometerDialog.value = false
+        odometerSetLoading.value = false
     } catch (error) {
+        odometerSetLoading.value = false
         appStore.setSnackbar({ text: "Помилка збереження", type: 'error' })
         console.error(error)
     }
@@ -282,11 +295,13 @@ const odometerSet = async () => {
 
 const completeTrip = async () => {
     try {
+        odometerSetLoading.value = true
         await appStore.completePoint(props.tripId, props.point.id)
         appStore.setSnackbar({ text: "Точка завершена", type: 'success' })
         try {
             await appStore.completeTrip(props.tripId, { odometerFinish: odometer.value })
             appStore.setSnackbar({ text: "Рейс виконано", type: 'success' })
+            odometerSetLoading.value = false
             odometrFinishDialog.value = false
         } catch (error) {
             appStore.setSnackbar({ text: "Помилка завершення рейсу", type: 'error' })
@@ -299,11 +314,14 @@ const completeTrip = async () => {
             } else {
                 completeTripDialogError.value = true
             }
+            odometerSetLoading.value = false
         } catch (error) {
+            odometerSetLoading.value = false
             appStore.setSnackbar({ text: "Помилка передачі даних", type: 'error' })
             console.error(error)
         }
     } catch (error) {
+        odometerSetLoading.value = false
         appStore.setSnackbar({ text: "Помилка завершення точки", type: 'error' })
         console.error(error)
     }

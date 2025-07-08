@@ -22,7 +22,7 @@ const localStg = useLocalStorage({
   'lastSync': '',
 })
 
-const { location, locationError, getLocation } = useGeolocation();
+const { location, locationError, getLocation, isLocationLoading } = useGeolocation();
 const Pouch = usePouchDB()
 
 export const useAppStore = defineStore('appStore', () => {
@@ -407,6 +407,23 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
+  const getLastOdometerStatus = async (tripId) => {
+    // Отримуємо останній статус одометра для рейсу
+    try {
+      if (offline.value) return null
+      const doc = await Pouch.getDoc('routes', tripId)
+      const autoId = doc.autoId || ''
+      if (!autoId) return null
+      const res = await HTTP.get(`/tms/get-last-odometer-status?autoId=${autoId}`)
+      return res.data.content || null
+
+    } catch (error) {
+      console.error('Error getting last odometer status:', error)
+      return null
+    }
+  }
+
+
   // --------------------------------- actions --------------------------------
   const createCode = (phone) => {
     const code = process.env.NODE_ENV === 'production' ? parseInt(Math.random() * 10000).toString().padStart(4, '0') : '1111'
@@ -485,7 +502,28 @@ export const useAppStore = defineStore('appStore', () => {
       throw error
     }
   }
-
+  
+  const destroyDB = async (dbName) => {
+    try {
+      await Pouch.destroyDB(dbName)
+      if (dbName === 'routes') {
+        lastRoutesSeq.value = 0
+      } else if (dbName === 'statuses') {
+        lastStatusesSeq.value = 0
+      } else if (dbName === 'manager_perm') {
+        lastLocalManagersPerlSeq.value = 0
+      } else if (dbName === 'users') {
+        localStg.userData = {}
+        localStg.user_name = ''
+        localStg.user_id = ''
+        localStg.token = ''
+      }
+      return true
+    } catch (error) {
+      console.error('Error destroying DB:', error)
+      return false
+    }
+  }
   // ---------------------- реплікація -----------------------------------
   const pullTripsData = async (config) => {
     try {
@@ -670,6 +708,14 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
+  const getTripStatusData = async (tripId) => {
+    try {
+      return await Pouch.getDoc('statuses', tripId)
+    } catch (error) {
+      throw error
+    }
+  }
+
   const cancelPoint = async (tripId, pointId) => {
     try {
       const st = await Pouch.getDoc('statuses', tripId)
@@ -679,10 +725,7 @@ export const useAppStore = defineStore('appStore', () => {
         if (point.id === pointId) {
           const cpoint = trip.points.find(point => point.id === pointId) || {}
           if (cpoint.sortNumber == 1) {
-            const res = await Pouch.deleteDoc('statuses', tripId)
-            statuses.value = await Pouch.fetchData('statuses')
-            await pushStatusesData()
-            return
+            st.status = 100 // Якщо перша точка, то рейс новий
           }
           point.status = 100
           point.arrivalTime = ''
@@ -803,6 +846,7 @@ export const useAppStore = defineStore('appStore', () => {
               doc.palletsFact = config.palletsFact
               doc.boxesFact = config.boxesFact
               doc.statusConnection = !offline.value
+              doc.statusOnline = navigator.onLine
               if (config.rcptQR) {
                 doc.rcptQR = config.rcptQR
               }
@@ -833,6 +877,7 @@ export const useAppStore = defineStore('appStore', () => {
               doc.status = 400
               doc.description = config.description
               doc.statusConnection = !offline.value
+              doc.statusOnline = navigator.onLine
             }
           }
         }
@@ -860,6 +905,7 @@ export const useAppStore = defineStore('appStore', () => {
               doc.status = 500
               doc.description = config.description
               doc.statusConnection = !offline.value
+              doc.statusOnline = navigator.onLine
             }
           }
         }
@@ -929,7 +975,7 @@ export const useAppStore = defineStore('appStore', () => {
     formatDateTime, routes, pullTripsById, activeTrips, activeStatuses,
     activeTripsIds, activeStatusesIds, availableTripsIds, closedStatuses, closedStatusesIds, pullStatuses, pullManagersPerm, pullRoutes,
     finishedOdometerData, statusesIds, routesIds, tripsByDate, getStats, getAllAvailableTrips, availableTrips, pushManagerPermData, netLogin, touch,
-    isThisWhPoint, inplaceLoading, syncLoading, downloadPointReportPDF, pdfLoading
+    isThisWhPoint, inplaceLoading, syncLoading, downloadPointReportPDF, pdfLoading, destroyDB, getLastOdometerStatus, getTripStatusData
   }
 })
 

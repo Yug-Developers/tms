@@ -35,7 +35,7 @@ export function usePouchDB() {
                         console.error(`Помилка видалення бази ${dbName}`, err);
                         reject(err)
                     } else {
-                        console.error(`Базу ${db} видалено`, response);
+                        console.error(`Базу ${dbName} видалено`, response);
                         resolve(response)
                     }
                 })

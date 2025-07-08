@@ -3,22 +3,22 @@
     <v-layout full-height>
         <template v-if="trip && pointData && pointData.id">
             <v-container>
-
                 <PointHeader :point="pointData" :tripId="tripId" :points="points" :editorId="isEditor"
                     @init-data="initData" />
                 <v-sheet v-if="appStore.localStg.userData.role == 'manager' && !dontSendSms" elevation="0"
                     max-width="600" rounded="lg" width="100%"
                     class="pa-0 mx-auto mb-4 d-flex justify-center bg-transparent">
                     <v-btn prepend-icon="mdi-cellphone-message-off" @click="setSMSstatus()"
-                        :loading="setSMSstatusLoading" :disabled="pointStatus && pointStatus == 200 ? false : true" class="mx-auto">
+                        :loading="setSMSstatusLoading" :disabled="pointStatus && pointStatus == 200 ? false : true"
+                        class="mx-auto">
                         Без Коду SMS
                     </v-btn>
                 </v-sheet>
                 <v-alert v-if="dontSendSms" variant="tonal" type="success" border="start" max-width="600"
                     icon="mdi-cellphone-message-off" class="mx-auto mb-4">Дозволено без підтвердження через Код
                     SMS</v-alert>
-                <v-alert v-if="permitWithoutConfirm" variant="tonal" type="error" border="start" icon="mdi-alert" max-width="600"
-                    class="mx-auto mb-4">Обов'язково підпишіть ТТН та Видаткову накладну!</v-alert>
+                <v-alert v-if="permitWithoutConfirm" variant="tonal" type="error" border="start" icon="mdi-alert"
+                    max-width="600" class="mx-auto mb-4">Обов'язково підпишіть ТТН та Видаткову накладну!</v-alert>
                 <v-sheet elevation="0" max-width="600" width="100%" class="mx-auto bg-transparent">
                     <template v-for="(type) in types" :key="type">
                         <v-expansion-panels v-model="panel[type]" multiple class="mb-2">
@@ -51,7 +51,8 @@
                                                         :icon="docsSelected[doc.id] ? `mdi-check-circle-outline` : `mdi-circle-outline`"
                                                         color="green" class="mr-2 mb-1" />
                                                     <b v-if="doc.splitDocumentId">{{ doc.splitDocumentId }}</b>
-                                                    <b v-if="!doc.splitDocumentId && doc.mainDocumentId">{{ doc.mainDocumentId }}</b>
+                                                    <b v-if="!doc.splitDocumentId && doc.mainDocumentId">{{
+                                                        doc.mainDocumentId }}</b>
                                                     <span v-if="doc.id != doc.mainDocumentId"> ({{ doc.id }})</span>
                                                     <span v-if="doc.docType == 'out_RP'"> (з РП)</span>
                                                 </div>
@@ -226,8 +227,7 @@
                 {{ curDoc.id }}
             </v-card-text>
             <v-form v-model="isFormValid">
-                <v-card-text v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP' "
-                    class="pb-0">
+                <v-card-text v-if="curDoc.docType == 'out' || curDoc.docType == 'out_RP'" class="pb-0">
                     <v-row>
                         <v-col>
                             <v-text-field v-model="curBoxes" :rules="[rules.number]" label="Коробок"
@@ -259,7 +259,7 @@
                 <v-btn color="grey" @click="cancelSmsDialog()">Скасувати</v-btn>
                 <v-spacer></v-spacer>
                 <v-btn @click="openQRScanDialog('releaseDoc')" variant="text" icon="mdi-qrcode-scan"
-                    :disabled="checkReleaseForm ? false : true" class="ml-2"></v-btn>
+                    :disabled="checkReleaseForm && !appStore.offline ? false : true" class="ml-2"></v-btn>
                 <v-spacer></v-spacer>
                 <v-btn @click="acceptRelease()" :disabled="checkReleaseForm ? false : true"
                     :loading="checkInternetConnectionLoading">Підтвердити</v-btn>
@@ -316,8 +316,8 @@
             </v-card-title>
             <v-card-text>
                 <v-radio-group v-model="cancelReason" row>
-                    <v-radio v-for="(reason, index) in cancelReasons" :key="index" :label="reason"
-                        :value="index" class="align-start mb-2"></v-radio>
+                    <v-radio v-for="(reason, index) in cancelReasons" :key="index" :label="reason" :value="index"
+                        class="align-start mb-2"></v-radio>
                 </v-radio-group>
 
                 <v-textarea v-model="cancelText" label="Коментар" outlined></v-textarea>
@@ -382,8 +382,8 @@
             </v-card-title>
             <v-card-text>
                 <v-radio-group v-model="cancelReason" row>
-                    <v-radio v-for="(reason, index) in cancelReasons" :key="index" :label="reason"
-                        :value="index" class="align-start mb-2"></v-radio>
+                    <v-radio v-for="(reason, index) in cancelReasons" :key="index" :label="reason" :value="index"
+                        class="align-start mb-2"></v-radio>
                 </v-radio-group>
 
                 <v-textarea v-model="cancelText" label="Коментар" outlined></v-textarea>
@@ -441,7 +441,7 @@
                     <v-btn color="grey" @click="massReleaseDialog = false">Скасувати</v-btn>
                     <v-spacer></v-spacer>
                     <v-btn @click="openQRScanDialog('massReleaseDoc')" variant="text" icon="mdi-qrcode-scan"
-                        :disabled="checkMassReleaseForm" class="ml-2"></v-btn>
+                        :disabled="checkMassReleaseForm || appStore.offline" class="ml-2"></v-btn>
                     <v-spacer></v-spacer>
                     <v-btn :disabled="checkMassReleaseForm" @click="acceptMassRelease()"
                         :loading="checkInternetConnectionLoading">Підтвердити</v-btn>
@@ -456,14 +456,17 @@
                 Підтвердження
             </v-card-title>
             <v-card-text v-if="statusConnection" class="px-2">
-                <div v-if="!smsPhoneError" class="mb-4 px-2">Одержувачу на тел. {{ hidePhone(pointData.rcptPhone) }} <br> було надіслано SMS з
-                    Кодом підтвердження.</div>
+                <div v-if="!smsPhoneError" class="mb-4 px-2">Одержувачу на тел. {{ hidePhone(pointData.rcptPhone) }}
+                    <br>
+                    було надіслано SMS з
+                    Кодом підтвердження.
+                </div>
                 <v-alert v-if="smsPhoneError" type="error" elevation="2" class="mx-2 mb-4">
                     {{ smsPhoneError }}
                 </v-alert>
                 <div class="text-center">
-                    <v-text-field v-if="!smsPhoneError" label="Код з SMS" v-model="smsCode" style="width: 120px" outlined
-                        class="mx-auto"></v-text-field>
+                    <v-text-field v-if="!smsPhoneError" label="Код з SMS" v-model="smsCode" style="width: 120px"
+                        outlined class="mx-auto"></v-text-field>
                     <div v-if="timer !== 0" class="text-grey">
                         Повторно відправити SMS через
                         <v-progress-circular :model-value="timer" :rotate="360" :size="40" :width="3" color="teal">
@@ -506,6 +509,19 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
+    <v-dialog v-model="confirmOffline" max-width="600" persistent>
+        <v-card>
+            <v-card-title><v-icon icon="mdi-alert" color="primary" class="mr-2"></v-icon>Увага!</v-card-title>
+            <v-card-text>
+                <div class="text-center">Ви перейшли в offline режим. Продовжити видачу без підтвердження?</div>
+            </v-card-text>
+            <v-card-actions>
+                <v-btn color="grey" @click="resetInOffline()">Скасувати</v-btn>
+                <v-spacer></v-spacer>
+                <v-btn @click="acceptInOffline()" :loading="loading">Продовжити</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
 
 </template>
 
@@ -514,7 +530,7 @@ import MainNavigation from '@/components/MainNavigation.vue'
 import PointHeader from '@/components/PointHeader.vue'
 import StatusChip from '@/components/DocumentStatusChip.vue'
 import QRScanner from '@/components/QRScanner.vue'
-import { onMounted,  ref, computed, reactive, watch } from 'vue'
+import { onMounted, ref, computed, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppStore } from '@/store/appStore'
 import cyrillicToTranslit from 'cyrillic-to-translit-js'
@@ -524,7 +540,7 @@ import { useOnlineStatus } from '@/hooks/onlineStatus'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const { updateOnlineStatus } = useOnlineStatus()
+const { updateOnlineStatus, wasOffline } = useOnlineStatus()
 const appStore = useAppStore()
 const route = useRoute()
 const pointData = ref({})
@@ -605,6 +621,8 @@ const releaseType = ref('')
 const checkInternetConnectionLoading = ref(false)
 const barcodeResult = ref('')
 const isBarcodeDialogOpen = ref(false)
+const confirmOffline = ref(false)
+const confirmOfflineRelease = ref(false)
 
 const setSMSstatus = async () => {
     setSMSstatusLoading.value = true
@@ -652,12 +670,23 @@ const hidePhone = (phone) => {
 
 
 // Відкрити попап
-const openQRScanDialog = (input) => {
+const openQRScanDialog = async (input) => {
     acceptFunc.value = input === 'releaseDoc' ? releaseDoc : massRelease
     releaseType.value = input
     qrResult.value = ''
     phoneFromQr.value = ''
-    isQRDialogOpen.value = true
+    const wasOff = wasOffline.value
+    await updateOnlineStatus()
+    if (appStore.offline && !wasOff) {
+        confirmOfflineRelease.value = false
+        confirmOffline.value = true
+        acceptFunc.value = releaseDoc
+    } else {
+        confirmOfflineRelease.value = false
+        confirmOffline.value = false
+        isQRDialogOpen.value = true
+    }
+
 }
 
 const closeQRDialog = () => {
@@ -706,7 +735,9 @@ watch(qrResult, async (newResult) => {
             appStore.setSnackbar({ text: 'Не вдалося перевірити дійсність QR-коду.', type: 'error' })
         }
     } catch (error) {
+        appStore.setSnackbar({ text: 'Помилка перевірки QR-коду', type: 'error' })
         console.error('Помилка перевірки QR-коду:', error)
+        isQRDialogOpen.value = false
     }
 })
 
@@ -811,6 +842,8 @@ const release = (docId) => {
         sumPack.value = curDocument.sumPack
         sumFact.value = Number(curDocument.sum)
         acceptDocDialog.value = true
+        confirmOfflineRelease.value = false
+
     } else {
         appStore.setSnackbar({ text: "Не всі завдання виконані", type: 'error' })
     }
@@ -899,7 +932,7 @@ const sendMassSMS = async () => {
     smsCode.value = ''
     const [code, hash] = await appStore.createCode()
     checkSmsHash.value = hash
-    const message = allInDocTypeIn.value ? `прийняв ${allInDocTypeIn.value} док-тів`:`видав ${allBoxes.value} кор / ${allPallets.value} пал`
+    const message = allInDocTypeIn.value ? `прийняв ${allInDocTypeIn.value} док-тів` : `видав ${allBoxes.value} кор / ${allPallets.value} пал`
     const codeText = `Код: ${code}`
     // const messageSum = allSumFact.value ? `прийняв ${allSumFact.value} грн (№ пакету ${allSumPack.value})` : ``
     const messageSum = allSumFact.value ? `прийняв № пакету ${allSumPack.value}` : ``
@@ -936,19 +969,47 @@ const accept = async () => {
         console.error(error)
     }
 }
+
+const acceptInOffline = async () => {
+    try {
+        confirmOfflineRelease.value = true
+        checkInternetConnectionLoading.value = false
+        confirmOffline.value = false
+        acceptFunc.value()
+        acceptDocDialog.value = false
+    } catch (error) {
+        appStore.setSnackbar({ text: 'Помилка [0] ' + error.message, type: 'error' })
+        console.error(error)
+    }
+}
+
+const resetInOffline = () => {
+    confirmOfflineRelease.value = false
+    confirmOffline.value = false
+    checkInternetConnectionLoading.value = false
+}
+
+
 const acceptRelease = async () => {
     try {
         checkInternetConnectionLoading.value = true
+        const wasOff = wasOffline.value
         await updateOnlineStatus()
-        checkInternetConnectionLoading.value = false
-        if (navigator.onLine && !dontSendSms.value && !appStore.offline) {
-            await sendSMS()
+        if (appStore.offline && !wasOff) {
+            confirmOfflineRelease.value = false
+            confirmOffline.value = true
             acceptFunc.value = releaseDoc
-            acceptDocDialog.value = false
-            acceptSmsDialog.value = true
         } else {
-            await releaseDoc()
-            acceptDocDialog.value = false
+            checkInternetConnectionLoading.value = false
+            if (navigator.onLine && !dontSendSms.value && !appStore.offline) {
+                await sendSMS()
+                acceptFunc.value = releaseDoc
+                acceptDocDialog.value = false
+                acceptSmsDialog.value = true
+            } else {
+                await releaseDoc()
+                acceptDocDialog.value = false
+            }
         }
     } catch (error) {
         appStore.setSnackbar({ text: 'Помилка [1] ' + error.message, type: 'error' })
@@ -959,26 +1020,35 @@ const acceptRelease = async () => {
 
 const releaseDoc = async () => {
     try {
-        if (checkSmsCode.value) {
-            loading.value = true
-            const rcptQR = phoneFromQr.value
-            await appStore.releaseDoc({
-                tripId: tripId.value,
-                pointId: pointId.value,
-                docId: Number(curDoc.value.id),
-                sumPack: sumPack.value,
-                sumFact: Number(sumFact.value),
-                palletsFact: Number(curPallets.value),
-                boxesFact: Number(curBoxes.value),
-                rcptQR
-            })
-            loading.value = false
-            acceptSmsDialog.value = false
-            acceptDocDialog.value = false
-            docsSelected.value = {}
-            appStore.setSnackbar({ text: "Документ отримано", type: 'success' })
+        const wasOff = wasOffline.value
+        await updateOnlineStatus()
+        if (appStore.offline && !confirmOfflineRelease.value && !wasOff) {
+            confirmOfflineRelease.value = false
+            confirmOffline.value = true
+            acceptFunc.value = releaseDoc
         } else {
-            appStore.setSnackbar({ text: "Невірний код з SMS", type: 'error' })
+            if (checkSmsCode.value || confirmOfflineRelease.value) {
+                confirmOfflineRelease.value = false
+                loading.value = true
+                const rcptQR = phoneFromQr.value
+                await appStore.releaseDoc({
+                    tripId: tripId.value,
+                    pointId: pointId.value,
+                    docId: Number(curDoc.value.id),
+                    sumPack: sumPack.value,
+                    sumFact: Number(sumFact.value),
+                    palletsFact: Number(curPallets.value),
+                    boxesFact: Number(curBoxes.value),
+                    rcptQR
+                })
+                loading.value = false
+                acceptSmsDialog.value = false
+                acceptDocDialog.value = false
+                docsSelected.value = {}
+                appStore.setSnackbar({ text: "Документ отримано", type: 'success' })
+            } else {
+                appStore.setSnackbar({ text: "Невірний код з SMS", type: 'error' })
+            }
         }
     } catch (error) {
         console.error(error)
@@ -992,12 +1062,12 @@ const reject = (docId) => {
     curDoc.value = curDocument
     rejectReason.value = null
     rejectText.value = ''
-    if (curDocument.docType == 'in' ) {
+    if (curDocument.docType == 'in') {
         rejectInDialog.value = true
     } else {
         rejectDialog.value = true
     }
-    
+
 }
 
 const massRejectDialogOpen = () => {
@@ -1077,17 +1147,24 @@ const docTasks = (docId) => {
 const acceptMassRelease = async () => {
     try {
         checkInternetConnectionLoading.value = true
+        const wasOff = wasOffline.value
         await updateOnlineStatus()
-        checkInternetConnectionLoading.value = false
-        if (navigator.onLine && !dontSendSms.value && !appStore.offline) {
-            await sendMassSMS()
+        if (appStore.offline && !wasOff) {
+            confirmOfflineRelease.value = false
+            confirmOffline.value = true
             acceptFunc.value = massRelease
-            massReleaseDialog.value = false
-            acceptSmsDialog.value = true
-            statusConnection.value = !appStore.offline
         } else {
-            await massRelease()
-            acceptDocDialog.value = false
+            checkInternetConnectionLoading.value = false
+            if (navigator.onLine && !dontSendSms.value && !appStore.offline) {
+                await sendMassSMS()
+                acceptFunc.value = massRelease
+                massReleaseDialog.value = false
+                acceptSmsDialog.value = true
+                statusConnection.value = !appStore.offline
+            } else {
+                await massRelease()
+                acceptDocDialog.value = false
+            }
         }
     } catch (error) {
         console.error(error)
@@ -1099,41 +1176,50 @@ const acceptMassRelease = async () => {
 
 const massRelease = async () => {
     try {
-        if (checkSmsCode.value) {
-            loading.value = true
-            let restOfSum = Number(allSumFact.value)
-            const cdocs = docs.value.filter((item) => docsSelected.value[item.id])
-            let docsCount = cdocs.filter((item) => item.sum > 0).length
-            for (let doc of cdocs) {
-                const docSum = doc.sum ? Number(doc.sum) : 0
-                let sumFact = docSum > restOfSum ? restOfSum : docSum
-                if (docSum > 0) {
-                    docsCount--
-                    restOfSum -= sumFact
-                    restOfSum = restOfSum < 0 ? 0 : restOfSum
-                    if (docsCount == 0) {
-                        sumFact += restOfSum
-                    }
-                }
-                const rcptQR = phoneFromQr.value
-                await appStore.releaseDoc({
-                    tripId: tripId.value,
-                    pointId: pointId.value,
-                    docId: doc.id,
-                    palletsFact: Number(doc.pallQty) || 0,
-                    boxesFact: Number(doc.boxQty) || 0,
-                    sumFact: Number(sumFact) || 0,
-                    sumPack: docSum > 0 ? allSumPack.value : null,
-                    statusConnection: navigator.onLine,
-                    rcptQR
-                })
-            }
-            loading.value = false
-            docsSelected.value = {}
-            massReleaseDialog.value = false
-            acceptSmsDialog.value = false
+        const wasOff = wasOffline.value
+        await updateOnlineStatus()
+        if (appStore.offline && !confirmOfflineRelease.value && !wasOff) {
+            confirmOfflineRelease.value = false
+            confirmOffline.value = true
+            acceptFunc.value = massRelease
         } else {
-            appStore.setSnackbar({ text: "Невірний код з SMS", type: 'error' })
+            if (checkSmsCode.value || confirmOfflineRelease.value) {
+                loading.value = true
+                confirmOfflineRelease.value = false
+                let restOfSum = Number(allSumFact.value)
+                const cdocs = docs.value.filter((item) => docsSelected.value[item.id])
+                let docsCount = cdocs.filter((item) => item.sum > 0).length
+                for (let doc of cdocs) {
+                    const docSum = doc.sum ? Number(doc.sum) : 0
+                    let sumFact = docSum > restOfSum ? restOfSum : docSum
+                    if (docSum > 0) {
+                        docsCount--
+                        restOfSum -= sumFact
+                        restOfSum = restOfSum < 0 ? 0 : restOfSum
+                        if (docsCount == 0) {
+                            sumFact += restOfSum
+                        }
+                    }
+                    const rcptQR = phoneFromQr.value
+                    await appStore.releaseDoc({
+                        tripId: tripId.value,
+                        pointId: pointId.value,
+                        docId: doc.id,
+                        palletsFact: Number(doc.pallQty) || 0,
+                        boxesFact: Number(doc.boxQty) || 0,
+                        sumFact: Number(sumFact) || 0,
+                        sumPack: docSum > 0 ? allSumPack.value : null,
+                        statusConnection: navigator.onLine,
+                        rcptQR
+                    })
+                }
+                loading.value = false
+                docsSelected.value = {}
+                massReleaseDialog.value = false
+                acceptSmsDialog.value = false
+            } else {
+                appStore.setSnackbar({ text: "Невірний код з SMS", type: 'error' })
+            }
         }
     } catch (error) {
         console.error(error)
@@ -1235,7 +1321,7 @@ const taskData = computed(() => {
 const docsSelectedList = computed(() => {
     const selectedDocs = Object.keys(docsSelected.value)
     return selectedDocs && selectedDocs.length ? selectedDocs.join('<br>') : ''
- })
+})
 
 
 const docsData = computed(() => {
@@ -1306,8 +1392,7 @@ const releaseBottomBtn = computed(() => {
         if ((docStatuses.value[item] && docStatuses.value[item].status == 200 && (docData.docType == 'out' || docData.docType == 'out_RP' || docData.docType == 'task')
             && completeAllSelectedTasks.value) || allInDocTypeIn.value) {
             result = false
-        } else 
-        {
+        } else {
             return true
         }
     }
@@ -1416,12 +1501,12 @@ const allDocsCompleteByType = computed(() => {
 })
 
 const checkReleaseForm = computed(() => {
-    if (curDoc.value.docType === 'task' ||  curDoc.value.docType === 'in') {
+    if (curDoc.value.docType === 'task' || curDoc.value.docType === 'in') {
         return true
     } else {
-        return isFormValid.value && (curPallets.value > 0 || curBoxes.value > 0) 
+        return isFormValid.value && (curPallets.value > 0 || curBoxes.value > 0)
     }
-    
+
 })
 
 const checkMassReleaseForm = computed(() => {
