@@ -229,6 +229,13 @@ const inPlace = async () => {
         return
     }
 
+    if(await appStore.checkPointsDocuments(props.tripId)){
+        appStore.setSnackbar({ text: "Рейс має непроведені в обліку документи. Для запуску рейсу необхідно виправити документи - зверніться до логіста!", type: 'error' })
+        appStore.inplaceLoading = false
+        return
+    }
+
+
     emit('init-data', {})
     const activTrips = await appStore.checkOpenTrip(props.tripId)
     if (activTrips) {
@@ -236,6 +243,7 @@ const inPlace = async () => {
         appStore.inplaceLoading = false
         return
     }
+
     if (props.point?.sortNumber == 1 && !existsTripStatus.value) {
         odometer.value = ''
         odometerDialog.value = true

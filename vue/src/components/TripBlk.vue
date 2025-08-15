@@ -14,16 +14,18 @@
                 Відповідальний: {{ trip.editorName }}
             </v-card-text>
             <v-card-text class="text-grey text-caption pt-0">
+                Вікно завантаження: <span v-if="trip.loadStart">{{ trip.loadStart }}</span><span v-else>-</span> - <span v-if="trip.loadFinish">{{ trip.loadFinish }}</span><span v-else>-</span> <span v-if="trip.loadStart || trip.loadFinish">{{ appStore.formatDate(trip.date) }}</span>
+            </v-card-text>
+
+            <v-card-text class="text-grey text-caption pt-0">
                 <v-row>
                     <v-col cols="6">
-                        <v-icon x-small
-                            class="mr-1 ml-n1">mdi-flag-outline</v-icon>Старт:<br>
+                        <v-icon x-small class="mr-1 ml-n1">mdi-flag-outline</v-icon>Старт:<br>
                         <span v-if="statusData.startTime">{{ appStore.formatDateTime(statusData.startTime) }}</span>
                         <span v-else>-</span>
                     </v-col>
                     <v-col cols="6">
-                        <v-icon x-small
-                            class="mr-1 ml-n1">mdi-flag-checkered</v-icon>Фініш:<br>
+                        <v-icon x-small class="mr-1 ml-n1">mdi-flag-checkered</v-icon>Фініш:<br>
                         <span v-if="statusData.finishTime">{{ appStore.formatDateTime(statusData.finishTime) }}</span>
                         <span v-else>-</span>
                     </v-col>

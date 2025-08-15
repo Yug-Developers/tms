@@ -768,8 +768,35 @@ export const useAppStore = defineStore('appStore', () => {
     if (!statusFile && trip.status === 'active') {
       for (let point of trip.points) {
         for (let doc of point.docs) {
-          if (doc.docType === 'out' && doc.boxQty === 0 && doc.pallQty === 0) {
+          if (doc.docType === 'out' && doc.boxQty === 0 && doc.pallQty === 0 && doc.wmsBuran === true) {
             console.log('Видача без коробок та палет', doc.id)
+            return true
+          }
+        }
+      }
+    }
+    return false
+  }
+
+  const checkPointsDocuments = async (tripId, pointId) => {
+    //
+    let statusFile = true
+    try {
+      await Pouch.getDoc('statuses', tripId)
+    } catch (error) {
+      statusFile = false
+    }
+    const trip = await Pouch.getDoc('routes', tripId)
+    if (!statusFile && trip.status === 'active') {
+      for (let point of trip.points) {
+        for (let doc of point.docs) {
+          if (doc.docType === 'out' && doc.id ===  doc.mainDocumentId && doc.docStatusId < 1000 ) {
+            return true
+          }
+          if (doc.docType === 'out' && doc.id !==  doc.mainDocumentId && doc.docStatusId < 200 ) {
+            return true
+          }
+          if (doc.docType === 'out_RP' && doc.docStatusId < 200 ) {
             return true
           }
         }
@@ -975,7 +1002,7 @@ export const useAppStore = defineStore('appStore', () => {
     formatDateTime, routes, pullTripsById, activeTrips, activeStatuses,
     activeTripsIds, activeStatusesIds, availableTripsIds, closedStatuses, closedStatusesIds, pullStatuses, pullManagersPerm, pullRoutes,
     finishedOdometerData, statusesIds, routesIds, tripsByDate, getStats, getAllAvailableTrips, availableTrips, pushManagerPermData, netLogin, touch,
-    isThisWhPoint, inplaceLoading, syncLoading, downloadPointReportPDF, pdfLoading, destroyDB, getLastOdometerStatus, getTripStatusData
+    isThisWhPoint, inplaceLoading, syncLoading, downloadPointReportPDF, pdfLoading, destroyDB, getLastOdometerStatus, getTripStatusData, checkPointsDocuments
   }
 })
 
