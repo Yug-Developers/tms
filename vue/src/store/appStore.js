@@ -790,7 +790,7 @@ export const useAppStore = defineStore('appStore', () => {
     if (!statusFile && trip.status === 'active') {
       for (let point of trip.points) {
         for (let doc of point.docs) {
-          if (doc.wmsBuran && doc.id ===  doc.mainDocumentId && doc.docStatusId < 1000 ) {
+          if (doc.docType === 'out' && doc.wmsBuran && doc.id ===  doc.mainDocumentId && doc.docStatusId < 1000 ) {
             return true
           }
           if (doc.docStatusId < 200 ) {
