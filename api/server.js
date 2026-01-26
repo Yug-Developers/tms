@@ -59,9 +59,9 @@ const startChangesListener = () => {
             console.log('Всі точки виконані');
             //Відправити листа зі звітом про закриття документа
             try {
-              // await Base.sendReportEmail(currentDoc)
-              // await Base.sendManagersReportEmail(currentDoc)
-              // await Base.sendManagersReturnReportEmail(currentDoc)
+              await Base.sendReportEmail(currentDoc)
+              await Base.sendManagersReportEmail(currentDoc)
+              await Base.sendManagersReturnReportEmail(currentDoc)
               await Base.sendTasksReportEmail(currentDoc)
             } catch (error) {
               console.log('Помилка відправки листів:', error)
@@ -90,14 +90,13 @@ const startChangesListener = () => {
         const preparedData = Base.prepareData(currentDoc)
         try {
           await Base.sendDataToTyphoon(preparedData)
-          await Base.sendDataToTyphoon(preparedData)
         } catch (error) {
           console.log('Помилка відправки даних до Typhoon:', error.response.data);
         }
         try {
-          // await Base.sendReportEmail(currentDoc)
-          // await Base.sendManagersReportEmail(currentDoc)
-          // await Base.sendManagersReturnReportEmail(currentDoc)
+          await Base.sendReportEmail(currentDoc)
+          await Base.sendManagersReportEmail(currentDoc)
+          await Base.sendManagersReturnReportEmail(currentDoc)
           await Base.sendTasksReportEmail(currentDoc)
         } catch (error) {
           console.log('Помилка відправки листів:', error)
