@@ -48,8 +48,8 @@
                 </div>
                 <div class="text-caption d-flex justify-space-between align-end mt-3">
                     <div><v-icon x-small class="green mr-2 mb-1">mdi-timer-check-outline</v-icon>{{ pointTime }}</div>
-                    <v-btn icon="mdi-file-download-outline" color="green" variant="text" @click="downloadPDF()" :loading="appStore.pdfLoading"
-                        title="Завантажити PDF звіт про точку"
+                    <v-btn icon="mdi-file-download-outline" color="green" variant="text" @click="downloadPDF()"
+                        :loading="appStore.pdfLoading" title="Завантажити PDF звіт про точку"
                         v-if="!appStore.offline && appStore.localStg.userData.role == 'manager' && pointStatus == 300">
                     </v-btn>
 
@@ -73,8 +73,6 @@
                 <v-icon icon="mdi-alert-circle-outline" color="primary" class="mr-2 mb-1"></v-icon>Увага! Розпочинайте
                 рейс лише після повного завантаження автомобіля на складі.
             </div>
-
-
         </div>
         <div class="d-flex justify-space-around">
             <v-btn :disabled="disableInPlaceBtn" v-if="pointStatus == 100" variant="elevated" color="blue"
@@ -90,6 +88,40 @@
         </div>
         <v-divider class="mt-2"></v-divider>
     </v-sheet>
+    <v-sheet v-if="point.isSignPoint" elevation="0" max-width="600" class="mx-auto mb-6 bg-transparent">
+        <div class="my-2 mt-4">
+            <h4>Додаткові завдання на точці:</h4>
+            <div class="d-flex align-center caption">
+                <v-icon v-model="isSignPointDone" v-if="pointStatus == 100" color="primary" class="mr-2">mdi-exclamation-thick</v-icon>
+                <v-checkbox v-model="isSignPointDone" v-if="pointStatus != 100" :disabled="pointStatus != 200" class="mr-2" color="green"/>
+                Отримати від клієнта підписані документи
+            </div>
+        </div>
+    </v-sheet>
+
+    <v-dialog v-model="signPointDoneDialog" max-width="600" persistent>
+        <v-card>
+            <v-card-title>
+                Ви не виконали завдання по підпису документів на точці?
+            </v-card-title>
+            <v-card-text>
+                <v-form v-model="isFormValid">
+                    <v-radio-group v-model="isSignPointDone" 
+                        row>
+                        <v-radio :value="true" label="Підпис документів виконано (документи забрані у клієнта)"></v-radio>
+                        <v-radio :value="false" label="Підпис документів не виконано"></v-radio>
+                    </v-radio-group>
+                    <v-textarea v-model="signPointComment" :disabled="isSignPointDone"
+                        label="Причина не підписання документів" outlined></v-textarea>
+                </v-form>
+            </v-card-text>
+            <v-card-actions>
+                <v-btn color="grey" @click="signPointDoneDialog = false">Скасувати</v-btn>
+                <v-spacer></v-spacer>
+                <v-btn :disabled="isSignPointDone || (!isSignPointDone && signPointComment) ? false : true" @click="completePoint({ signPointDialogDone: true})">Зберегти</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
 
     <v-dialog v-model="odometerDialog" max-width="600" persistent>
         <v-card>
@@ -98,14 +130,15 @@
             </v-card-title>
             <v-card-text>
                 <v-form v-model="isFormValid">
-                    <v-text-field :loading="lastOdometerLoading" v-model="odometer" prepend-inner-icon="mdi-counter" :rules="[rules.number]" label="Км"
-                        outlined></v-text-field>
+                    <v-text-field :loading="lastOdometerLoading" v-model="odometer" prepend-inner-icon="mdi-counter"
+                        :rules="[rules.number]" label="Км" outlined></v-text-field>
                 </v-form>
             </v-card-text>
             <v-card-actions>
                 <v-btn color="grey" @click="odometerDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="isFormValid && !lastOdometerLoading ? false : true" @click="odometerSet()" :loading="odometerSetLoading">Зберегти</v-btn>
+                <v-btn :disabled="isFormValid && !lastOdometerLoading ? false : true" @click="odometerSet()"
+                    :loading="odometerSetLoading">Зберегти</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -123,7 +156,8 @@
             <v-card-actions>
                 <v-btn color="grey" @click="odometrFinishDialog = false">Скасувати</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn :disabled="isFormValid ? false : true" @click="completeTrip()" :loading="odometerSetLoading">Зберегти</v-btn>
+                <v-btn :disabled="isFormValid ? false : true" @click="completeTrip()"
+                    :loading="odometerSetLoading">Зберегти</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -187,6 +221,9 @@ const isThisFirstWhPoint = ref(false)
 const completeTripDialogError = ref(false)
 const lastOdometerLoading = ref(false)
 const odometerSetLoading = ref(false)
+const isSignPointDone = ref(false)
+const signPointComment = ref('')
+const signPointDoneDialog = ref(false)
 
 const emit = defineEmits(['init-data'])
 
@@ -229,7 +266,7 @@ const inPlace = async () => {
         return
     }
 
-    if(await appStore.checkPointsDocuments(props.tripId)){
+    if (await appStore.checkPointsDocuments(props.tripId)) {
         appStore.setSnackbar({ text: "Рейс має непроведені в обліку документи. Для запуску рейсу необхідно виправити документи - зверніться до логіста!", type: 'error' })
         appStore.inplaceLoading = false
         return
@@ -266,14 +303,18 @@ const delay = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-const completePoint = async () => {
+const completePoint = async (config) => {
     try {
+        if (props.point.isSignPoint && !isSignPointDone.value && !config?.signPointDialogDone) {
+            signPointDoneDialog.value = true
+            return
+        }
+        signPointDoneDialog.value = false 
         if (!uncompetedPoints.value) {
             odometrFinishDialog.value = true
-            console.log(appStore.statuses[0])
             odometer.value = appStore.statuses[0]?.odometerStart || '0'
         } else {
-            await appStore.completePoint(props.tripId, props.point.id)
+            await appStore.completePoint({ tripId: props.tripId, pointId: props.point.id, isSignPointDone: isSignPointDone.value, signPointComment: signPointComment.value })
             appStore.setSnackbar({ text: "Точка завершена", type: 'success' })
         }
     } catch (error) {
@@ -287,7 +328,7 @@ const odometerSet = async () => {
         odometerSetLoading.value = true
         await appStore.initNewTripStatus(props.tripId, { odometerStart: odometer.value })
         if (isThisFirstWhPoint.value) {
-            await appStore.completePoint(props.tripId, props.point.id)
+            await appStore.completePoint({ tripId: props.tripId, pointId: props.point.id, isSignPointDone: isSignPointDone.value, signPointComment: signPointComment.value })
             appStore.setSnackbar({ text: "Точка завершена", type: 'success' })
         } else {
             appStore.setSnackbar({ text: "Збережено координати та час", type: 'success' })
@@ -304,7 +345,7 @@ const odometerSet = async () => {
 const completeTrip = async () => {
     try {
         odometerSetLoading.value = true
-        await appStore.completePoint(props.tripId, props.point.id)
+        await appStore.completePoint({ tripId: props.tripId, pointId: props.point.id, isSignPointDone: isSignPointDone.value, signPointComment: signPointComment.value })
         appStore.setSnackbar({ text: "Точка завершена", type: 'success' })
         try {
             await appStore.completeTrip(props.tripId, { odometerFinish: odometer.value })

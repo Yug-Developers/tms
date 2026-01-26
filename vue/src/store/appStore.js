@@ -729,6 +729,7 @@ export const useAppStore = defineStore('appStore', () => {
           }
           point.status = 100
           point.arrivalTime = ''
+          point.isSignPointDone = false
           delete point.coordinates
         }
       }
@@ -828,6 +829,7 @@ export const useAppStore = defineStore('appStore', () => {
         if (point.id === pointId) {
           point.status = 200
           point.arrivalTime = getCurrentTime()
+          point.isSignPointDone = false
           try {
             if (isSecureConnection) {
               await getLocation()
@@ -954,7 +956,7 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
-  const completePoint = async (tripId, pointId) => {
+  const completePoint = async ({tripId, pointId, isSignPointDone, signPointComment}) => {
     try {
       const st = await Pouch.getDoc('statuses', tripId)
       const points = st.points
@@ -962,6 +964,8 @@ export const useAppStore = defineStore('appStore', () => {
         if (point.id === pointId) {
           point.status = 300
           point.departureTime = getCurrentTime()
+          point.isSignPointDone = isSignPointDone || false
+          point.signPointComment = signPointComment || ''
         }
       }
       Object.assign(st, { points })

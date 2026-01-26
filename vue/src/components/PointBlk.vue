@@ -107,7 +107,7 @@ const docTypeOutPoint = computed((id) => {
 })
 
 const docTypeTaskPoint = computed((id) => {
-    return props.point.docs.reduce((acc, item) => {
+    return (props.point.isSignPoint ? 1 : 0) + props.point.docs.reduce((acc, item) => {
         if (item.docType == 'task') {
             return acc + 1
         } else {

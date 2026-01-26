@@ -8,10 +8,9 @@
                 <v-sheet v-if="appStore.localStg.userData.role == 'manager' && !dontSendSms" elevation="0"
                     max-width="600" rounded="lg" width="100%"
                     class="pa-0 mx-auto mb-4 d-flex justify-center bg-transparent">
-                    <v-btn prepend-icon="mdi-cellphone-message-off" @click="setSMSstatus()" 
-                        v-if="true || appStore.localStg.userData._id !== '698'"
-                        :loading="setSMSstatusLoading" :disabled="pointStatus && pointStatus == 200 ? false : true"
-                        class="mx-auto">
+                    <v-btn prepend-icon="mdi-cellphone-message-off" @click="setSMSstatus()"
+                        v-if="true || appStore.localStg.userData._id !== '698'" :loading="setSMSstatusLoading"
+                        :disabled="pointStatus && pointStatus == 200 ? false : true" class="mx-auto">
                         Без Коду SMS
                     </v-btn>
                 </v-sheet>
@@ -624,6 +623,7 @@ const barcodeResult = ref('')
 const isBarcodeDialogOpen = ref(false)
 const confirmOffline = ref(false)
 const confirmOfflineRelease = ref(false)
+
 
 const setSMSstatus = async () => {
     setSMSstatusLoading.value = true

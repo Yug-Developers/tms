@@ -4,7 +4,7 @@ const Config = require('./Config')
 const dbName = 'tms_statuses'
 const auth = Config.adminAuthCouchDb
 const Base = require('./shared/base-class')
-
+const dbh = require('./db')
 const remoteDB = new PouchDB(Config.remoteCouchDb + dbName, { auth })
 
 
@@ -59,9 +59,10 @@ const startChangesListener = () => {
             console.log('Всі точки виконані');
             //Відправити листа зі звітом про закриття документа
             try {
-              await Base.sendReportEmail(currentDoc)
-              await Base.sendManagersReportEmail(currentDoc)
-              await Base.sendManagersReturnReportEmail(currentDoc)
+              // await Base.sendReportEmail(currentDoc)
+              // await Base.sendManagersReportEmail(currentDoc)
+              // await Base.sendManagersReturnReportEmail(currentDoc)
+              await Base.sendTasksReportEmail(currentDoc)
             } catch (error) {
               console.log('Помилка відправки листів:', error)
             }
@@ -94,9 +95,10 @@ const startChangesListener = () => {
           console.log('Помилка відправки даних до Typhoon:', error.response.data);
         }
         try {
-          await Base.sendReportEmail(currentDoc)
-          await Base.sendManagersReportEmail(currentDoc)
-          await Base.sendManagersReturnReportEmail(currentDoc)
+          // await Base.sendReportEmail(currentDoc)
+          // await Base.sendManagersReportEmail(currentDoc)
+          // await Base.sendManagersReturnReportEmail(currentDoc)
+          await Base.sendTasksReportEmail(currentDoc)
         } catch (error) {
           console.log('Помилка відправки листів:', error)
         }
@@ -113,5 +115,14 @@ const startChangesListener = () => {
   })
 }
 
+// ---  Connection to DB & Start server -------------
+dbh.connect
+  .then(async () => {
+    console.log("Connected successfully to mySQL server")
+    startChangesListener()
+  })
+  .catch(err => {
+    console.log(Error(err))
+    process.exit()
+  })
 
-startChangesListener()

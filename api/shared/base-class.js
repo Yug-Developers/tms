@@ -9,6 +9,7 @@ const auth = Config.adminAuthCouchDb
 const remoteMailingDB = new PouchDB(Config.remoteCouchDb + 'tms_mailing', { auth })
 const dbNameRoutes = 'tms_routes'
 const remoteDBRoutes = new PouchDB(Config.remoteCouchDb + dbNameRoutes, { auth })
+const dbh = require('../db')
 
 const getUsersByCarrierId = async (carrierId) => {
   // E-mail з Розсилки ТМС з Перевізник = Перевізник рейсу ТА Звіт про інкасацію = ТАК.
@@ -23,6 +24,31 @@ const getUsersByCarrierId = async (carrierId) => {
           {
             carrierId: { $in: [carrierId] },
             isActive: { $eq: true }
+          }
+        ]
+      }
+    }
+    )
+    return result.docs
+  } catch (error) {
+    console.error('Помилка при виконанні запиту:', error)
+    throw error
+  }
+}
+
+const getTaskUsersByCarrierId = async (carrierId) => {
+  // E-mail з Розсилки ТМС з Перевізник = Перевізник рейсу ТА Звіт про завдання = ТАК.
+  try {
+    const result = await remoteMailingDB.find({
+      selector: {
+        $or: [
+          {
+            carrierId: { $size: 0 },
+            isTasksReport: { $eq: true }
+          },
+          {
+            carrierId: { $in: [carrierId] },
+            isTasksReport: { $eq: true }
           }
         ]
       }
@@ -454,7 +480,7 @@ module.exports = {
           for (const row of dataList[email]) {
             const colorized = (row.type === 'out' && (row.boxQty !== row.boxesFact || row.pallQty !== row.palletsFact))
               // || row.sum !== row.sumFact 
-              || (row.sum && row.sumPack == 0 )
+              || (row.sum && row.sumPack == 0)
               || row.statusCode !== 300 ?
               'style="background-color: #ffcccc;"' : ''
             table += `
@@ -757,5 +783,174 @@ module.exports = {
     } catch (error) {
       throw error
     }
-  }
+  },
+  async createTasksReportData(data) {
+    try {
+      const doc = await remoteDBRoutes.get(data._id)
+      const managers = await getTaskUsersByCarrierId(String(doc.carrierId))
+      const specDocData = []
+      for (const point of doc.points) {
+        if (!point.counterpartyId) continue
+        if (!point.isSignPoint) continue
+        const specDocManagersEmail = await this.getSpecDocManagers({ contractorId: point.counterpartyId })
+        if (specDocManagersEmail) {
+          specDocData.push({ email: specDocManagersEmail, pointId: point.id })
+        }
+      }
+      const managersEmails = managers.map(manager => manager.email) || []
+      if (managersEmails.length === 0) {
+        managersEmails.push(Config.defaultManagerEmail)
+      }
+
+      const tripDoc = await remoteDBRoutes.get(data._id)
+      const tripPoints = {}
+      tripDoc.points.forEach(point => {
+        tripPoints[point.id] = point
+      })
+      const points = {}
+      for (const email of managersEmails) {
+        for (const point of data.points) {
+          if (tripPoints[point.id]?.isSignPoint) {
+            if (!points[email]) {
+              points[email] = []
+            }
+            points[email].push({
+              rcpt: tripPoints[point.id]?.counterpartyName,
+              status: point.status === 300 ? 'Виконано' : (point.status === 400 ? 'Відмова' : 'Інше'),
+              statusConnection: point.docs.find(doc => doc.statusConnection) ? 'Online' : 'Offline',
+              isSignPointDone: point.isSignPointDone ? 'Так' : 'Ні',
+              signPointComment: point.signPointComment || ''
+            })
+          }
+        }
+      }
+      for (const specDoc of specDocData) {
+        if (tripPoints[specDoc.pointId]?.isSignPoint) {
+          if (!points[specDoc.email]) {
+            points[specDoc.email] = []
+          }
+          const point = data.points.find(p => p.id === specDoc.pointId)
+          if (!point) {
+            continue
+          }
+          points[specDoc.email].push({
+            rcpt: tripPoints[point.id]?.counterpartyName,
+            status: point.status === 300 ? 'Виконано' : (point.status === 400 ? 'Відмова' : 'Інше'),
+            statusConnection: point.docs.find(doc => doc.statusConnection) ? 'Online' : 'Offline',
+            isSignPointDone: point.isSignPointDone ? 'Так' : 'Ні',
+            signPointComment: point.signPointComment || ''
+          })
+        }
+      }
+      return points
+    } catch (error) {
+      throw error
+    }
+  },
+  getSpecDocManagers: async (config = {}) => {
+    const contractorId = config.contractorId || -1
+    return new Promise(async (resolve, reject) => {
+      dbh.get().query(`
+          SELECT
+          u.authen_email as email
+          FROM
+          mis_contractors c
+          JOIN authensrv_userhead u ON u.user_id = c.manager_specdoc_id
+          WHERE
+          c.typhoon_id =  ?
+        `
+        , [contractorId], (err, rows) => {
+          if (err) {
+            reject(err)
+          } else
+            resolve(rows[0] ? rows[0].email : null)
+        }
+      )
+    })
+  },
+  async sendTasksReportEmail(data) {
+    //Звіт про завдання
+    // Отримувачі: 
+    // - E-mail з Розсилки ТМС з Звіт про завдання = ТАК ТА Перевізник = (Перевізник рейсу або пустий)
+    // - Сп. документообігу (manager_specdoc_id) менеджери за Контрагента Точки (counterpartyId)
+    try {
+
+      const token = Token.create(1)
+      const doc = await remoteDBRoutes.get(data._id)
+
+      const currTime = new Date().toLocaleString()
+      subject = `[ЮК.Доставка] Рейс № ${data._id} - звіт про завдання`
+      const header = `
+          <!DOCTYPE html>
+          <body>
+          <font face="Courier New" size="2">
+          Вітаємо,<br/><br/>
+          <b>Рейс № ${data._id} на ${this.formatDate(doc.date)} завершено.</b><br/>
+          Відповідальний: ${doc.editorName}<br/><br/>
+          Початок: ${this.formatDateTime(data.startTime)}<br/>
+          Завершення завдання рейсу: ${this.formatLocalTime(currTime)}<br/>
+          <br/>
+          `;
+
+      const dataList = await this.createTasksReportData(data)
+
+      if (Object.keys(dataList).length > 0) {
+        for (const email in dataList) {
+          let table = `
+          <table border="1" cellpadding="5" cellspacing="0" style="font-family: 'Courier New'; font-size: 12px;"> 
+          <tr style="background-color: #f0f0f0;">
+            <th>Контрагент</th>
+            <th>Статус точки</th>
+            <th>Підпис документів</th>
+            <th>Причина</th>
+            <th>Статус підключення</th>
+          </tr>
+          `
+          for (const row of dataList[email]) {
+            const colorized = row.isSignPointDone === 'Ні' ?
+              'style="background-color: #ffcccc;"' : ''
+            table += `
+            <tr ${colorized}>
+              <td>${row.rcpt}</td>
+              <td>${row.status}</td>
+              <td>${row.isSignPointDone}</td>
+              <td>${row.signPointComment}</td>
+              <td>${row.statusConnection}</td>
+            </tr>
+            `
+          }
+          table += '</table>'
+
+          // 2. Формуємо фінальний лист ТУТ, поєднуючи заголовок, таблицю і закінчення
+          const finalMessage = `
+              ${header}
+              ${table}
+              </font>
+              </body>
+              `;
+
+          console.log('Відправка листа звіту про завдання')
+          // ... ваші логи ...
+
+          await mes.sendMail({
+            from: 'ЮК.Доставка <yug_dostavka@yugcontract.ua>',
+            to: email,
+            subject,
+            html: finalMessage, // Використовуємо нову змінну
+            token
+          })
+        }
+      }
+    }
+    catch (error) {
+      throw error
+    }
+  },
+
 }
+
+
+
+
+
+
