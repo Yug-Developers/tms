@@ -429,6 +429,11 @@ const pointTime = computed(() => {
     }
 })
 
+const isSignPointDoneSet = (() => {
+        const trip = appStore.statuses && appStore.statuses.find((item) => item._id == props.tripId)
+        const point = trip && trip.points && trip.points.find((item) => item.id == pointId.value)
+        return point?.isSignPointDone || false
+})
 
 const cancelPoint = async () => {
     try {
@@ -587,6 +592,7 @@ const coordinates = computed(() => {
 
 onMounted(async () => {
     isThisFirstWhPoint.value = await appStore.isThisWhPoint(props.tripId, props.point.id)
+    isSignPointDone.value = isSignPointDoneSet()
 })
 
 </script>
