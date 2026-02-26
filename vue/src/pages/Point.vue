@@ -899,13 +899,13 @@ const sendResultSMS = async (phone) => {
         // const messageSum = sumFact.value ? `прийняв ${sumFact.value} грн (№ пакету ${sumPack.value})` : ``
         const messageSum = sumFact.value ? `прийняв № пакету ${sumPack.value}` : ``
         const coma = messageSum && message ? `, ` : ``
-        translit = cyrillicToTranslit({ preset: "uk" }).transform(`YUG.Dostavka. Водій ${message}${coma}${messageSum}. ||`)
+        translit = cyrillicToTranslit({ preset: "uk" }).transform(`YUG.Dostavka. Водій ${message}${coma}${messageSum}. |||`)
     } else {
         const message = `видав ${allBoxes.value} кор / ${allPallets.value} пал`
         // const messageSum = allSumFact.value ? `прийняв ${allSumFact.value} грн (№ пакету ${allSumPack.value})` : ``
         const messageSum = allSumFact.value ? `прийняв № пакету ${allSumPack.value}` : ``
         const coma = messageSum && message ? `, ` : ``
-        translit = cyrillicToTranslit({ preset: "uk" }).transform(`YUG.Dostavka. Водій ${message}${coma}${messageSum}. |||`)
+        translit = cyrillicToTranslit({ preset: "uk" }).transform(`YUG.Dostavka. Водій ${message}${coma}${messageSum}. ||||`)
     }
 
     console.log(translit)
@@ -938,7 +938,7 @@ const sendMassSMS = async () => {
     // const messageSum = allSumFact.value ? `прийняв ${allSumFact.value} грн (№ пакету ${allSumPack.value})` : ``
     const messageSum = allSumFact.value ? `прийняв № пакету ${allSumPack.value}` : ``
     const coma = messageSum && message ? `, ` : ``
-    const translit = cyrillicToTranslit({ preset: "uk" }).transform(`YUG.Dostavka. Водій ${message}${coma}${messageSum}. ${codeText} _`)
+    const translit = cyrillicToTranslit({ preset: "uk" }).transform(`YUG.Dostavka. Водій ${message}${coma}${messageSum}. ${codeText} ||`)
     console.log(translit)
     timer.value = 100
     interval.value = setInterval(() => {
