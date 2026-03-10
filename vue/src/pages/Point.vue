@@ -724,7 +724,8 @@ watch(qrResult, async (newResult) => {
                 return
             } else {
                 phoneFromQr.value = result.content.phone
-                await sendResultSMS(result.content.phone)
+                const sent = await sendResultSMS(result.content.phone)
+                if (!sent) return
                 try {
                     await acceptFunc.value()
                 } catch (error) {
@@ -856,6 +857,20 @@ const cancelSmsDialog = () => {
     acceptDocDialog.value = false
 }
 
+const buildMassReleaseMessage = () => {
+    if (allInDocTypeIn.value) {
+        return `прийняв ${allInDocTypeIn.value} док-тів`
+    }
+    if (allTaskDocType.value) {
+        return `виконав ${allTaskDocType.value} завдань`
+    }
+    if (!hasMassReleaseQty.value) {
+        appStore.setSnackbar({ text: 'По вибраних документах 0 кор / 0 пал. Перевірте кількість у документах.', type: 'error' })
+        return ''
+    }
+    return `видав ${allBoxes.value} кор / ${allPallets.value} пал`
+}
+
 const sendSMS = async () => {
     //Відправити SMS
     smsCode.value = ''
@@ -901,7 +916,8 @@ const sendResultSMS = async (phone) => {
         const coma = messageSum && message ? `, ` : ``
         translit = cyrillicToTranslit({ preset: "uk" }).transform(`YUG.Dostavka. Водій ${message}${coma}${messageSum}. |||`)
     } else {
-        const message = `видав ${allBoxes.value} кор / ${allPallets.value} пал`
+        const message = buildMassReleaseMessage()
+        if (!message) return false
         // const messageSum = allSumFact.value ? `прийняв ${allSumFact.value} грн (№ пакету ${allSumPack.value})` : ``
         const messageSum = allSumFact.value ? `прийняв № пакету ${allSumPack.value}` : ``
         const coma = messageSum && message ? `, ` : ``
@@ -921,10 +937,12 @@ const sendResultSMS = async (phone) => {
     try {
         smsPhoneError.value = ''
         await appStore.sendSMScode({ phone, message: translit, pointId: pointId.value, routeId: tripId.value })
+        return true
     } catch (error) {
         console.error(error)
         smsPhoneError.value = error
         appStore.setSnackbar({ text: 'Помилка відправки SMS', type: 'error' })
+        return false
     }
 }
 
@@ -933,7 +951,8 @@ const sendMassSMS = async () => {
     smsCode.value = ''
     const [code, hash] = await appStore.createCode()
     checkSmsHash.value = hash
-    const message = allInDocTypeIn.value ? `прийняв ${allInDocTypeIn.value} док-тів` : `видав ${allBoxes.value} кор / ${allPallets.value} пал`
+    const message = buildMassReleaseMessage()
+    if (!message) return false
     const codeText = `Код: ${code}`
     // const messageSum = allSumFact.value ? `прийняв ${allSumFact.value} грн (№ пакету ${allSumPack.value})` : ``
     const messageSum = allSumFact.value ? `прийняв № пакету ${allSumPack.value}` : ``
@@ -951,10 +970,12 @@ const sendMassSMS = async () => {
     try {
         smsPhoneError.value = ''
         await appStore.sendSMScode({ phone: pointData.value.rcptPhone, message: translit, pointId: pointId.value, routeId: tripId.value })
+        return true
     } catch (error) {
         console.error(error)
         smsPhoneError.value = error
         appStore.setSnackbar({ text: 'Помилка відправки SMS', type: 'error' })
+        return false
     }
 }
 
@@ -1157,7 +1178,8 @@ const acceptMassRelease = async () => {
         } else {
             checkInternetConnectionLoading.value = false
             if (navigator.onLine && !dontSendSms.value && !appStore.offline) {
-                await sendMassSMS()
+                const sent = await sendMassSMS()
+                if (!sent) return
                 acceptFunc.value = massRelease
                 massReleaseDialog.value = false
                 acceptSmsDialog.value = true
@@ -1184,6 +1206,10 @@ const massRelease = async () => {
             confirmOffline.value = true
             acceptFunc.value = massRelease
         } else {
+            if (!allInDocTypeIn.value && !allTaskDocType.value && !hasMassReleaseQty.value) {
+                appStore.setSnackbar({ text: 'По вибраних документах 0 кор / 0 пал. Перевірте кількість у документах.', type: 'error' })
+                return
+            }
             if (checkSmsCode.value || confirmOfflineRelease.value) {
                 loading.value = true
                 confirmOfflineRelease.value = false
@@ -1414,6 +1440,20 @@ const allInDocTypeIn = computed(() => {
     return count
 })
 
+const allTaskDocType = computed(() => {
+    // усі документи типу task
+    let count = 0
+    for (let item of Object.keys(docsSelected.value)) {
+        const docData = docs.value.find((doc) => doc.id == item)
+        if (!docData || docData.docType != 'task') {
+            return 0
+        } else {
+            count++
+        }
+    }
+    return count
+})
+
 const allSelectedHaveSameType = computed(() => {
     // усі документи одного типу
     let result = true
@@ -1458,7 +1498,10 @@ const allBoxes = computed(() => {
     let result = 0
     for (let item of Object.keys(docsSelected.value)) {
         const docData = docs.value.find((doc) => doc.id == item)
-        if (docData.boxQty) result += docData.boxQty
+        if (docData && docData.boxQty !== null && docData.boxQty !== undefined && docData.boxQty !== '') {
+            const boxes = Number(docData.boxQty)
+            result += Number.isFinite(boxes) ? boxes : 0
+        }
     }
     return result
 })
@@ -1468,9 +1511,16 @@ const allPallets = computed(() => {
     let result = 0
     for (let item of Object.keys(docsSelected.value)) {
         const docData = docs.value.find((doc) => doc.id == item)
-        if (docData.pallQty) result += docData.pallQty
+        if (docData && docData.pallQty !== null && docData.pallQty !== undefined && docData.pallQty !== '') {
+            const pallets = Number(docData.pallQty)
+            result += Number.isFinite(pallets) ? pallets : 0
+        }
     }
     return result
+})
+
+const hasMassReleaseQty = computed(() => {
+    return allBoxes.value > 0 || allPallets.value > 0
 })
 
 // сума COD у всіх вибраних доументів
@@ -1513,8 +1563,10 @@ const checkReleaseForm = computed(() => {
 const checkMassReleaseForm = computed(() => {
     if (allInDocTypeIn.value) {
         return false
-    } else {
+    } else if (allTaskDocType.value) {
         return isFormValid.value ? false : true
+    } else {
+        return isFormValid.value && hasMassReleaseQty.value ? false : true
     }
 })
 

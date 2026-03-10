@@ -96,7 +96,7 @@ export function useOnlineStatus() {
         if (eventHandlersAdded) {
             window.removeEventListener('online', updateOnlineStatus)
             window.removeEventListener('offline', updateOnlineStatus)
-            eventHandlersAdded = true
+            eventHandlersAdded = false
         }
         if (pingOnlineInterval) {
             clearInterval(pingOnlineInterval)
