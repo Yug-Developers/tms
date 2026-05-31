@@ -956,6 +956,57 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
+  const areAllRealPointsDone = (points = []) => {
+    const regularPoints = points.filter(point => point.id !== -1)
+    return regularPoints.length > 0 && regularPoints.every(point => point.status === 300)
+  }
+
+  const isReturnHomePointPending = (points = []) => {
+    const returnHomePoint = points.find(point => point.id === -1)
+    return !returnHomePoint || returnHomePoint.status < 200
+  }
+
+  const kyivDateTimeFormatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Kyiv',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  })
+  const kyivOffsetFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Kyiv',
+    timeZoneName: 'longOffset'
+  })
+  const getKyivDateTimeParts = (date = new Date()) => Object.fromEntries(
+    kyivDateTimeFormatter
+      .formatToParts(date)
+      .filter(part => part.type !== 'literal')
+      .map(part => [part.type, part.value])
+  )
+  const getKyivOffset = (date = new Date()) => {
+    const timeZoneName = kyivOffsetFormatter
+      .formatToParts(date)
+      .find(part => part.type === 'timeZoneName')
+      ?.value || 'GMT+02:00'
+
+    return timeZoneName.replace('GMT', '')
+  }
+  const getKyivIsoTimestamp = (date = new Date()) => {
+    const parts = getKyivDateTimeParts(date)
+    const milliseconds = String(date.getMilliseconds()).padStart(3, '0')
+
+    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}.${milliseconds}${getKyivOffset(date)}`
+  }
+
+  const setReportReadyAt = (statusDoc) => {
+    if (!statusDoc.reportReadyAt && areAllRealPointsDone(statusDoc.points) && isReturnHomePointPending(statusDoc.points)) {
+      statusDoc.reportReadyAt = getKyivIsoTimestamp()
+    }
+  }
+
   const completePoint = async ({tripId, pointId, isSignPointDone, signPointComment}) => {
     try {
       const st = await Pouch.getDoc('statuses', tripId)
@@ -969,6 +1020,7 @@ export const useAppStore = defineStore('appStore', () => {
         }
       }
       Object.assign(st, { points })
+      setReportReadyAt(st)
       delete st._id
       delete st._rev
       const res = await Pouch.updateDoc('statuses', tripId, st)
@@ -1015,4 +1067,3 @@ export const useAppStore = defineStore('appStore', () => {
     isThisWhPoint, inplaceLoading, syncLoading, downloadPointReportPDF, pdfLoading, destroyDB, getLastOdometerStatus, getTripStatusData, checkPointsDocuments
   }
 })
-
