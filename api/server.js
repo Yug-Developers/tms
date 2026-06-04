@@ -242,20 +242,18 @@ const handleChange = async (change) => {
       // Якщо документ має статус 300 (виконано) і він змінився з попереднього статусу закриваємо документ в базі рейсів
       if (documentJustDone) {
         console.log('Статус документа змінився з інший на виконано:', currentStatus);
-        await Base.closeDocInDb(currentDoc)
-        // Відправимо дані до Typhoon якщо документ закрито
-        await sendDataToTyphoon(currentDoc)
+        await Base.syncCompletedDocument(currentDoc, 'статус документа змінився на виконано', { forceSendToTyphoon: true })
         if (canSendClosingReportEmails) {
           await sendClosingReportEmails(currentDoc, 'статус документа змінився на виконано')
         } else if (allPointsDone) {
           console.log('Листи не відправлено після закриття документа: точка повернення додому вже почата або завершена')
         }
+      } else if (currentStatus === 300) {
+        await Base.syncCompletedDocument(currentDoc, 'документ вже виконано, перевірка закриття маршруту')
       }
     } else if (currentDoc.status === 300) {
       console.log('Статус документа виконано без доступної попередньої ревізії:', currentDoc.status);
-      await Base.closeDocInDb(currentDoc)
-      // Відправимо дані до Typhoon якщо документ закрито
-      await sendDataToTyphoon(currentDoc)
+      await Base.syncCompletedDocument(currentDoc, 'документ виконано без доступної попередньої ревізії')
       if (shouldSendClosingReportEmails(currentDoc)) {
         await sendClosingReportEmails(currentDoc, 'документ виконано без доступної попередньої ревізії')
       } else if (areAllPointsDone(currentDoc.points || [])) {

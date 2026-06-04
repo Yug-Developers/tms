@@ -202,6 +202,43 @@ module.exports = {
       throw error
     }
   },
+  async closeRouteDocIfNeeded(id, attempts = 0) {
+    try {
+      const doc = await remoteDBRoutes.get(id)
+      if (doc.status === 'closed') {
+        return false
+      }
+
+      doc.status = 'closed'
+      await remoteDBRoutes.put(doc)
+      return true
+    } catch (error) {
+      if (error.status === 409 && attempts < 3) {
+        return this.closeRouteDocIfNeeded(id, attempts + 1)
+      }
+      throw error
+    }
+  },
+  async syncCompletedDocument(data, reason, { forceSendToTyphoon = false } = {}) {
+    if (data.status !== 300) {
+      return
+    }
+
+    const routeClosedNow = await this.closeRouteDocIfNeeded(data._id)
+    if (routeClosedNow) {
+      console.log(`Документ ${data._id} закрито в базі рейсів. Причина: ${reason}`)
+    } else {
+      console.log(`Документ ${data._id} вже закрито в базі рейсів. Причина: ${reason}`)
+    }
+
+    if (forceSendToTyphoon || routeClosedNow) {
+      try {
+        await this.sendDataToTyphoon(this.prepareData(data))
+      } catch (error) {
+        console.log('Помилка відправки даних до Typhoon:', error?.response?.data || error?.message || error)
+      }
+    }
+  },
   async sendDataToTyphoon(data) {
     try {
       // console.log(JSON.stringify(data, null, 2));
@@ -948,7 +985,6 @@ module.exports = {
   },
 
 }
-
 
 
 
