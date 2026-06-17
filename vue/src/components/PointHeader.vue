@@ -46,8 +46,8 @@
                         <span v-if="sumPack">(Пакети: {{ sumPack }})</span>
                     </div>
                 </div>
-                <div class="text-caption d-flex justify-space-between align-end mt-3">
-                    <div><v-icon x-small class="green mr-2 mb-1">mdi-timer-check-outline</v-icon>{{ pointTime }}</div>
+                <div class="text-caption d-flex justify-space-between align-start mt-3">
+                    <div class="mt-2"><v-icon x-small class="green mr-2 mb-1">mdi-timer-check-outline</v-icon>{{ pointTime }}<br>{{ pointArrivalTime }} - {{ pointDepartureTime }}</div>
                     <v-btn icon="mdi-file-download-outline" color="green" variant="text" @click="downloadPDF()"
                         :loading="appStore.pdfLoading" title="Завантажити PDF звіт про точку"
                         v-if="!appStore.offline && appStore.localStg.userData.role == 'manager' && pointStatus == 300">
@@ -407,6 +407,27 @@ const pointStatus = computed(() => {
     const trip = appStore.statuses && appStore.statuses.find((item) => item._id == props.tripId)
     const point = trip && trip.points && trip.points.find((item) => item.id == pointId.value)
     return point && point.status || 100
+})
+
+const pointArrivalTime = computed(() => {
+    const trip = appStore.statuses && appStore.statuses.find((item) => item._id == props.tripId)
+    const pointStatus = trip?.points?.find((item) => item.id == pointId.value) || {}
+    if (!pointStatus.arrivalTime) {
+        return '-'
+    }
+    const arrival = new Date(pointStatus.arrivalTime)
+    return arrival.toLocaleTimeString('uk-UA')
+})
+
+const pointDepartureTime = computed(() => {
+    const trip = appStore.statuses && appStore.statuses.find((item) => item._id == props.tripId)
+    const pointStatus = trip?.points?.find((item) => item.id == pointId.value) || {}
+    if (!pointStatus.departureTime) {
+        return '-'
+    }
+    const departure = new Date(pointStatus.departureTime)
+    
+    return departure.toLocaleTimeString('uk-UA')
 })
 
 const pointTime = computed(() => {
