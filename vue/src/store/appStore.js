@@ -601,10 +601,15 @@ export const useAppStore = defineStore('appStore', () => {
 
   const checkOpenTrip = async (tripId) => {
     try {
+      if (!offline.value) {
+        const res = await HTTP.post('/tms/check-open-trip', { tripId })
+        return Boolean(res.data?.content)
+      }
+
       const statuses = await Pouch.fetchData('statuses')
       return statuses.find(status => status.status === 200 && status._id != tripId) ? true : false
     } catch (error) {
-      return false
+      throw error
     }
   }
 
@@ -827,6 +832,9 @@ export const useAppStore = defineStore('appStore', () => {
       const points = st.points
       for (let point of points) {
         if (point.id === pointId) {
+          if (st.status === 100) {
+            st.status = 200
+          }
           point.status = 200
           point.arrivalTime = getCurrentTime()
           point.isSignPointDone = false
@@ -1034,6 +1042,18 @@ export const useAppStore = defineStore('appStore', () => {
   const completeTrip = async (tripId, config) => {
     try {
       const st = await Pouch.getDoc('statuses', tripId)
+      const point = st.points?.find(point => point.id === config.pointId)
+      if (!point || !st.points.every(item => item.id === point.id || item.status === 300)) {
+        throw new Error('Не всі точки рейсу завершені')
+      }
+      // Остання точка та рейс мають зберігатися одним документом.
+      if (point.status !== 300) {
+        point.status = 300
+        point.departureTime = getCurrentTime()
+        point.isSignPointDone = config.isSignPointDone || false
+        point.signPointComment = config.signPointComment || ''
+      }
+      setReportReadyAt(st)
       st.status = 300
       st.finishTime = getCurrentTime()
       st.odometerFinish = config.odometerFinish

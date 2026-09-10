@@ -82,6 +82,8 @@
                 @click="cancelDialog = true">Скасувати</v-btn>
             <v-btn :disabled="uncomletedDocs" v-if="pointStatus == 200" @click="completePoint()" variant="elevated"
                 color="success">Виконано</v-btn>
+            <v-btn v-if="pointStatus == 300 && existsTripStatus?.status == 200 && uncompetedPoints === 0"
+                @click="completePoint()" color="success">Завершити рейс</v-btn>
             <div v-if="pointStatus == 300" class="text-center">
                 <v-icon icon="mdi-check-circle" color="green" class="mr-2 mb-1"></v-icon>Точка виконана
             </div>
@@ -274,7 +276,15 @@ const inPlace = async () => {
 
 
     emit('init-data', {})
-    const activTrips = await appStore.checkOpenTrip(props.tripId)
+    let activTrips
+    try {
+        activTrips = await appStore.checkOpenTrip(props.tripId)
+    } catch (error) {
+        appStore.setSnackbar({ text: "Не вдалося перевірити наявність інших активних рейсів.", type: 'error' })
+        appStore.inplaceLoading = false
+        console.error(error)
+        return
+    }
     if (activTrips) {
         appStore.setSnackbar({ text: "Неможливо відкрити новий рейс. Є інші активні рейси.", type: 'error' })
         appStore.inplaceLoading = false
@@ -305,14 +315,14 @@ const delay = (ms) => {
 
 const completePoint = async (config) => {
     try {
-        if (props.point.isSignPoint && !isSignPointDone.value && !config?.signPointDialogDone) {
+        if (pointStatus.value !== 300 && props.point.isSignPoint && !isSignPointDone.value && !config?.signPointDialogDone) {
             signPointDoneDialog.value = true
             return
         }
         signPointDoneDialog.value = false 
         if (!uncompetedPoints.value) {
             odometrFinishDialog.value = true
-            odometer.value = appStore.statuses[0]?.odometerStart || '0'
+            odometer.value = existsTripStatus.value?.odometerStart || '0'
         } else {
             await appStore.completePoint({ tripId: props.tripId, pointId: props.point.id, isSignPointDone: isSignPointDone.value, signPointComment: signPointComment.value })
             appStore.setSnackbar({ text: "Точка завершена", type: 'success' })
@@ -345,16 +355,21 @@ const odometerSet = async () => {
 const completeTrip = async () => {
     try {
         odometerSetLoading.value = true
-        await appStore.completePoint({ tripId: props.tripId, pointId: props.point.id, isSignPointDone: isSignPointDone.value, signPointComment: signPointComment.value })
-        appStore.setSnackbar({ text: "Точка завершена", type: 'success' })
         try {
-            await appStore.completeTrip(props.tripId, { odometerFinish: odometer.value })
+            await appStore.completeTrip(props.tripId, {
+                odometerFinish: odometer.value,
+                pointId: props.point.id,
+                isSignPointDone: isSignPointDone.value,
+                signPointComment: signPointComment.value
+            })
             appStore.setSnackbar({ text: "Рейс виконано", type: 'success' })
             odometerSetLoading.value = false
             odometrFinishDialog.value = false
         } catch (error) {
             appStore.setSnackbar({ text: "Помилка завершення рейсу", type: 'error' })
             console.error(error)
+            odometerSetLoading.value = false
+            return
         }
         try {
             const res = await appStore.pushStatusesData(true)
