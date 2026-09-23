@@ -61,33 +61,35 @@ const notClosedPoins = ref(true)
 const reloadLoading = ref(false)
 
 const reload = async () => {
+    if (reloadLoading.value) return
     try {
         reloadLoading.value = true
         const start = await appStore.getTmsTripsById(tripId.value)
         const pid = start.content.pid
         appStore.setSnackbar({ text: "Оновлення данних маршруту розпочато", type: 'warning' });
 
-        let attempts = 0
-        const maxAttempts = 60  // Максимальна кількість спроб
-        const intervalId = setInterval(async () => {
-            attempts++
+        const deadline = Date.now() + 30000
+        while (Date.now() < deadline) {
+            await new Promise(resolve => setTimeout(resolve, 500))
             const result = await appStore.checkTmsTripsProcess()
+            const process = result.content
+            if (!process || String(process.pid) !== String(pid)) continue
 
-            if (result.content && result.content.status === 'finished' && result.content.pid === pid) {
-                appStore.setSnackbar({ text: "Оновлення данних маршруту завершено", type: 'success' });
-                clearInterval(intervalId)  // зупиняємо інтервал
-                reloadLoading.value = false
-            } else if (attempts >= maxAttempts) {
-                clearInterval(intervalId)  // зупиняємо інтервал
-                reloadLoading.value = false
-                appStore.setSnackbar({ text: "Не вдалося оновити дані!", type: 'error' });
+            if (process.status === 'finished') {
+                appStore.setSnackbar({ text: "Оновлення даних маршруту завершено", type: 'success' })
+                return
             }
-        }, 500);
+            if (process.status === 'error') {
+                throw new Error(process.error || 'Не вдалося оновити дані маршруту')
+            }
+        }
+        throw new Error('Перевищено час очікування оновлення маршруту')
 
     } catch (error) {
-        reloadLoading.value = false
         console.error(error)
-        appStore.setSnackbar({ text: "Невдалось оновити данні", type: 'error' });
+        appStore.setSnackbar({ text: error.message || "Не вдалося оновити дані", type: 'error' })
+    } finally {
+        reloadLoading.value = false
     }
 }
 
