@@ -64,27 +64,50 @@ const { smAndDown } = useDisplay()
 const appStore = useAppStore()
 const tripsLoading = ref(false)
 const statsLoading = ref(false)
+const summaries = ref(null)
 
 const filteredTrips = computed(() => {
+    if (summaries.value !== null) {
+        return summaries.value.filter(trip => trip.executionStatus !== 300)
+    }
     // якщо в базі статусів статус 300 то він не відображається в списку рейсів
     return appStore.activeTrips.filter(trip => appStore.closedStatusesIds.includes(trip._id) === false)
 })
 
 onMounted(async () => {
-    try {
-        tripsLoading.value = true
-        statsLoading.value = true
-        await appStore.getStats()
-        statsLoading.value = false
-
-        await appStore.pullTripsData()
-        tripsLoading.value = false
-
+    tripsLoading.value = true
+    statsLoading.value = true
+    let synchronized = false
+    let syncDone = false
+    let summaryDone = appStore.offline
+    const finishLoading = () => {
+        if (synchronized || summaries.value !== null || (syncDone && summaryDone)) tripsLoading.value = false
     }
-    catch (error) {
-        console.error(error)
-        tripsLoading.value = false
-        statsLoading.value = false
-    }
+
+    const statsTask = (async () => {
+        try { await appStore.getStats() }
+        catch (error) { console.error(error) }
+        finally { statsLoading.value = false }
+    })()
+
+    // Full documents continue syncing for point screens and offline work.
+    const syncTask = (async () => {
+        try {
+            await appStore.pullTripsData()
+            synchronized = true
+            summaries.value = null
+        } catch (error) { console.error(error) }
+        finally { syncDone = true; finishLoading() }
+    })()
+
+    const summaryTask = appStore.offline ? Promise.resolve() : (async () => {
+        try {
+            const items = await appStore.getTripSummaries()
+            if (!synchronized) summaries.value = items
+        } catch (error) { console.error(error) }
+        finally { summaryDone = true; finishLoading() }
+    })()
+
+    await Promise.allSettled([statsTask, syncTask, summaryTask])
 })
 </script>

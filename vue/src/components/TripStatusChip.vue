@@ -10,7 +10,8 @@ import { computed } from 'vue'
 const appStore = useAppStore()
 
 const props = defineProps({
-    tripId: String
+    tripId: String,
+    executionStatus: { type: [Number, String], default: undefined }
 })
 
 const colors = {
@@ -21,6 +22,7 @@ const colors = {
 }
 
 const status = computed(() => {
+    if (props.executionStatus !== undefined) return props.executionStatus || 100
     const trip = appStore.statuses.find((item) => item._id == props.tripId)
     return trip && trip.status || 100
 })

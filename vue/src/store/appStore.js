@@ -232,6 +232,11 @@ export const useAppStore = defineStore('appStore', () => {
     }
   }
 
+  const getTripSummaries = async () => {
+    const res = await HTTP.get('/tms/get-trip-summaries')
+    return res.data?.content || []
+  }
+
   const getAllAvailableTrips = async () => {
     // Для розділу - рейси
     try {
@@ -550,9 +555,10 @@ export const useAppStore = defineStore('appStore', () => {
         routes.value = await Pouch.fetchData('routes')
         statuses.value = await Pouch.fetchData('statuses')
       }
-      loading.value = false
     } catch (error) {
       throw error
+    } finally {
+      loading.value = false
     }
   }
 
@@ -1083,7 +1089,7 @@ export const useAppStore = defineStore('appStore', () => {
     setSMSstatus, getManagerPermDoc, checkQrCode, extractPhoneNumber, parsePhones, checkEmptyPointDocsExists, connection, offline, skipSync,
     formatDateTime, routes, pullTripsById, activeTrips, activeStatuses,
     activeTripsIds, activeStatusesIds, availableTripsIds, closedStatuses, closedStatusesIds, pullStatuses, pullManagersPerm, pullRoutes,
-    finishedOdometerData, statusesIds, routesIds, tripsByDate, getStats, getAllAvailableTrips, availableTrips, pushManagerPermData, netLogin, touch,
+    finishedOdometerData, statusesIds, routesIds, tripsByDate, getStats, getTripSummaries, getAllAvailableTrips, availableTrips, pushManagerPermData, netLogin, touch,
     isThisWhPoint, inplaceLoading, syncLoading, downloadPointReportPDF, pdfLoading, destroyDB, getLastOdometerStatus, getTripStatusData, checkPointsDocuments
   }
 })

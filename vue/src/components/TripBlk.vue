@@ -6,7 +6,7 @@
                 <div>№ {{ trip.id }}
                     <!-- v-icon v-if="trip.doc.isCircular" size="small" icon="mdi-rotate-360" color="green" class="ml-4 mb-1" title="Кільцевий маршрут"/ -->
                 </div>
-                <StatusChip :tripId="trip.id" />
+                <StatusChip :tripId="trip.id" :execution-status="trip.executionStatus" />
             </v-card-title>
             <v-card-text class="text-grey text-caption">
                 Дата рейсу: {{ appStore.formatDate(trip.date) }}<br>
@@ -58,6 +58,7 @@ const props = defineProps({
 const appStore = useAppStore()
 
 const tripLength = (id) => {
+    if (props.trip?.executionStatus !== undefined) return props.trip.tripLength || 0
     let length = 0
     if (props.trip?.points) {
         length = props.trip.points.reduce((acc, item) => {
@@ -70,6 +71,7 @@ const tripLength = (id) => {
 }
 
 const pointsNumber = computed(() => {
+    if (props.trip?.executionStatus !== undefined) return props.trip.onRouteCount || 0
     if (props.trip?.points) {
         return props.trip.isCircular || props.trip.circular ? (props.trip.points.length + 1) : props.trip.points.length
     } else {
@@ -78,6 +80,7 @@ const pointsNumber = computed(() => {
 })
 
 const statusData = computed(() => {
+    if (props.trip?.executionStatus !== undefined) return props.trip
     const out = appStore.statuses.find(el => el._id === String(props.trip.id))
     return out || {}
 })
