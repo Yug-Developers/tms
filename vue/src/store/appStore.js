@@ -770,6 +770,8 @@ export const useAppStore = defineStore('appStore', () => {
 
   const checkEmptyPointDocsExists = async (tripId) => {
     //Якщо Рейс має Статус = Новий (пустий документ статусу) ТА у Рейсі є хоч один документ з Тип = Видача (out) ТА Кор = 0 ТА Пал = 0, то видати помилку: "Видача без коробок та палет"
+    return false // temp fix
+
     let statusFile = true
     try {
       await Pouch.getDoc('statuses', tripId)
@@ -787,11 +789,12 @@ export const useAppStore = defineStore('appStore', () => {
         }
       }
     }
-    return false
   }
 
   const checkPointsDocuments = async (tripId, pointId) => {
     //
+    return false // temp fix
+    // The code below will never be reached due to the return above
     let statusFile = true
     try {
       await Pouch.getDoc('statuses', tripId)
@@ -820,7 +823,7 @@ export const useAppStore = defineStore('appStore', () => {
         }
       }
     }
-    return false
+    
   }
 
   const isThisWhPoint = async (tripId, pointId) => {
