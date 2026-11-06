@@ -20,7 +20,7 @@
                             <v-form ref="form" v-model="formValid" v-if="check">
                                 <v-text-field @keyup.enter="checkPhone()" prepend-icon="mdi-phone" variant="underlined"
                                     v-model="phone" name="phone" label="Телефон" type="text" append-icon="mdi"
-                                    :rules="[rules.phone]" placeholder="+38(000) 000 - 0000" v-maska:[options]
+                                    :rules="[rules.phone]" placeholder="+38(000) 000 - 0000" v-maska="options"
                                     density="default"></v-text-field>
                             </v-form>
                         </v-card-text>
@@ -55,7 +55,7 @@
 import { useAppStore } from '@/store/appStore'
 import { ref, } from 'vue'
 import { useRouter } from 'vue-router'
-import { vMaska } from "maska"
+import { vMaska } from "maska/vue"
 import Config from '@/Config'
 
 const options = { mask: '+38(###) ### - ####' }

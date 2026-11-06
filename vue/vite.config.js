@@ -3,6 +3,9 @@ import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
+import { readFileSync } from 'node:fs'
+
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
 
 export default defineConfig({
   plugins: [
@@ -52,11 +55,12 @@ export default defineConfig({
   ],
   define: {
     'process.env': {
-      __VERSION__: JSON.stringify(require('./package.json').version),
+      __VERSION__: JSON.stringify(version),
     }
   },
   resolve: {
     alias: {
+      events: 'events/',
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
     extensions: [
@@ -71,6 +75,7 @@ export default defineConfig({
   },
   server: {
     port: 3011,
+    allowedHosts: ['dev.tms.yugcontract.ua', 'dev.yugcontract.ua'],
     watch: { usePolling: true }
   },
 })

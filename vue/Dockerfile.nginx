@@ -1,22 +1,22 @@
-# stage1 as builder
-FROM node:18 as builder
+# stage1 AS builder
+FROM node:24-bookworm AS builder
 
 WORKDIR /vue
 
 # Copy the package.json and install dependencies
 COPY package*.json ./
 
-RUN npm install --verbose
+RUN npm ci --include=dev
 
 # Copy rest of the files
 COPY . .
 
 ARG DEV_MODE
 # Set environment variable
-ENV NODE_ENV $DEV_MODE
+ENV NODE_ENV=$DEV_MODE
 
 # Build the project
-RUN npm run build -- --mode $NODE_ENV 
+RUN npm run build -- --mode $NODE_ENV
 
 
 # nginx state for serving content
@@ -43,5 +43,3 @@ EXPOSE 80 443 22
 # Containers run nginx with global directives and daemon off
 ENTRYPOINT ["nginx", "-g", "daemon off;", "-c", "/etc/nginx/nginx.conf"]
 #ENTRYPOINT ["nginx", "-g", "daemon off;"]
-
-

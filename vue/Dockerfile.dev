@@ -1,16 +1,16 @@
-FROM node:18
+FROM node:24-bookworm
 RUN ln -fs /usr/share/zoneinfo/Europe/Kiev /etc/localtime
-   
+
 WORKDIR /node/tms/vue
-   
+
 COPY package*.json ./
-   
-RUN npm install --verbose
+
+RUN npm ci --include=dev
 
 RUN umask 002
-   
+
 COPY . .
 
 EXPOSE 3011
 
-CMD yarn dev
+CMD ["npm", "run", "dev"]

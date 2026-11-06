@@ -1,8 +1,4 @@
 import PouchDB from 'pouchdb-browser'
-import Config from '../Config'
-import PouchDBAuth from 'pouchdb-authentication'
-
-PouchDB.plugin(PouchDBAuth)
 
 const dBObj = {}
 const user_name = 'tms'

@@ -1,19 +1,18 @@
-FROM node:18
+FROM node:24-bookworm
 
 RUN ln -fs /usr/share/zoneinfo/Europe/Kiev /etc/localtime
-   
-WORKDIR /node/tms/api
-   
-COPY package*.json ./
-   
-RUN npm install --verbose
 
-RUN npm install pm2 -g
-   
+WORKDIR /node/tms/api
+
+COPY package*.json ./
+
+RUN npm ci --omit=dev
+
+
 COPY . .
 
 ARG DEV_MODE
 # Set environment variable
-ENV NODE_ENV $DEV_MODE
+ENV NODE_ENV=$DEV_MODE
 
-CMD pm2-runtime start ./ecosystem.config.js
+CMD ["./node_modules/.bin/pm2-runtime", "start", "./ecosystem.config.js"]
